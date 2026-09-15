@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { LAUNCH_OFFER_CLOSES, launchOfferOpen } from '../src/lib/launch-offers'
+import { codeMatchKey, normaliseCode } from '../src/lib/ambassador-codes'
 
 // A code that stops working on a date nobody chose.
 //
@@ -81,4 +82,40 @@ test('the season itself is unchanged', () => {
   assert.equal(LAUNCH_OFFER_CLOSES, '2026-11-01T00:00:00Z')
   assert.equal(launchOfferOpen(new Date('2026-10-31T22:00:00Z')), true)
   assert.equal(launchOfferOpen(new Date('2026-11-01T00:00:00Z')), false)
+})
+
+test('a code typed off a poster is the same code', () => {
+  // The lookup forgave the case and the outer spaces and nothing else, while
+  // the comment beside it claimed loose matching. Somebody reading SPA-WELL26
+  // off an Instagram caption types it four different ways, and three of them
+  // were told we did not recognise their code.
+  const forms = ['SPA-WELL26', 'spa well 26', 'spawell26', ' SPA WELL 26 ', 'Spa_Well26']
+  const keys = new Set(forms.map(codeMatchKey))
+  assert.equal(keys.size, 1, `these should be one code: ${[...keys].join(', ')}`)
+  assert.equal([...keys][0], 'SPAWELL26')
+
+  // The stored value keeps its punctuation, because SPA-WELL26 is what goes
+  // on the poster and what should read back on the admin list.
+  assert.equal(normaliseCode('spa-well26'), 'SPA-WELL26')
+})
+
+test('the database is where the matching happens', () => {
+  // Comparing in TypeScript would mean reading every code out of the table to
+  // find one, and the claim has to stay a single locked statement.
+  const migration = readFileSync('supabase/migrations/20260915140000_a_code_typed_off_a_poster.sql', 'utf8')
+  assert.match(migration, /regexp_replace\(upper\(code\), '\[\^A-Z0-9\]', '', 'g'\)/)
+  assert.match(migration, /FOR UPDATE/, 'and it must still take the row lock')
+
+  // Only the matching changed. The expiry comparison and the write order were
+  // both altered by accident while retyping the body, and both are back.
+  assert.match(migration, /v\.expires_at < now\(\)/)
+  assert.doesNotMatch(migration, /v\.expires_at <= now\(\)/)
+})
+
+test('two codes cannot differ only by a hyphen', () => {
+  // The UNIQUE constraint does not catch this: SPA-WELL26 and SPAWELL26 are
+  // different strings and the same code, and the lookup would return whichever
+  // row it found first.
+  const route = readFileSync('src/app/api/admin/ambassadors/route.ts', 'utf8')
+  assert.match(route, /codeMatchKey\(row\.code\) === key/)
 })
