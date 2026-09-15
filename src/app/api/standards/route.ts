@@ -4,7 +4,7 @@ import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
 import { loadAttachments } from '@/lib/documents/attachments-server'
 import { formatOf } from '@/lib/documents/formats'
-import { TOOLS } from '@/lib/documents/tools/registry'
+import { TOOLS, TOOL_BUNDLE } from '@/lib/documents/tools/registry'
 
 // What is actually on the shelf.
 //
@@ -74,6 +74,17 @@ export async function GET() {
       price: tool.pricePence,
       sheets: tool.sheets,
     })),
+    toolkit: {
+      slug: TOOL_BUNDLE.slug,
+      name: TOOL_BUNDLE.name,
+      blurb: TOOL_BUNDLE.blurb,
+      detail: TOOL_BUNDLE.detail,
+      price: TOOL_BUNDLE.pricePence,
+      // Worked out rather than typed, so the saving on the card cannot drift
+      // from the prices beside it.
+      singly: TOOLS.reduce((total, tool) => total + tool.pricePence, 0),
+      count: TOOLS.length,
+    },
     files: attachments.map(attachment => ({
       name: attachment.name,
       description: attachment.description,

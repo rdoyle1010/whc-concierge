@@ -6,7 +6,7 @@ import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { filesForOrders } from '@/lib/documents/entitlement'
 import { replacementWorkbook } from '@/lib/documents/attachments'
-import { TOOLS } from '@/lib/documents/tools/registry'
+import { TOOLS, TOOL_BUNDLE_SLUG } from '@/lib/documents/tools/registry'
 import { slugsInOrders } from '@/lib/documents/entitlement'
 import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
 import { getStripe } from '@/lib/stripe'
@@ -78,7 +78,9 @@ export async function GET(req: NextRequest) {
   // The tools they bought. Built on request, so the shelf lists them rather
   // than storing a copy that goes stale the day the tool improves.
   const theirSlugs = new Set(slugsInOrders(orders || []))
-  const theirTools = TOOLS.filter(tool => theirSlugs.has(tool.slug))
+  const theirTools = theirSlugs.has(TOOL_BUNDLE_SLUG)
+    ? TOOLS
+    : TOOLS.filter(tool => theirSlugs.has(tool.slug))
 
   return NextResponse.json({
     documents: sellableCatalogue()

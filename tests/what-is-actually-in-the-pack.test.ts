@@ -144,3 +144,26 @@ test('she can look at just the spreadsheets', () => {
   // A filter that hides everything has to say so, or it reads as data loss.
   assert.ok(page.includes('Nothing in {format}'))
 })
+
+test('searching the library finds the tools and the files, not only the documents', () => {
+  // A search for "audit" or "costings" or "staffing" returned nothing at all
+  // while every one of those was a product on the same page. A search that
+  // confidently says nothing matches is worse than no search: it does not
+  // send somebody to look elsewhere, it tells them there is nothing there.
+  const list = body('src/components/StandardsList.tsx')
+  assert.match(list, /tools \?: Tool\[\]|tools\?: Tool\[\]/, 'the list is never told about the tools')
+  assert.match(list, /const elsewhere = useMemo/)
+  assert.ok(list.includes('Not a document, but we have'))
+  assert.ok(list.includes('href="#tools"'), 'and it points at where they are')
+
+  // Said before the document list, because when that list is empty this is
+  // the whole answer.
+  assert.ok(list.indexOf('Not a document, but we have') < list.indexOf('Nothing matches that'),
+    'the answer comes before the apology')
+
+  // A file only counts when it is actually on sale on its own.
+  assert.match(list, /file\.slug && \(file\.price \|\| 0\) > 0/)
+
+  const shop = body('src/components/StandardsCatalogue.tsx')
+  assert.match(shop, /<StandardsList[\s\S]{0,160}tools=\{tools\} files=\{files\}/)
+})

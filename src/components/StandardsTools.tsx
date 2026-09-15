@@ -32,7 +32,19 @@ export type Tool = {
   sheets: number
 }
 
-export default function StandardsTools({ files, tools }: { files: PackFile[]; tools: Tool[] }) {
+export type Toolkit = {
+  slug: string
+  name: string
+  blurb: string
+  detail: string
+  price: number
+  singly: number
+  count: number
+}
+
+export default function StandardsTools(
+  { files, tools, toolkit }: { files: PackFile[]; tools: Tool[]; toolkit: Toolkit | null },
+) {
   const sold = files.filter(file => file.slug && (file.price || 0) > 0)
   if (!sold.length && !tools.length) return null
 
@@ -44,6 +56,30 @@ export default function StandardsTools({ files, tools }: { files: PackFile[]; to
           Not everything worth having is a procedure. These are working files you complete with your own
           numbers, sold on their own and included with the packs they belong to.
         </p>
+
+        {/* The bundle first. Four tools singly is more than the library
+            costs to a buyer who is adding up, and the saving is worked out
+            from the prices rather than typed beside them. */}
+        {toolkit && tools.length > 1 && (
+          <div className="mt-8 border border-[#1c1c1c] p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h3 className="text-[21px] font-semibold text-[#1c1c1c]">{toolkit.name}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-[#1c1c1c]">{toolkit.blurb}</p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="font-serif text-[30px] leading-none text-[#1c1c1c]">{formatPrice(toolkit.price)}</p>
+                <p className="mt-1.5 text-[12px] text-[#6b6b6b]">
+                  {formatPrice(toolkit.singly)} bought separately
+                </p>
+              </div>
+            </div>
+            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-[#555555]">{toolkit.detail}</p>
+            <div className="mt-4">
+              <BuyButton packSlug={toolkit.slug} label={`Buy all ${toolkit.count} tools`} />
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2">
           {tools.map(tool => (

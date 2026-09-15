@@ -7,7 +7,7 @@ import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pri
 import { priceSingle, pricePack } from '@/lib/documents/stock'
 import { DOCUMENT_STATUS, FILE_STATUS } from '@/lib/documents/status'
 import { soldSeparately } from '@/lib/documents/attachments'
-import { toolBySlug } from '@/lib/documents/tools/registry'
+import { toolBySlug, TOOL_BUNDLE, TOOL_BUNDLE_SLUG } from '@/lib/documents/tools/registry'
 import { loadAttachments } from '@/lib/documents/attachments-server'
 
 // Buying a document.
@@ -79,16 +79,25 @@ export async function POST(req: NextRequest) {
   // A tool built in code. Checked first because it needs no database at all:
   // it either is one of ours or it is not.
   const tool = packSlug ? toolBySlug(packSlug) : null
+  const toolkit = packSlug === TOOL_BUNDLE_SLUG ? TOOL_BUNDLE : null
 
-  const file = !tool && packSlug
+  const file = !tool && !toolkit && packSlug
     ? soldSeparately(await loadAttachments(true, admin)).find(entry => entry.slug === packSlug)
     : null
 
-  const bundle = !tool && !file && packSlug
+  const bundle = !tool && !toolkit && !file && packSlug
     ? (await loadBundles(true, admin)).find(entry => entry.slug === packSlug)
     : null
   let purchase
-  if (tool) {
+  if (toolkit) {
+    purchase = {
+      ok: true as const,
+      description: toolkit.name,
+      amountPence: toolkit.pricePence,
+      packSlug: toolkit.slug,
+      isFile: true as const,
+    }
+  } else if (tool) {
     purchase = {
       ok: true as const,
       description: tool.name,

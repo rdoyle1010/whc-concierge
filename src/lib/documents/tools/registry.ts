@@ -1,4 +1,7 @@
 import { treatmentCostingsWorkbook, TREATMENT_COSTINGS_FILE } from './treatment-costings'
+import { staffingWorkbook, STAFFING_FILE } from './staffing'
+import { retailWorkbook, RETAIL_FILE } from './retail'
+import { preOpeningWorkbook, PRE_OPENING_FILE, PRE_OPENING_TASK_COUNT } from './pre-opening'
 
 // The tools, as products.
 //
@@ -46,7 +49,80 @@ export const TOOLS: Tool[] = [
     sheets: 6,
     build: treatmentCostingsWorkbook,
   },
+
+  {
+    slug: 'tool-staffing',
+    name: 'Staffing, Rota and Cover',
+    blurb: 'What a shape of week costs, and whether the hours match the diary.',
+    detail:
+      'A rota says who is in. It does not say whether the hours match the bookings, what they cost against '
+      + 'the revenue they can produce, or what it costs to cover the holiday and sickness that are certain to '
+      + 'happen. This costs an hour at wage plus on-costs plus cover, which is usually a third above the '
+      + 'contract rate and is why payroll comes in over budget in a spa that rostered exactly what it '
+      + 'planned. It measures utilisation against hours rostered rather than hours worked, and it separates a '
+      + 'rota problem from a price problem, which are the two things a high payroll percentage can mean.',
+    pricePence: 24500,
+    fileName: STAFFING_FILE,
+    sheets: 5,
+    build: staffingWorkbook,
+  },
+
+  {
+    slug: 'tool-retail',
+    name: 'Retail Range, Margin and Stock',
+    blurb: 'Which lines earn, which are dead, and what the shelf is costing you.',
+    detail:
+      'Retail is the easiest money in a spa and the worst managed. This takes commission out of the margin, '
+      + 'reads the range by gross profit rather than by units sold, and puts a value on the stock that is not '
+      + 'moving. Four lines that sold nothing is a note; four thousand pounds sitting in them is a decision. '
+      + 'It also says what share of the profit comes from the top five lines, which in most spas is more than '
+      + 'half and changes what the other thirty-five are for.',
+    pricePence: 19500,
+    fileName: RETAIL_FILE,
+    sheets: 4,
+    build: retailWorkbook,
+  },
+
+  {
+    slug: 'tool-pre-opening',
+    name: 'Pre-Opening Critical Path',
+    blurb: `The ${PRE_OPENING_TASK_COUNT} things that have to happen before the first guest, in order.`,
+    detail:
+      'The only tool here that arrives filled in, because the value is knowing what the tasks are and in '
+      + 'what order, which is exactly what somebody opening their first spa cannot find out until it is too '
+      + 'late to act on. Enter the opening date and the whole path recalculates, which is the one thing a '
+      + 'printed plan cannot do. Every task is marked with whether it stops opening, because at week two '
+      + 'everything is late and somebody has to decide what actually cannot slip.',
+    pricePence: 39500,
+    fileName: PRE_OPENING_FILE,
+    sheets: 4,
+    build: preOpeningWorkbook,
+  },
 ]
+
+export const TOOL_BUNDLE_SLUG = 'tool-operators-toolkit'
+
+/**
+ * Every tool, at a price that is not the sum of them.
+ *
+ * Four tools bought singly are one thousand and eighty pounds. A spa that
+ * wants all four is a spa taking the whole operation seriously, and the
+ * bundle should be priced so that is the obvious decision rather than a
+ * calculation. It also sits just under the reporting pack, which is the right
+ * order: the tools work out what to do, the reporting pack proves what
+ * happened, and most properties should buy the first before the second.
+ */
+export const TOOL_BUNDLE = {
+  slug: TOOL_BUNDLE_SLUG,
+  name: 'The Spa Operator\u2019s Toolkit',
+  blurb: 'Every tool in one purchase, at less than three of them bought separately.',
+  detail:
+    'Treatment costings and menu pricing, staffing and rota cost, retail range and margin, and the '
+    + 'pre-opening critical path. The four spreadsheets a spa is actually run from, each built so that a '
+    + 'handful of typed numbers produce the rest, and none of them pre-filled with a figure somebody would '
+    + 'believe.',
+  pricePence: 79500,
+}
 
 export const toolBySlug = (slug: string): Tool | undefined =>
   TOOLS.find(tool => tool.slug === slug)

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { slugsInOrders } from '@/lib/documents/entitlement'
-import { toolBySlug } from '@/lib/documents/tools/registry'
+import { toolBySlug, TOOL_BUNDLE_SLUG } from '@/lib/documents/tools/registry'
 
 // A tool, to the person who bought it.
 //
@@ -42,7 +42,11 @@ export async function GET(req: NextRequest) {
     orders = theirs || []
   }
 
-  if (!slugsInOrders(orders || []).includes(tool.slug)) {
+  // The toolkit is every tool. Resolved here rather than by writing four
+  // rows at checkout, so a tool added later reaches everybody who already
+  // bought the bundle rather than only people who buy it afterwards.
+  const theirs = slugsInOrders(orders || [])
+  if (!theirs.includes(tool.slug) && !theirs.includes(TOOL_BUNDLE_SLUG)) {
     return NextResponse.json({ error: `${tool.name} is not in your library.` }, { status: 403 })
   }
 

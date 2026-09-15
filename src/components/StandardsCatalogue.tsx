@@ -5,7 +5,7 @@ import { departmentPacks, categoryPacks, everythingPacks, formatPrice, type Pric
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsList from '@/components/StandardsList'
 import PackContents, { type PackFile } from '@/components/PackContents'
-import StandardsTools, { type Tool } from '@/components/StandardsTools'
+import StandardsTools, { type Tool, type Toolkit } from '@/components/StandardsTools'
 import BuyButton from '@/components/BuyButton'
 import Link from 'next/link'
 
@@ -33,6 +33,7 @@ export default function StandardsCatalogue() {
   // that decides the sale, and it was only answerable after paying.
   const [files, setFiles] = useState<PackFile[]>([])
   const [tools, setTools] = useState<Tool[]>([])
+  const [toolkit, setToolkit] = useState<Toolkit | null>(null)
 
   useEffect(() => {
     fetch('/api/standards')
@@ -45,6 +46,7 @@ export default function StandardsCatalogue() {
         setBundles(data.bundles || [])
         setFiles(data.files || [])
         setTools(data.tools || [])
+        setToolkit(data.toolkit || null)
       })
       .catch(() => setUnavailable(true))
   }, [])
@@ -84,7 +86,7 @@ export default function StandardsCatalogue() {
         spending eight hundred pounds today will spend two hundred and come
         back, and a tool listed under a department pack is a tool nobody
         finds. */}
-    <StandardsTools files={files} tools={tools} />
+    <StandardsTools files={files} tools={tools} toolkit={toolkit} />
 
     {/* The guest journey first, and departments underneath.
         A department pack asks a buyer to know which team owns a procedure.
@@ -321,7 +323,8 @@ export default function StandardsCatalogue() {
           name, which is the question a buyer actually arrives with. She
           signed a document off and could not find it on her own shop,
           because nothing here ever listed a document. */}
-      <StandardsList available={available} unavailable={unavailable} prices={prices} />
+      <StandardsList available={available} unavailable={unavailable} prices={prices}
+        tools={tools} files={files} />
     </section>
     </>
   )
