@@ -100,7 +100,6 @@ test('every card on the shop opens, not just one of them', () => {
   const shop = body('src/components/StandardsCatalogue.tsx')
   assert.equal((shop.match(/<PackContents/g) || []).length, 4,
     'a pack card somewhere is still saying only how many documents it has')
-  assert.ok(shop.includes('references={referencesIn(stage)}'))
   assert.ok(shop.includes('references={referencesIn(pack)}'))
   assert.ok(shop.includes('references={bundle.references}'))
   assert.ok(shop.includes('files={filesFor('), 'the files that come with a pack are named on it')

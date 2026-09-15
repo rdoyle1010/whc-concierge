@@ -6,7 +6,7 @@ import Footer from '@/components/Footer'
 import {
   formatPrice, SINGLE_DOCUMENT_PRICE, COMPLETE_LIBRARY_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
   CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
-  journeyPacks,
+  categoryPacks,
 } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
@@ -367,13 +367,13 @@ export default function StandardsPage() {
                   cta: 'Find it',
                 },
                 {
-                  name: 'A stage of the visit',
+                  name: 'One part of the operation',
                   // Worked out from the packs rather than typed, so the card
                   // cannot drift away from the prices below it.
-                  price: `From ${formatPrice(Math.min(...journeyPacks().map(pack => pack.price)))}`,
-                  detail: 'Everything one part of the guest journey needs in writing, across every team it touches. Arrivals, the visit itself, departures, or what happens afterwards.',
-                  href: '#stages',
-                  cta: 'See the six stages',
+                  price: `From ${formatPrice(Math.min(...categoryPacks().map(pack => pack.price)))}`,
+                  detail: 'Risk assessments, the reporting pack, the guest journey end to end, recruitment, training, safety, or how the day is run. Everything that part needs in writing, across every team it touches.',
+                  href: '#packs',
+                  cta: `See all ${categoryPacks().length}`,
                 },
                 {
                   name: 'Before the first guest',
