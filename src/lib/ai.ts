@@ -19,27 +19,44 @@ import Anthropic from '@anthropic-ai/sdk'
  * Two models, because two different jobs are being paid for.
  *
  * AI_MODEL writes prose a person reads and judges: a bio, a headline, a job
- * advert, a message to a candidate. That is the platform's voice, it is short,
- * and it is worth the better model.
+ * advert, a message to a candidate. That is the platform's voice.
  *
  * AI_MODEL_READING reads a long document and returns a shape: a CV into
  * profile fields, a CV and a job advert into interview questions, an
- * application into an analysis. Almost all of the tokens are input, nobody
- * reads the model's sentences, and the cheaper model is not detectably worse
- * at pulling facts out of a document.
+ * application into an analysis. Almost all of those tokens are input, nobody
+ * reads the model's sentences, and a cheaper model is not detectably worse at
+ * pulling dates and job titles out of a document.
  *
- * The split is not an emergency measure. The first fortnight's bill was read
- * carefully before writing this: almost all of it was one day, one batch, and
- * the document library being drafted, which is not the live site and does not
- * repeat. The live surfaces cost pennies. This is here because paying the
- * better model to pull dates out of a CV was never the right trade, not
- * because anything is on fire.
+ * Both are Sonnet today, and that is worth explaining rather than leaving as a
+ * puzzle. Haiku is the obvious next step down for the reading surfaces and it
+ * was tried: it rejects the effort setting every call here uses, taking the
+ * older fixed-budget shape instead, so moving to it is a rewrite of how
+ * thinking is configured rather than a change of one string. Not worth it for
+ * the difference between one and two dollars a million input tokens, on a
+ * platform spending pennies a day. The split stays because the two jobs really
+ * are different and pricing them apart should cost one line on the day it is
+ * worth doing.
+ *
+ * Both sat a tier higher than they do, and the reason is a business one rather
+ * than a technical one. This platform charges members nothing to join. Every
+ * AI call is therefore a cost carried before a penny of revenue, and a cost
+ * per member that cannot be stated confidently is a cost that gets feared
+ * instead of managed. Writing moved to Sonnet because the difference on an
+ * eighty word bio is small and arguable, while the difference on a founder's
+ * nerve about her own margin is not.
+ *
+ * What this does not buy is much. The live surfaces were already pennies: a
+ * fortnight's entire bill was one batch drafting the document library, not
+ * people using the site. The saving is real but small, and it is worth having
+ * mainly because it is free of any consequence anybody will notice.
  *
  * Both are overridable from Netlify, which takes effect on the next deploy
  * rather than immediately: Netlify reads environment variables into a function
- * when it builds it, so changing one and not deploying changes nothing.
+ * when it builds it, so changing one and not deploying changes nothing. Going
+ * back up a tier is one variable and one deploy, and is worth doing the moment
+ * members are paying for something.
  */
-export const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-5'
+export const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5'
 export const AI_MODEL_READING = process.env.ANTHROPIC_MODEL_READING || 'claude-sonnet-5'
 
 /** Which job this is. Picks the model, and nothing else. */

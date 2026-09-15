@@ -21,15 +21,28 @@ function body(path: string) {
     .join('\n')
 }
 
-test('reading a document and writing prose are not paid for at the same rate', () => {
-  // Reading a CV is extraction against a fixed shape: long input, short
-  // structured output, and nobody ever reads the model's sentences. Writing a
-  // bio is the platform's voice on somebody's profile. Paying the same for
-  // both was the trade nobody had actually looked at.
-  assert.notEqual(AI_MODEL, AI_MODEL_READING,
-    'one model for both is the thing this split exists to prevent')
+test('the two jobs can be priced apart, whether or not they are today', () => {
+  // This test asserted the two models must differ. That was written when they
+  // did, and it was the wrong assertion: whether reading and writing are
+  // currently priced apart is a business decision that changes, while the
+  // mechanism for pricing them apart is the thing that must not rot. Haiku was
+  // tried for reading and rejected the effort setting every call here uses, so
+  // both sit on Sonnet for now and the tier is a lever waiting rather than a
+  // saving being taken.
+  assert.match(AI_MODEL, /^claude-[a-z0-9-]+$/, 'the writing model must be named, never defaulted')
+  assert.match(AI_MODEL_READING, /^claude-[a-z0-9-]+$/, 'the reading model must be named, never defaulted')
   assert.equal(modelFor('writing'), AI_MODEL)
   assert.equal(modelFor('reading'), AI_MODEL_READING)
+})
+
+test('nothing on the live site is on the most expensive tier', () => {
+  // The platform charges members nothing to join, so every AI call is a cost
+  // carried before any revenue. Opus is two and a half times Sonnet per token.
+  // Going back up is a deliberate act, made when members are paying.
+  for (const model of [AI_MODEL, AI_MODEL_READING]) {
+    assert.doesNotMatch(model, /opus|fable|mythos/,
+      `${model} is a premium tier, and this platform has no revenue to put against it yet`)
+  }
 })
 
 test('the biggest input on the live site goes to the reading model', () => {
