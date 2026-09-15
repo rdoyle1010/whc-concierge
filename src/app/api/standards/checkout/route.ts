@@ -7,6 +7,7 @@ import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pri
 import { priceSingle, pricePack } from '@/lib/documents/stock'
 import { DOCUMENT_STATUS, FILE_STATUS } from '@/lib/documents/status'
 import { soldSeparately } from '@/lib/documents/attachments'
+import { toolBySlug } from '@/lib/documents/tools/registry'
 import { loadAttachments } from '@/lib/documents/attachments-server'
 
 // Buying a document.
@@ -75,15 +76,27 @@ export async function POST(req: NextRequest) {
   // collide with either, and because the answer is cheap: a workbook has no
   // documents to be part-finished, so there is nothing to verify against the
   // shelf. It either exists, is live and is priced, or it is not for sale.
-  const file = packSlug
+  // A tool built in code. Checked first because it needs no database at all:
+  // it either is one of ours or it is not.
+  const tool = packSlug ? toolBySlug(packSlug) : null
+
+  const file = !tool && packSlug
     ? soldSeparately(await loadAttachments(true, admin)).find(entry => entry.slug === packSlug)
     : null
 
-  const bundle = !file && packSlug
+  const bundle = !tool && !file && packSlug
     ? (await loadBundles(true, admin)).find(entry => entry.slug === packSlug)
     : null
   let purchase
-  if (file) {
+  if (tool) {
+    purchase = {
+      ok: true as const,
+      description: tool.name,
+      amountPence: tool.pricePence,
+      packSlug: tool.slug,
+      isFile: true as const,
+    }
+  } else if (file) {
     purchase = {
       ok: true as const,
       description: file.name,

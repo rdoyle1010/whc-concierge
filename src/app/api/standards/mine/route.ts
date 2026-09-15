@@ -6,6 +6,8 @@ import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { filesForOrders } from '@/lib/documents/entitlement'
 import { replacementWorkbook } from '@/lib/documents/attachments'
+import { TOOLS } from '@/lib/documents/tools/registry'
+import { slugsInOrders } from '@/lib/documents/entitlement'
 import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
@@ -73,6 +75,10 @@ export async function GET(req: NextRequest) {
   const ready = new Set((approved || []).map((row: any) => row.reference))
 
   const theirFiles = await filesForOrders(orders || [], admin)
+  // The tools they bought. Built on request, so the shelf lists them rather
+  // than storing a copy that goes stale the day the tool improves.
+  const theirSlugs = new Set(slugsInOrders(orders || []))
+  const theirTools = TOOLS.filter(tool => theirSlugs.has(tool.slug))
 
   return NextResponse.json({
     documents: sellableCatalogue()
@@ -89,6 +95,7 @@ export async function GET(req: NextRequest) {
     // Unless one of their own files replaces it. Two workbooks in one pack is
     // worse than either alone: the buyer has to decide which is authoritative.
     workbook: owned.has(FINANCE_REGISTER[0].reference) && !replacementWorkbook(theirFiles),
+    tools: theirTools.map(tool => ({ slug: tool.slug, name: tool.name, blurb: tool.blurb })),
     // The files that travel with a pack: a register in Excel is still the
     // thing they paid for, and a shelf that shows only the PDFs looks like a
     // short delivery.

@@ -32,6 +32,7 @@ export default function MyDocumentsPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [files, setFiles] = useState<FileEntry[]>([])
   const [workbook, setWorkbook] = useState(false)
+  const [tools, setTools] = useState<{ slug: string; name: string; blurb: string }[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function MyDocumentsPage() {
       setOrders(body.orders || [])
       setFiles(body.files || [])
       setWorkbook(Boolean(body.workbook))
+      setTools(body.tools || [])
     }
     load().catch(() => { setError('We could not reach your documents just now.'); setDocuments([]) })
   }, [])
@@ -76,7 +78,7 @@ export default function MyDocumentsPage() {
 
         {documents === null ? (
           <p className="mt-6 text-[13px] text-secondary">Loading...</p>
-        ) : documents.length === 0 && files.length === 0 && !workbook ? (
+        ) : documents.length === 0 && files.length === 0 && !workbook && tools.length === 0 ? (
           <div className="mt-6">
             <p className="max-w-2xl text-[14px] leading-relaxed text-secondary">
               You have not bought any documents yet. The library holds standard operating procedures, risk
@@ -130,6 +132,21 @@ export default function MyDocumentsPage() {
                 is not an attachment that came with a pack: it is where the
                 pack is actually worked out, and the PDFs are how a month is
                 presented once it has been. */}
+            {/* Tools they bought, above the reporting workbook because a
+                tool is opened weekly and a reporting pack monthly. */}
+            {tools.map(tool => (
+              <div key={tool.slug} className="mt-10 border border-[#1c1c1c] p-5">
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                  <FileSpreadsheet size={16} className="shrink-0 text-muted" /> {tool.name}
+                </h2>
+                <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-secondary">{tool.blurb}</p>
+                <a href={`/api/standards/tool?slug=${encodeURIComponent(tool.slug)}`}
+                  className="mt-4 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+                  <Download size={13} /> Download it
+                </a>
+              </div>
+            ))}
+
             {workbook && (
               <div className="mt-10 border border-[#1c1c1c] p-5">
                 <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">

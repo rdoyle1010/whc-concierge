@@ -87,7 +87,8 @@ test('a price cannot be set on something nobody can receive', () => {
 
 test('it is on the shop, above the packs', () => {
   const shop = body('src/components/StandardsCatalogue.tsx')
-  assert.ok(shop.includes('<StandardsTools files={files} />'))
+  assert.ok(shop.includes('<StandardsTools files={files} tools={tools} />'),
+    'the section carries both the uploaded files and the tools built in code')
   assert.ok(shop.indexOf('StandardsTools') < shop.indexOf('id="stages"'),
     'the cheapest way in belongs above the eight hundred pound packs')
 
