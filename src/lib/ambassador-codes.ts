@@ -24,9 +24,28 @@ export const CODE_REFUSALS: Record<string, string> = {
   audience: 'That code is for a different kind of account.',
 }
 
-/** Typed off a poster or read down the phone, so it is matched loosely. */
+/** What is sent to the database. Trimmed and upper-cased; the rest is below. */
 export function normaliseCode(input: unknown): string {
   return String(input ?? '').trim().toUpperCase().slice(0, 40)
+}
+
+/**
+ * The form two codes are compared in, with the punctuation thrown away.
+ *
+ * The comment here used to claim a code was "matched loosely, because it is
+ * typed off a poster or read down the phone", and the lookup forgave the case
+ * and the outer spaces and nothing else. SPA-WELL26 worked; spa well 26 and
+ * spawell26 did not, and what somebody reading it off an Instagram caption got
+ * back was that we did not recognise their code, which is the message most
+ * likely to make a person decide the offer was never real.
+ *
+ * The matching itself happens in the database, inside the same statement that
+ * takes the place, because comparing in TypeScript would mean reading every
+ * code out to find one. This is here so the admin screen can apply the same
+ * rule when it refuses to create a second code that differs only by a hyphen.
+ */
+export function codeMatchKey(input: unknown): string {
+  return normaliseCode(input).replace(/[^A-Z0-9]/g, '')
 }
 
 export type CodeClaim =

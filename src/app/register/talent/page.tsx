@@ -171,32 +171,37 @@ export default function TalentRegisterPage() {
             <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#222321]">Create your Talent account</h1>
             <p className="mt-2 mb-7 text-[13px] leading-6 text-[#57544c]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
 
+            {/* The opening season, and the code box, which are two different
+                things and used to be one.
+                The box lived inside this panel, so on the first of November it
+                would have vanished from the form along with the offer, and
+                every code printed on anything would have stopped working with
+                nothing on screen to say why. A code carries its own expiry and
+                its own number of places: that is the reason for issuing one
+                from a screen instead of hardcoding it, and it is worthless if
+                the field to type it into is seasonal. */}
             {launchOfferOpen() && (
-              <div className="mb-5 border border-[#dcd4c8] bg-[#ede8df] px-3.5 py-3">
+              <div className="mb-3 border border-[#dcd4c8] bg-[#ede8df] px-3.5 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#222321]">Opening season</p>
                 <p className="mt-1.5 text-[12.5px] leading-5 text-[#3a4239]">{LAUNCH_OFFER_TALENT}</p>
-                {/* The code box.
-                    Redeemed against the codes issued from the Ambassadors
-                    screen, so a code has places, an expiry and somebody it is
-                    attributed to. Optional on purpose: the courses are granted
-                    inside the window either way, and a field that looks
-                    compulsory and is not is a field people abandon a form
-                    over. */}
-                <label className="mt-2.5 block">
-                  <span className="text-[11px] text-[#6e6a60]">Code, if you have one</span>
-                  <input
-                    value={signupCode}
-                    onChange={event => setSignupCode(event.target.value.slice(0, 40))}
-                    placeholder="SPA-WELL26"
-                    aria-label="Sign-up code"
-                    className="mt-1 w-full border border-[#dcd4c8] bg-white px-3 py-2 text-[13px] uppercase tracking-[.06em] text-[#222321] placeholder:normal-case placeholder:tracking-normal placeholder:text-[#7e7a70]"
-                  />
-                </label>
                 <p className="mt-1.5 text-[11px] text-[#6e6a60]">
                   Both courses are yours either way. Closes {launchOfferClosesLabel()}.
                 </p>
               </div>
             )}
+
+            {/* Optional on purpose, and it says so. A field that looks
+                compulsory and is not is a field people abandon a form over. */}
+            <label className="mb-5 block">
+              <span className="text-[11px] text-[#6e6a60]">Code, if you have one</span>
+              <input
+                value={signupCode}
+                onChange={event => setSignupCode(event.target.value.slice(0, 40))}
+                placeholder="SPA-WELL26"
+                aria-label="Sign-up code"
+                className="mt-1 w-full border border-[#dcd4c8] bg-white px-3 py-2 text-[13px] uppercase tracking-[.06em] text-[#222321] placeholder:normal-case placeholder:tracking-normal placeholder:text-[#7e7a70]"
+              />
+            </label>
 
             {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 mb-5">{error}</div>}
 

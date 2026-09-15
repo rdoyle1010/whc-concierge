@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { codeMatchKey } from '@/lib/ambassador-codes'
 import { LAUNCH_COURSE_SLUGS } from '@/lib/launch-offers'
 
 // Administering the ambassador scheme.
@@ -100,6 +101,19 @@ export async function POST(req: NextRequest) {
     const slugs = Array.isArray(body.reward_slugs)
       ? body.reward_slugs.map((slug: unknown) => trim(slug, 120)).filter(Boolean).slice(0, 20)
       : []
+
+    // Two codes that differ only by a hyphen are one code to whoever types
+    // them, and the database would hand back whichever row it found first.
+    // The UNIQUE constraint does not catch this: SPA-WELL26 and SPAWELL26 are
+    // different strings and the same code.
+    const key = codeMatchKey(code)
+    const { data: existing } = await admin.from('ambassador_codes').select('code')
+    const clash = ((existing || []) as any[]).find(row => codeMatchKey(row.code) === key)
+    if (clash) {
+      return NextResponse.json({
+        error: `That is the same code as ${clash.code} once the spaces and hyphens come out, and people type both. Pick a different one.`,
+      }, { status: 409 })
+    }
 
     const { data, error } = await admin.from('ambassador_codes').insert({
       ambassador_id: trim(body.ambassador_id, 60) || null,
