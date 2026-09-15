@@ -34,7 +34,7 @@ async function generateJson(prompt: string, maxOutputTokens = 1800) {
   // Null on any failure, because Interview Ready has a written fallback and a
   // candidate preparing for an interview tonight is better served by the
   // fallback than by an error. The reason is logged, not shown.
-  const result = await askForJson<any>({ prompt, maxTokens: maxOutputTokens })
+  const result = await askForJson<any>({ label: 'interview ready', prompt, maxTokens: maxOutputTokens })
   if (!result.ok) {
     console.error('[Interview Ready]', result.error)
     return null

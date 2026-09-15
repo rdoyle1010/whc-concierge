@@ -16,16 +16,52 @@ import Anthropic from '@anthropic-ai/sdk'
 // that is maintained rather than from six copies of the same twenty lines.
 
 /**
- * The model, in one place.
+ * Two models, because two different jobs are being paid for.
  *
- * Opus for quality, because the question asked was which provider gives the
- * best rather than which is cheapest. It is roughly two and a half times the
- * token price of Sonnet, and at this platform's volumes that is a difference
- * of pennies a day. If it ever stops being pennies, or if a route starts
- * timing out, set ANTHROPIC_MODEL in Netlify to claude-sonnet-5 and everything
- * moves together. No deploy.
+ * AI_MODEL writes prose a person reads and judges: a bio, a headline, a job
+ * advert, a message to a candidate. That is the platform's voice, it is short,
+ * and it is worth the better model.
+ *
+ * AI_MODEL_READING reads a long document and returns a shape: a CV into
+ * profile fields, a CV and a job advert into interview questions, an
+ * application into an analysis. Almost all of the tokens are input, nobody
+ * reads the model's sentences, and the cheaper model is not detectably worse
+ * at pulling facts out of a document.
+ *
+ * The split is not an emergency measure. The first fortnight's bill was read
+ * carefully before writing this: almost all of it was one day, one batch, and
+ * the document library being drafted, which is not the live site and does not
+ * repeat. The live surfaces cost pennies. This is here because paying the
+ * better model to pull dates out of a CV was never the right trade, not
+ * because anything is on fire.
+ *
+ * Both are overridable from Netlify, which takes effect on the next deploy
+ * rather than immediately: Netlify reads environment variables into a function
+ * when it builds it, so changing one and not deploying changes nothing.
  */
 export const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-5'
+export const AI_MODEL_READING = process.env.ANTHROPIC_MODEL_READING || 'claude-sonnet-5'
+
+/** Which job this is. Picks the model, and nothing else. */
+export type AiTier = 'writing' | 'reading'
+
+export function modelFor(tier: AiTier): string {
+  return tier === 'reading' ? AI_MODEL_READING : AI_MODEL
+}
+
+/**
+ * What a call actually cost, in the logs, named.
+ *
+ * The bill arrived as one number for eight surfaces and the only way to guess
+ * which one spent it was to read the code and estimate. That is not a
+ * diagnosis, it is a hunch. Every call now says what it was and what it used,
+ * so the next time the number looks wrong the Netlify function log answers it.
+ */
+export function logUsage(label: string, model: string, usage: { input_tokens?: number; output_tokens?: number } | null | undefined) {
+  const input = usage?.input_tokens ?? 0
+  const output = usage?.output_tokens ?? 0
+  console.log(`[AI spend] ${label} model=${model} in=${input} out=${output}`)
+}
 
 /**
  * Netlify kills a synchronous function at twenty-six seconds.
@@ -53,6 +89,10 @@ function client(): Anthropic {
 }
 
 type Ask = {
+  /** What this call is, for the spend log. Short, and the same every time. */
+  label: string
+  /** Writing prose, or reading a document. Picks the model. */
+  tier?: AiTier
   /** The instruction. */
   prompt: string
   /** Rules that do not change between calls, cached across requests. */
@@ -82,16 +122,19 @@ export type AiResult =
  * trace is not an answer to "why is this button not working". Every failure
  * comes back as a sentence that says what to do about it.
  */
-export async function askForText({ prompt, system, maxTokens, effort = 'low' }: Ask): Promise<AiResult> {
+export async function askForText({ label, tier = 'writing', prompt, system, maxTokens, effort = 'low' }: Ask): Promise<AiResult> {
   if (!aiConfigured()) return { ok: false, error: AI_NOT_CONFIGURED }
+  const model = modelFor(tier)
   try {
     const response = await client().messages.create({
-      model: AI_MODEL,
+      model,
       max_tokens: maxTokens,
       output_config: { effort },
       ...(system ? { system } : {}),
       messages: [{ role: 'user', content: prompt }],
     }, { timeout: TIMEOUT_MS })
+
+    logUsage(label, model, response.usage)
 
     const text = response.content
       .filter((block): block is Anthropic.TextBlock => block.type === 'text')
@@ -113,10 +156,11 @@ export async function askForText({ prompt, system, maxTokens, effort = 'low' }: 
  * anyway, because a model told to return only JSON will occasionally wrap it
  * in a code fence, and a route that assumes otherwise fails on a Tuesday.
  */
-export async function askForJson<T>({ prompt, system, maxTokens, effort = 'low' }: Ask): Promise<
+export async function askForJson<T>({ label, tier = 'reading', prompt, system, maxTokens, effort = 'low' }: Ask): Promise<
   { ok: true; data: T } | { ok: false; error: string }
 > {
   const result = await askForText({
+    label, tier,
     prompt: `${prompt}\n\nReturn only valid JSON. No preamble, no code fence, no explanation.`,
     system, maxTokens, effort,
   })

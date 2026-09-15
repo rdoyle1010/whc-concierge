@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are the Talent House Collective employer messaging assistant for luxury spa, wellness and hospitality recruitment in the UK.\n\n${actionInstruction}\n\nUse only the supplied facts. Never invent interview feedback, salary, benefits, start dates, qualifications, personal details or reasons for a decision. Do not mention AI or a match percentage. Keep the tone polished, warm, human and concise. UK English. Around 60-110 words. Address the candidate by first name if supplied. Sign off from the property/team, not from an invented named person.\n\nProperty: ${JSON.stringify({ name: employer.property_name || employer.company_name || 'the property' })}\nCandidate: ${JSON.stringify(candidate || {})}\nRole: ${JSON.stringify(job || {})}\nApplication stage: ${JSON.stringify(application.status || '')}\nCompleted interviews: ${completedInterviewCount || 0}\nAction: ${intent}\n\nReturn only the message text, with no heading, quotation marks or markdown.`
 
-    const drafted = await askForText({ system: HOUSE_RULES, prompt, maxTokens: 350 })
+    const drafted = await askForText({ label: 'employer message', system: HOUSE_RULES, prompt, maxTokens: 350 })
     const message = drafted.ok ? drafted.text.slice(0, 1600) : ''
     return NextResponse.json({
       message: message || fallback,

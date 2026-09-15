@@ -708,6 +708,35 @@ check('every AI call goes through the one client', () => {
   assert.deepEqual(offenders, [])
 })
 
+// And every call says what it was.
+//
+// A bill arrives as one number for nine surfaces. Without a label on each
+// call, working out which one spent it means reading the code and guessing,
+// and a guess is not a diagnosis: the first guess here blamed the live site
+// for a cost that turned out to be one batch drafting the document library.
+// Every call logs its own name and token counts, so the Netlify function log
+// answers the question instead of the estimating.
+check('every AI call is labelled, so spend can be attributed', () => {
+  const client = read('src/lib/ai.ts')
+  assert.match(client, /export function logUsage\(/)
+  assert.match(client, /label: string/)
+
+  const unlabelled = listFiles('src')
+    .filter(file => /\.tsx?$/.test(file) && file !== 'src/lib/ai.ts')
+    .flatMap(file => {
+      const source = read(file)
+      // Each askFor call has to carry a label within its own argument object.
+      return [...source.matchAll(/askFor(?:Text|Json)(?:<[^>]*>)?\(\{([\s\S]*?)\}\)/g)]
+        .filter(match => !/\blabel\s*:/.test(match[1]))
+        .map(() => file)
+    })
+  assert.deepEqual(unlabelled, [])
+
+  // The two libraries that hold the raw SDK log their own.
+  for (const file of ['src/lib/ai-write.ts', 'src/lib/cv-read.ts']) {
+    assert.match(read(file), /logUsage\(/, `${file} does not log what it spent`)
+  }
+})
 
 let passed = 0
 for (const [name, fn] of checks) {

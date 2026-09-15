@@ -35,7 +35,7 @@ async function generatePreparation(prompt: string) {
   // Null on any failure, because Interview Ready has a written fallback and a
   // candidate preparing for an interview tonight is better served by the
   // fallback than by an error. The reason is logged, not shown.
-  const result = await askForJson<any>({ prompt, maxTokens: 2600 })
+  const result = await askForJson<any>({ label: 'interview ready (mobile)', prompt, maxTokens: 2600 })
   if (!result.ok) {
     console.error('[Interview Ready mobile]', result.error)
     return null

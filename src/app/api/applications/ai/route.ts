@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { HOUSE_RULES } from '@/lib/house-style'
-import { askForJson, AI_MODEL } from '@/lib/ai'
+import { askForJson, AI_MODEL_READING } from '@/lib/ai'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -24,6 +24,7 @@ export const maxDuration = 26
 // before the object.
 async function generateJson(input: string) {
   const result = await askForJson<any>({
+    label: 'application analysis',
     system: HOUSE_RULES,
     prompt: input,
     maxTokens: 1800,
@@ -115,7 +116,7 @@ Style rules: sophisticated but natural UK English; no clichés such as 'I am wri
       strengths: Array.isArray(result.strengths) ? result.strengths.slice(0, 4).map(String) : [],
       gaps: Array.isArray(result.gaps) ? result.gaps.slice(0, 3).map(String) : [],
       covering_letter: String(result.covering_letter || '').slice(0, 5000),
-      model: AI_MODEL,
+      model: AI_MODEL_READING,
     })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'AI assistant unavailable' }, { status: 500 })

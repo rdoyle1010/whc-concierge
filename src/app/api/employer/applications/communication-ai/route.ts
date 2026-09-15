@@ -21,6 +21,7 @@ export const maxDuration = 26
 // read.
 async function generate(input: string) {
   const result = await askForText({
+    label: 'employer communication',
     system: HOUSE_RULES,
     prompt: input,
     maxTokens: 700,
