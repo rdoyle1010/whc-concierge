@@ -260,11 +260,25 @@ stored as `candidate`). Admin is a third role on the same column.
 - **British English** everywhere, including code comments and user-facing copy.
 - **No em dashes.** A readiness check enforces this across `src/`.
 - **One house style for every AI surface**, in `src/lib/house-style.ts`, shared
-  by all eight writing routes and checked by readiness check 44. Note the
-  platform now calls one provider through one client, `src/lib/ai.ts`, with one
-  key (`ANTHROPIC_API_KEY`) and one model constant (`ANTHROPIC_MODEL`
-  overrides it in Netlify without a deploy). `OPENAI_API_KEY` is no longer
-  read anywhere and can be removed. Readiness checks 45 and 46 hold both.
+  by all eight writing routes and checked by readiness check 44. The platform
+  calls one provider through one client, `src/lib/ai.ts`, with one key
+  (`ANTHROPIC_API_KEY`). `OPENAI_API_KEY` is no longer read anywhere and can be
+  removed. Readiness checks 45 and 46 hold both.
+- **Two models, chosen by the job.** Writing prose a person reads (bios,
+  headlines, job adverts, employer messages) uses the better model;
+  reading a document and returning a shape (CV extraction, Interview Ready,
+  application analysis) uses the cheaper one, because almost all of those
+  tokens are input and nobody reads the model's sentences. `ANTHROPIC_MODEL`
+  and `ANTHROPIC_MODEL_READING` override them in Netlify, and both take effect
+  on the next deploy, not immediately: Netlify reads environment variables into
+  a function when it builds it.
+- **Every AI call is labelled and logs its token counts**, held by readiness
+  check 47. This exists because the first bill was misread. Roughly sixteen
+  dollars in a fortnight looked like a run rate and was blamed on the live
+  site; the cost chart showed it was one day, one batch, and the document
+  library being drafted on the cheaper model. The live AI surfaces cost
+  pennies. Attribution by estimate is not attribution, so the Netlify function
+  log now answers it directly.
 - **The palette is ivory, forest, stone and charcoal, and there is no metal.**
   Ground `#F6F3ED`, structure and accent `#28322B`, body copy `#222321`, warm
   taupe `#B5A898` and muted sage `#879080` for hairlines and quiet detail only.

@@ -59,7 +59,7 @@ For an advert specifically: write as the property speaking to a professional it 
 
 // One client, one key, one bill. See src/lib/ai.ts.
 async function ask(input: string, maxTokens: number) {
-  const result = await askForText({ system: HOUSE_STYLE, prompt: input, maxTokens })
+  const result = await askForText({ label: 'job advert', system: HOUSE_STYLE, prompt: input, maxTokens })
   if (!result.ok) throw new Error(result.error)
   return result.text
 }

@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { PRODUCT_HOUSES, QUALIFICATIONS, ROLE_LEVELS, SYSTEMS } from '@/lib/constants'
-import { AI_MODEL } from './ai'
+import { AI_MODEL_READING, logUsage } from './ai'
 
 // Reading a CV into a profile.
 //
@@ -55,7 +55,7 @@ export type CvReading = {
 // button, waited, and was told to paste the text in instead. A model that
 // answers in seven seconds is a better model here than a cleverer one that
 // answers after the function has been killed.
-export const CV_MODEL = AI_MODEL
+export const CV_MODEL = AI_MODEL_READING
 
 // The whole request has to finish inside the host's twenty-six second ceiling,
 // so the work is cut to fit. Fifteen thousand characters is a long CV several
@@ -207,6 +207,8 @@ export async function readCv(source: Source): Promise<
       },
       messages: [{ role: 'user', content }],
     }, { timeout: CALL_TIMEOUT_MS })
+
+    logUsage(`cv read (${source.kind})`, CV_MODEL, response.usage)
 
     if (response.stop_reason === 'refusal') {
       return { ok: false, error: 'The reader declined to process that document. Fill the profile in by hand.' }

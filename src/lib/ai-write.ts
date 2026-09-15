@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { HOUSE_RULES } from './house-style'
-import { AI_MODEL } from './ai'
+import { AI_MODEL, logUsage } from './ai'
 
 // The blank box, answered.
 //
@@ -273,6 +273,8 @@ export async function writeText(request: WriteRequest): Promise<
     if (response.stop_reason === 'refusal') {
       return { ok: false, error: 'That could not be written. Try putting a little more in the box first.' }
     }
+
+    logUsage(`write ${request.field}`, WRITE_MODEL, response.usage)
 
     const block = response.content.find(item => item.type === 'text')
     const text = block && block.type === 'text' ? block.text.trim() : ''
