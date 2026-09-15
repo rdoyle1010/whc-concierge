@@ -230,3 +230,34 @@ test('the consultancy form sends what is in its boxes', () => {
   const uses = page.match(/context=\{typedSoFar\(\)\}/g) || []
   assert.equal(uses.length, 2, 'both the headline and the about box send it')
 })
+
+// "I pressed Use this and nothing came up."
+//
+// It cleared the panel and put the text in the field, which sits above the
+// button. On a long form that field is often off the top of the screen, so
+// from where the person is looking the panel vanished and nothing replaced it.
+// It also never said the text was unsaved, so the other reading was that it
+// had saved itself, which this tool promises never to do.
+test('taking a draft says where it went and that it is not saved', () => {
+  const component = readFileSync('src/components/AiWrite.tsx', 'utf8')
+  assert.match(component, /setTook\(true\)/, 'accepting is recorded')
+  assert.match(component, /Put in the box above/)
+  assert.match(component, /Nothing is saved until you press Save/)
+  // And asking again clears it, or a stale confirmation sits under a new draft.
+  assert.match(component, /setBusy\(true\); setError\(''\); setTook\(false\)/)
+})
+
+// A rewrite that loses an award has made the profile worse, however well it
+// reads. This is the commonest way an assistant like this does damage: it
+// smooths a specific claim somebody earned into a description of the category
+// they work in.
+test('the writing prompts protect what somebody has earned', () => {
+  const prompts = readFileSync('src/lib/ai-write.ts', 'utf8')
+    + readFileSync('src/lib/house-style.ts', 'utf8')
+  assert.match(prompts, /What must survive, always:/)
+  assert.match(prompts, /An award, a title, a qualification, a named brand/)
+  assert.match(prompts, /If what they had is better, return theirs unchanged/)
+  // Writing a fresh one still mines the old one for facts, rather than
+  // throwing away every credential in it along with the wording.
+  assert.match(prompts, /It is not prose to preserve, it is a source of facts/)
+})

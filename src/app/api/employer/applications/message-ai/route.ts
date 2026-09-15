@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { HOUSE_RULES } from '@/lib/house-style'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
       const response = await fetch('https://api.openai.com/v1/responses', {
         signal: AbortSignal.timeout(AI_TIMEOUT_MS),
         method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: prompt, max_output_tokens: 350 }),
+        body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: `${HOUSE_RULES}\n\n${prompt}`, max_output_tokens: 350 }),
       })
       if (!response.ok) return NextResponse.json({ message: fallback, intent, model: 'fallback' })
       const payload = await response.json()

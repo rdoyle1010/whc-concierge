@@ -28,11 +28,21 @@ export default function AiWrite({ field, value, onAccept, subject, context, clas
   const [draft, setDraft] = useState('')
   const [steer, setSteer] = useState('')
   const [error, setError] = useState('')
+  // Said after the draft is taken.
+  //
+  // Pressing Use this cleared the panel and put the text in the field, which
+  // sits above the button. On a long form that field is often off the top of
+  // the screen, so from where the person is looking the panel simply vanished
+  // and nothing appeared. Reported as "I pressed Use this and nothing came
+  // up", which is exactly what it looks like. It also never said the text was
+  // unsaved, so the other way to read it was that it had saved itself, which
+  // this tool promises never to do.
+  const [took, setTook] = useState(false)
 
   const hasText = String(value || '').trim().length > 40
 
   async function run(mode: 'write' | 'improve') {
-    setBusy(true); setError('')
+    setBusy(true); setError(''); setTook(false)
     try {
       const res = await fetch('/api/ai/write', {
         method: 'POST',
@@ -74,6 +84,12 @@ export default function AiWrite({ field, value, onAccept, subject, context, clas
         <p className="mt-2 border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</p>
       )}
 
+      {took && !draft && (
+        <p className="mt-2 border border-[#28322b] bg-white px-3 py-2 text-[12px] text-[#28322b]">
+          Put in the box above. Nothing is saved until you press Save.
+        </p>
+      )}
+
       {draft && (
         <div className="mt-3 border border-[#222321] bg-white p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#777777]">A draft, for you to read</p>
@@ -87,7 +103,7 @@ export default function AiWrite({ field, value, onAccept, subject, context, clas
           </label>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => { onAccept(draft); setDraft(''); setSteer('') }}
+            <button type="button" onClick={() => { onAccept(draft); setDraft(''); setSteer(''); setTook(true) }}
               className="inline-flex items-center gap-1.5 bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white">
               <Check size={13} /> Use this
             </button>

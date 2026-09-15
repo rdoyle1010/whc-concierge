@@ -36,9 +36,13 @@ test('it can only be used by the property that owns the role', () => {
 })
 
 test('it is told it may not invent anything', () => {
-  const route = body(ROUTE)
-  assert.match(route, /Do not invent facts/)
-  assert.match(route, /Do not promise salary, benefits, progression or team size/)
+  // The shared house style is what carries these now. The advert route used to
+  // keep its own shorter copy, which had already drifted from the one the
+  // profile writer uses: it allowed words that one banned and said nothing
+  // about protecting a claim somebody had earned.
+  const route = body(ROUTE) + body('src/lib/house-style.ts')
+  assert.match(route, /Never invent an employer, a qualification/)
+  assert.match(route, /No salary, no contact details, no promises about outcomes/)
   assert.match(route, /British English/)
   assert.match(route, /Never use an em dash/)
 

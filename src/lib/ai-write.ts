@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { HOUSE_RULES } from './house-style'
 
 // The blank box, answered.
 //
@@ -133,22 +134,11 @@ export function writeFieldLabel(field: WriteField): string {
 
 const HOUSE_STYLE = `You write for Talent House Collective, a register of spa and wellness professionals and the luxury properties that hire them.
 
-How it reads:
-- British English. Every time.
-- Plain, confident, specific. A trusted industry insider, not a brochure and not a recruitment advert.
-- Short sentences next to longer ones. No list of adjectives.
-- Never use an em dash. Use a comma, a full stop, or a short dash with spaces.
-- Never use these words: passionate, dynamic, vibrant, cutting-edge, world-class, journey, elevate, unlock, seamless, bespoke experience, exciting opportunity, rockstar, ninja, family.
-- No exclamation marks. No emoji. No headings, no bullet points, no markdown. Plain prose only.
+${HOUSE_RULES}
+
+Two more, for a profile specifically:
 - Do not open with the person's or property's name, and do not open with "With over".
-
-What you may say:
-- Only what the facts below support. You are rewriting what somebody has told us, not researching them.
-- Never invent an employer, a qualification, a treatment, a brand, a date, a number or an award.
-- Where the facts are thin, write something shorter and true rather than longer and padded.
-- No salary, no contact details, no promises about outcomes.
-
-One more thing about numbers. A number in the draft is a fact and must survive exactly as it is. A number that is not in the draft or the details does not exist: never round one, never add a percentage sign, and never write "significant" or "substantial" where a number was expected and is missing. Say what happened without one.
+- If keeping every earned claim makes the text longer than the length asked for, keep the claims and cut the description around them.
 
 Return the finished text and nothing else. No preamble, no quotation marks around it, no explanation.`
 
@@ -215,7 +205,14 @@ export async function writeText(request: WriteRequest): Promise<
 
 Their draft:
 ${draft}`
-    : `Write the "${named}" from the details below. There is nothing written yet.`
+    : draft
+      ? `Write the "${named}" fresh. They have asked for a different one, so do not keep their wording or their structure.
+
+Their current version is below. It is not prose to preserve, it is a source of facts. Every award, title, qualification, named brand, number and year in it is something they have earned and must appear in yours. Losing one of those is the failure this instruction exists to prevent.
+
+Their current version:
+${draft}`
+      : `Write the "${named}" from the details below. There is nothing written yet.`
 
   const client = new Anthropic({ apiKey, maxRetries: 0 })
 

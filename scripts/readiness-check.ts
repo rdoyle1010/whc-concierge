@@ -646,6 +646,30 @@ check('the accent is a colour of its own', () => {
 })
 
 
+// Every AI surface writes in the same voice.
+//
+// The rules were written twice and omitted three times. The profile writer had
+// a long careful version, the job advert route had a shorter one that had
+// already drifted, and the three application routes had none at all. So the
+// same brand wrote in three voices depending on which button was pressed, and
+// two of the five banned em dashes while three did not.
+//
+// They also span two AI providers, which is exactly why this is checked rather
+// than trusted: the next route somebody adds will call whichever one is
+// convenient, and the rules belong to the brand rather than to the vendor.
+check('every AI writing route uses the one house style', () => {
+  const routes = listFiles('src/app/api')
+    .filter(file => /route\.tsx?$/.test(file))
+    .filter(file => /api\.openai\.com|@anthropic-ai\/sdk|anthropic\.messages/.test(read(file)))
+  const offenders = routes.filter(file => {
+    const source = read(file)
+    // Either it prepends the rules itself, or it calls a library that does.
+    return !/HOUSE_RULES/.test(source) && !/from '@\/lib\/ai-write'|from '@\/lib\/cv-read'/.test(source)
+  })
+  assert.deepEqual(offenders, [])
+})
+
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

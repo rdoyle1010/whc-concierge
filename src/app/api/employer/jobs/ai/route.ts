@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { HOUSE_RULES } from '@/lib/house-style'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -48,14 +49,15 @@ const POLISHABLE = new Set<string>([
   'why_move', 'career_progression', 'interview_process', 'requirements', 'benefits',
 ])
 
-const HOUSE_STYLE = [
-  'British English throughout.',
-  'Plain, confident, specific. No corporate filler, no "fast-paced dynamic environment", no "wear many hats".',
-  'Never use an em dash. Use a comma, a full stop, or a hyphen.',
-  'Do not invent facts. Only use what you are given. If something is not stated, leave it out rather than guessing.',
-  'Do not promise salary, benefits, progression or team size unless those exact details were provided.',
-  'Write as the property speaking to a professional it respects, not as a job board.',
-].join(' ')
+// The shared rules, plus the one thing that is only true of an advert.
+//
+// This was a shorter list written separately, and it had already drifted from
+// the one the profile writer uses: it allowed words that one banned, and said
+// nothing about protecting a claim somebody had earned. The same platform
+// wrote in two voices depending on which button was pressed.
+const HOUSE_STYLE = `${HOUSE_RULES}
+
+For an advert specifically: write as the property speaking to a professional it respects, not as a job board.`
 
 function extractResponseText(payload: any): string {
   if (typeof payload?.output_text === 'string') return payload.output_text
