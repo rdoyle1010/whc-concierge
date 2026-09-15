@@ -1,5 +1,14 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { categoryPacks, everythingPacks } from '@/lib/documents/pricing'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
+import { kindLabel } from '@/lib/documents/journey'
+
+/** Kept in step with the [reference] route, which decides the same thing. */
+const PAGEABLE_KINDS = new Set([
+  'Job description', 'Policy', 'Risk assessment', 'Checklist', 'Guide', 'Training',
+  'Operating procedure', 'Emergency plan', 'Management report', 'Safe system of work',
+])
 
 // Regenerated hourly. A sitemap built once at deploy would list a role that
 // closed three weeks ago and miss every one posted since.
@@ -40,6 +49,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // one URL missing from the sitemap. Twenty-four pages were listed and the
     // shop was not one of them.
     { url: `${BASE}/standards`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    // A page per pack and per document worth searching for. These are the
+    // URLs that answer "spa manager job description template", which is what
+    // somebody actually types, and which one page carrying five hundred and
+    // sixty titles could never rank for.
+    ...[...categoryPacks(), ...everythingPacks()].map(pack => ({
+      url: `${BASE}/standards/packs/${pack.slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    })),
+    ...sellableCatalogue()
+      .filter(entry => PAGEABLE_KINDS.has(kindLabel(entry.reference)))
+      .map(entry => ({
+        url: `${BASE}/standards/${entry.reference}`,
+        lastModified: now,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      })),
     { url: `${BASE}/roles`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/agency`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/residency`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
