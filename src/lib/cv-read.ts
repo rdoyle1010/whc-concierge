@@ -63,7 +63,12 @@ export const CV_MODEL = AI_MODEL_READING
 // thousand output tokens is generous for it and caps the worst case, which is
 // what actually decides whether this returns at all.
 const MAX_CV_CHARS = 15000
-const MAX_OUTPUT_TOKENS = 2200
+// Thinking and the answer share this, which is why it is not simply as large
+// as the schema might need. Unlike every other surface the binding constraint
+// here is the clock rather than the budget: three reads have already died past
+// eighteen seconds. This is the most room the timeout allows, and a CV too
+// long to fit now says so instead of returning half a career.
+const MAX_OUTPUT_TOKENS = 2500
 
 // Give up before the host does.
 //
@@ -212,6 +217,14 @@ export async function readCv(source: Source): Promise<
 
     if (response.stop_reason === 'refusal') {
       return { ok: false, error: 'The reader declined to process that document. Fill the profile in by hand.' }
+    }
+
+    // Truncated JSON is worse here than anywhere else on the platform: it does
+    // not fail, it parses short, and somebody's CV quietly loses its last two
+    // roles with nothing on screen to say so.
+    if (response.stop_reason === 'max_tokens') {
+      console.error(`[AI] cv read hit the token ceiling of ${MAX_OUTPUT_TOKENS}`)
+      return { ok: false, error: 'That CV was too long to read in one go. Try a shorter version, or fill the profile in by hand.' }
     }
 
     const text = response.content.find(block => block.type === 'text')

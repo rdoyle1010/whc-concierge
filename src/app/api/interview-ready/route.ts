@@ -30,7 +30,7 @@ function parseJson(text: string) {
   return null
 }
 
-async function generateJson(prompt: string, maxOutputTokens = 1800) {
+async function generateJson(prompt: string, maxOutputTokens = 2900) {
   // Null on any failure, because Interview Ready has a written fallback and a
   // candidate preparing for an interview tonight is better served by the
   // fallback than by an error. The reason is logged, not shown.

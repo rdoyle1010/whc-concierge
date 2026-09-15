@@ -73,7 +73,7 @@ Return STRICT JSON, no markdown, with exactly these keys:
 
     const result = await askForJson<any>({
       label: 'certificate assist', tier: 'writing',
-      system: HOUSE_RULES, prompt, maxTokens: 900,
+      system: HOUSE_RULES, prompt, maxTokens: 1900,
     })
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 502 })
