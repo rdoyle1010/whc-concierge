@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Upload, RefreshCw, Send, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { Upload, RefreshCw, Send, ExternalLink, Trash2, Image as ImageIcon } from 'lucide-react'
 import { cloneDefaultWebsiteContent, type WebsiteContent } from '@/lib/site-content'
 import { cloneDefaultPublicPagesContent, PAGE_NAMES, PAGE_PATHS, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPagesContent } from '@/lib/public-page-content'
 
@@ -104,6 +104,7 @@ export default function MediaLibraryPage() {
       })
       .catch(() => setLoadError('The current pictures could not be loaded. Refresh and try again.'))
       .finally(() => setLoading(false))
+    countUnused()
   }, [])
 
   const slots = useMemo(
@@ -117,6 +118,36 @@ export default function MediaLibraryPage() {
   }, [slots])
 
   const changed = JSON.stringify(website) !== publishedWebsite || JSON.stringify(pages) !== publishedPages
+
+  // The pictures nothing points at any more.
+  //
+  // Replacing a photograph uploads a new file and leaves the old one where it
+  // was. Nothing has ever deleted one, so every picture ever uploaded is still
+  // in the bucket. Counted here rather than tidied away automatically: a
+  // replacement is not live until it is published, and the version history
+  // exists so a change can be put back, so a file is only safe to remove once
+  // nothing refers to it at all.
+  const [unused, setUnused] = useState<{ unused: number; total: number; bytes: number } | null>(null)
+
+  async function countUnused() {
+    const res = await fetch('/api/admin/unused-pictures', { cache: 'no-store' })
+    const data = await res.json().catch(() => null)
+    if (res.ok && data) setUnused(data)
+  }
+
+  async function deleteUnused() {
+    if (!unused?.unused) return
+    if (!confirm(`Permanently delete ${unused.unused} picture${unused.unused === 1 ? '' : 's'} that no page uses? This cannot be undone.`)) return
+    setBusy('cleanup'); setNotice(null)
+    const res = await fetch('/api/admin/unused-pictures', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: true }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (!res.ok) { setNotice({ type: 'error', text: data.error || 'Those could not be deleted.' }); return }
+    setNotice({ type: 'success', text: `${data.removed} old picture${data.removed === 1 ? '' : 's'} deleted for good.` })
+    countUnused()
+  }
 
   async function replace(slot: Slot, file: File) {
     setBusy(slot.field); setNotice(null)
@@ -219,9 +250,22 @@ export default function MediaLibraryPage() {
           <h1 className="dashboard-title">Every picture on the site</h1>
           <p className="dashboard-intro max-w-2xl">Swap any picture on the public site from here. For wording, cropping and section order, use <Link href="/admin/website" className="underline">Website &amp; Brand</Link> or <Link href="/admin/website/pages" className="underline">Public pages</Link>.</p>
         </div>
-        <button type="button" onClick={publish} disabled={!changed || busy !== null || loading || Boolean(loadError)} className="btn-primary inline-flex items-center gap-2 disabled:opacity-50">
-          {busy === 'publish' ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />} Publish pictures
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button type="button" onClick={publish} disabled={!changed || busy !== null || loading || Boolean(loadError)} className="btn-primary inline-flex items-center gap-2 disabled:opacity-50">
+            {busy === 'publish' ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />} Publish pictures
+          </button>
+          {unused && unused.unused > 0 && (
+            <button type="button" onClick={deleteUnused} disabled={busy !== null}
+              className="btn-secondary inline-flex items-center gap-2 !py-2 !px-3 text-[12px] disabled:opacity-50">
+              {busy === 'cleanup' ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
+              Delete {unused.unused} unused picture{unused.unused === 1 ? '' : 's'}
+              {unused.bytes > 0 && ` (${(unused.bytes / 1048576).toFixed(1)} MB)`}
+            </button>
+          )}
+          {unused && unused.unused === 0 && unused.total > 0 && (
+            <span className="text-[11px] text-muted">All {unused.total} stored pictures are in use.</span>
+          )}
+        </div>
       </div>
 
       {notice && <div role="status" className={`mt-5 border px-4 py-3 text-[13px] ${notice.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-600'}`}>{notice.text}</div>}

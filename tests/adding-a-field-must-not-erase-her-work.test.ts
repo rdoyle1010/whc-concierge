@@ -91,6 +91,28 @@ test('a rejected save says which field', () => {
   // "Some page fields are invalid" names nothing, so the only way to find out
   // was to change one thing at a time and press save again.
   const route = readFileSync('src/app/api/admin/public-pages/route.ts', 'utf8')
-  assert.match(route, /parsed\.error\.issues\[0\]/)
-  assert.match(route, /That could not be saved: \$\{where\}/)
+  assert.match(route, /strict\.error\.issues\[0\]/)
+  assert.match(route, /That could not be saved: /)
+})
+
+test('a save is repaired rather than refused, because a refused save loses the upload', () => {
+  // This is the part that actually cost her the photographs, and it is worth
+  // being precise about the mechanism. A rejected save saves nothing at all.
+  // So while her open editor held a version from before six pages were added,
+  // every picture she uploaded was refused and dropped, the live site went on
+  // serving the last thing that had published, and the message named no field.
+  // From where she was standing the site simply kept showing old photographs.
+  const route = readFileSync('src/app/api/admin/public-pages/route.ts', 'utf8')
+  assert.match(route, /function parseSubmittedContent/)
+  assert.match(route, /const repaired = parsePublicPagesContent\(content\)/,
+    'a submission older than the schema must be filled in, not thrown away')
+  assert.match(route, /const parsed = parseSubmittedContent\(body\.content\)/)
+
+  // Both branches write the repaired content, so a publish cannot store one
+  // shape and a draft another.
+  const writes = route.match(/JSON\.stringify\(parsed\.data\)/g) || []
+  assert.ok(writes.length >= 3, 'draft and published must both write the checked content')
+
+  // Still refused when it is genuinely unreadable, and still says where.
+  assert.match(route, /That could not be saved: /)
 })
