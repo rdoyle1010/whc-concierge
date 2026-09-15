@@ -5,9 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
-import {
-  LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen, signupCodeValid, normaliseSignupCode, SIGNUP_CODE,
-} from '@/lib/launch-offers'
+import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
+import { claimCode, normaliseCode } from '@/lib/ambassador-codes'
 import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import { tolerantUpsert } from '@/lib/tolerant-upsert'
 import { DEFAULT_VISIBILITY, isTalentVisibility, visibilityColumns } from '@/lib/talent-visibility'
@@ -200,29 +199,30 @@ export async function POST(req: NextRequest) {
       // have to remember to redeem is an offer most people never get, and the
       // two courses are worth far more to us sitting in somebody's Academy on
       // day one than as a coupon in an email.
+      // A code, if they typed one, redeemed against the codes she issues from
+      // the Ambassadors screen rather than against a constant in this file.
       //
-      // The code is recorded whether or not it was needed. It is not a gate:
-      // somebody who arrives without it still gets the courses inside the
-      // window, because the point of them is the habit rather than the coupon.
-      // What it buys is a number, so a campaign that carries it can be counted
-      // afterwards, which is the only way to learn which campaign was worth
-      // running.
-      const usedCode = signupCodeValid(body.signupCode)
+      // This was a hardcoded SIGNUP_CODE for one campaign until somebody
+      // pointed at the screen that already issues codes, with places, an
+      // expiry date, an audience and attribution to whoever is carrying it.
+      // Two places for the same idea is one place too many, and the one that
+      // was already there is the better of the two.
+      //
+      // Best effort, always. A code that will not claim is never the reason an
+      // account is not created: the offer below still lands, and somebody who
+      // mistyped can use the code afterwards from their account.
+      const typedCode = normaliseCode(body.signupCode)
       if (launchOfferOpen()) {
         try {
           const { data: newCandidate } = await admin.from('candidate_profiles')
             .select('id').eq('user_id', data.user.id).maybeSingle()
           if (newCandidate?.id) {
             launchOfferGranted = (await grantCourses(
-              admin, newCandidate.id, LAUNCH_COURSE_SLUGS,
-              usedCode ? `code ${SIGNUP_CODE}` : 'opening season',
+              admin, newCandidate.id, LAUNCH_COURSE_SLUGS, 'opening season',
             )).granted
-            if (usedCode) {
-              // Best effort. A registration is never refused because a
-              // marketing column could not be written.
-              await admin.from('candidate_profiles')
-                .update({ signup_code: normaliseSignupCode(body.signupCode) })
-                .eq('id', newCandidate.id)
+            if (typedCode) {
+              const claimed = await claimCode(admin, data.user.id, typedCode, { candidateId: newCandidate.id })
+              if (!claimed.ok) console.error(`[register] code ${typedCode} not claimed: ${claimed.error}`)
             }
           }
         } catch (offerError: any) {

@@ -69,12 +69,18 @@ test('an ambassador code can only be spent once, by one person', () => {
 })
 
 test('a code for therapists cannot be spent by a property', () => {
-  const route = body('src/app/api/ambassador/redeem/route.ts')
-  assert.match(route, /const wrongAudience/)
+  // The claim moved into src/lib/ambassador-codes.ts so registration can use
+  // it too: a code is typed while an account is created, not three screens
+  // later. The rules did not move, and this is where they are held.
+  const shared = body('src/lib/ambassador-codes.ts')
+  assert.match(shared, /const wrongAudience/)
   // A wrong-audience claim releases the place rather than burning one of the
   // ambassador's allocation on somebody's mistake.
-  assert.match(route, /ambassador_redemptions'\)\.delete\(\)/)
-  assert.match(route, /redemptions_used: used - 1/)
+  assert.match(shared, /ambassador_redemptions'\)\.delete\(\)/)
+  assert.match(shared, /redemptions_used: used - 1/)
+  // The rate limit stays on the route, which is the surface somebody can
+  // hammer. Registration has its own, earlier.
+  const route = body('src/app/api/ambassador/redeem/route.ts')
   assert.match(route, /enforceRateLimit\(req, 'ambassador-redeem'/, 'a guessable code is worth guessing')
 })
 
