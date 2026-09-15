@@ -2,7 +2,7 @@ import { sellableCatalogue } from './catalogue'
 import {
   SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, DAY_ONE_PACK_PRICE, COMPLETE_LIBRARY_PRICE,
   POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, JOURNEY_PACK_CEILING,
-  CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
+  CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE, GUEST_JOURNEY_PRICE,
 } from './pricing'
 
 // Prices she can change without a deploy, and bundles she can compose.
@@ -14,7 +14,7 @@ import {
 
 export type PriceKey =
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
-  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance'
+  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey'
 
 export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: number }[] = [
   {
@@ -48,6 +48,10 @@ export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: 
   {
     key: 'checklists', label: 'Daily Running Checklists', fallback: CHECKLIST_PACK_PRICE,
     why: 'Nine shift checklists drawn from the procedures. Deliberately cheaper than the procedures they enforce, and under the five hundred a spa director signs off alone.',
+  },
+  {
+    key: 'guest-journey', label: 'The Guest Journey', fallback: GUEST_JOURNEY_PRICE,
+    why: 'The whole visit in one pack, where five stage packs used to be. Priced well under the complete library, because two hundred and sixty-five documents at a third of their singles would cost more than all five hundred.',
   },
   {
     key: 'finance', label: 'Spa Financial Reporting Pack', fallback: FINANCE_PACK_PRICE,

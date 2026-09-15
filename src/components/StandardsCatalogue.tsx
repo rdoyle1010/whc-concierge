@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { departmentPacks, journeyPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
+import { departmentPacks, categoryPacks, everythingPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsList from '@/components/StandardsList'
 import PackContents, { type PackFile } from '@/components/PackContents'
@@ -50,7 +50,8 @@ export default function StandardsCatalogue() {
   }, [])
 
   const packs = departmentPacks(prices)
-  const stages = journeyPacks(prices)
+  const categories = categoryPacks(prices)
+  const everything = everythingPacks(prices)
 
   // Counted against the catalogue, not against the table.
   //
@@ -91,15 +92,21 @@ export default function StandardsCatalogue() {
         they arrived with: "our arrivals are a mess" is how this gets said
         out loud, and arrivals are reception, housekeeping and membership at
         once. */}
-    <section className="border-b border-[#dddddd]" id="stages">
+    {/* One grid, in the order people ask for things.
+        This was two sections: "by stage of the visit" above "behind the
+        scenes". It asked a buyer to decide which half of the business their
+        problem lived in before it would show them a price, and the stage half
+        was the confusing one. Nobody arrives asking for departure, and the
+        five stages overlapped: a reception procedure sat inside three of
+        them, sold three times under three names. */}
+    <section className="border-b border-[#dddddd]" id="packs">
       <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By stage of the visit</h2>
+            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">What do you need</h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
-              A guest arrives, is welcomed, has their treatment, pays and leaves, and somebody decides whether
-              they come back. Each pack below is everything that part of your operation needs in writing,
-              across every team it touches.
+              Each pack is everything a spa needs in writing for one part of the operation. Priced at roughly
+              a third of its documents bought one at a time.
             </p>
           </div>
           {available !== null && !unavailable && (
@@ -109,28 +116,37 @@ export default function StandardsCatalogue() {
           )}
         </div>
 
+        {unavailable && (
+          <p className="mt-6 border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[13px] text-[#555555]">
+            We cannot reach the library just now. The prices below are right; ask us and we will confirm what
+            is ready before you pay anything.
+          </p>
+        )}
+
         <div className="mt-9 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2 lg:grid-cols-3">
-          {stages.filter(stage => stage.group === 'visit').map(stage => {
-            const ready = readyIn(stage)
-            const all = ready >= stage.count && stage.count > 0
+          {categories.map(pack => {
+            const ready = readyIn(pack)
+            const all = ready >= pack.count && pack.count > 0
             return (
-              <div key={stage.slug} className="flex flex-col bg-white p-6">
-                <h3 className="text-[19px] font-semibold text-[#1c1c1c]">{stage.name}</h3>
-                <p className="mt-2 font-serif text-[26px] text-[#1c1c1c]">{formatPrice(stage.price)}</p>
-                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{stage.detail}</p>
+              <div key={pack.slug} className="flex flex-col bg-white p-6">
+                <h3 className="text-[19px] font-semibold leading-tight text-[#1c1c1c]">{pack.name}</h3>
+                <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">{formatPrice(pack.price)}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">
+                  {pack.detail || pack.blurb}
+                </p>
                 <p className="mt-4 text-[12px] text-[#6b6b6b]">
-                  {stage.count} documents
+                  {pack.count} documents
                   {available !== null && !unavailable && (
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
                   )}
                 </p>
-                <PackContents name={stage.name} price={formatPrice(stage.price)} detail={stage.detail}
-                  references={referencesIn(stage)}
-                  files={filesFor(stage.slug)} readySet={readySet} showReady={!all} />
+                <PackContents name={pack.name} price={formatPrice(pack.price)} detail={pack.detail || pack.blurb}
+                  references={referencesIn(pack)}
+                  files={filesFor(pack.slug)} readySet={readySet} showReady={!all} />
                 <div className="mt-4">
                   {available !== null && !unavailable && (
                     all
-                      ? <BuyButton packSlug={stage.slug} label={`Buy ${stage.name.toLowerCase()}`} />
+                      ? <BuyButton packSlug={pack.slug} label={`Buy ${pack.name.toLowerCase()}`} />
                       : <Link href="/contact"
                           className="inline-block border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
                           Ask us
@@ -142,39 +158,32 @@ export default function StandardsCatalogue() {
           })}
         </div>
 
-        {/* The half of the operation a guest never sees, and the half that
-            is most often missing. Separated rather than mixed in, because
-            these are bought by different people in different weeks: a
-            finance manager and a spa therapist are not shopping for the
-            same thing on the same afternoon. */}
-        <h3 className="mt-14 text-[22px] font-semibold text-[#1c1c1c]">Behind the scenes</h3>
-        <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
-          The half a guest never sees, and usually the half that is missing. Each of these is a part of the
-          operation somebody owns, and the documents they need to own it properly.
-        </p>
-
-        <div className="mt-7 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2 lg:grid-cols-3">
-          {stages.filter(stage => stage.group === 'behind').map(stage => {
-            const ready = readyIn(stage)
-            const all = ready >= stage.count && stage.count > 0
+        {/* A different question, so a different block. Somebody who wants all
+            of it is not comparing categories, and burying the library among
+            eleven packs makes it look like a twelfth. */}
+        <h3 className="mt-14 text-[22px] font-semibold text-[#1c1c1c]">Or all of it</h3>
+        <div className="mt-5 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2">
+          {everything.map(pack => {
+            const ready = readyIn(pack)
+            const all = ready >= pack.count && pack.count > 0
             return (
-              <div key={stage.slug} className="flex flex-col bg-white p-6">
-                <h4 className="text-[19px] font-semibold text-[#1c1c1c]">{stage.name}</h4>
-                <p className="mt-2 font-serif text-[26px] text-[#1c1c1c]">{formatPrice(stage.price)}</p>
-                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{stage.detail}</p>
+              <div key={pack.slug} className="flex flex-col bg-white p-6">
+                <h4 className="text-[19px] font-semibold text-[#1c1c1c]">{pack.name}</h4>
+                <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">{formatPrice(pack.price)}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{pack.blurb}</p>
                 <p className="mt-4 text-[12px] text-[#6b6b6b]">
-                  {stage.count} documents
+                  {pack.count} documents
                   {available !== null && !unavailable && (
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
                   )}
                 </p>
-                <PackContents name={stage.name} price={formatPrice(stage.price)} detail={stage.detail}
-                  references={referencesIn(stage)}
-                  files={filesFor(stage.slug)} readySet={readySet} showReady={!all} />
+                <PackContents name={pack.name} price={formatPrice(pack.price)} detail={pack.blurb}
+                  references={referencesIn(pack)}
+                  files={filesFor(pack.slug)} readySet={readySet} showReady={!all} />
                 <div className="mt-4">
                   {available !== null && !unavailable && (
                     all
-                      ? <BuyButton packSlug={stage.slug} label={`Buy ${stage.name.toLowerCase()}`} />
+                      ? <BuyButton packSlug={pack.slug} label={`Buy ${pack.name.toLowerCase()}`} />
                       : <Link href="/contact"
                           className="inline-block border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
                           Ask us
@@ -187,9 +196,9 @@ export default function StandardsCatalogue() {
         </div>
 
         <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
-          Each pack is priced at roughly a third of its documents bought one at a time. Buying every pack costs
-          more than the complete library, so if you want most of them, buy the library. The risk assessment
-          suite and the safety operating procedure are sold on their own and are in the library, not in these.
+          Buying every pack costs more than the complete library, so if you want most of them, buy the
+          library. The risk assessment suite and the safety operating procedure are sold on their own and are
+          in the library, not in the other packs.
         </p>
       </div>
     </section>

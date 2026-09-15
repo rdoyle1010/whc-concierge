@@ -132,7 +132,7 @@ export const VAT_NOTE = VAT_REGISTERED
 // default in this file, which is the one argued for above.
 export type Prices = Partial<Record<
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
-  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance',
+  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey',
   number
 >>
 
@@ -151,6 +151,15 @@ export type Pack = {
   detail?: string
   /** Whether a stage is part of the visit or behind it. */
   group?: StageGroup
+  /**
+   * Withdrawn from the shop, still resolvable.
+   *
+   * A slug is written into an order and that order is a buyer's entitlement
+   * for as long as they have an account. Deleting a pack from this file would
+   * take a paid library away from whoever bought it, so a pack that stops
+   * being sold is marked here instead and the shop declines to list it.
+   */
+  retired?: boolean
 }
 
 export function formatPrice(pence: number): string {
@@ -225,6 +234,49 @@ export function journeyPrice(count: number, prices: Prices = {}): number {
  * flagship with your own shop. They are in the complete library, which is the
  * top of the ladder and the right place for them.
  */
+// The five stages of a visit, withdrawn as separate packs.
+//
+// Nobody arrives asking for "departure". They overlapped as well: a reception
+// procedure sits inside three of them, so the same document was being sold
+// under three names at three prices and a buyer had to work out which one
+// they were supposed to want.
+//
+// They are one pack now. What they are not is deleted: five slugs are in
+// orders, and a buyer who paid for The Visit Itself keeps it.
+const RETIRED_STAGES = new Set(['pre-arrival', 'arrival', 'experience', 'departure', 'post-departure'])
+
+/**
+ * The whole visit, as one pack.
+ *
+ * Priced well under the complete library rather than at a third of its parts.
+ * Two hundred and sixty-five documents at a third would be more than the
+ * library costs, and a pack that makes the library look cheap is a pack that
+ * sells the library, which is fine, but it should be by being better value
+ * rather than by being absurd.
+ */
+export const GUEST_JOURNEY_PRICE = 129500
+
+export function guestJourneyPack(prices: Prices = {}): Pack {
+  const references = new Set(
+    LIBRARY_PLAN.filter(entry => RETIRED_STAGES.has(stageOf(entry))).map(entry => entry.reference),
+  )
+  return {
+    slug: 'guest-journey',
+    name: 'The Guest Journey',
+    blurb:
+      'Every procedure a guest passes through, from the enquiry to the follow-up. Bookings, deposits, '
+      + 'consent and screening, check-in and welcome, the treatment itself, the pool and thermal suite, '
+      + 'paying, rebooking, and what happens when somebody complains afterwards.',
+    detail:
+      'The whole visit in one pack, across every team it touches. Arrivals are not a reception problem: they '
+      + 'are reception, housekeeping and membership at the same moment, which is why this is sold end to end '
+      + 'rather than a stage at a time.',
+    price: prices['guest-journey'] ?? GUEST_JOURNEY_PRICE,
+    includes: (reference: string) => references.has(reference),
+    count: references.size,
+  }
+}
+
 export function journeyPacks(prices: Prices = {}): Pack[] {
   return JOURNEY_STAGES.map(stage => {
     const references = new Set(
@@ -239,6 +291,7 @@ export function journeyPacks(prices: Prices = {}): Pack[] {
       includes: (reference: string) => references.has(reference),
       count: references.size,
       group: stage.group,
+      retired: RETIRED_STAGES.has(stage.slug),
     }
   })
 }
@@ -252,7 +305,9 @@ const JOURNEY_PACK_NAME: Record<string, string> = {
   departure: 'The Last Five Minutes',
   'post-departure': 'After They Leave',
   money: 'Money and Membership',
-  people: 'Hiring and Keeping People',
+  // Named for the words somebody types, not for the cleverer line. A buyer
+  // looking for recruitment does not search "hiring and keeping people".
+  people: 'Recruitment and HR',
   training: 'Training Your Team',
   systems: 'Systems and Setup',
   safety: 'Safety and the Building',
@@ -388,11 +443,50 @@ export function tierPacks(prices: Prices = {}): Pack[] {
   ]
 }
 
+/**
+ * The shop, in the order people ask for things.
+ *
+ * One grid rather than "by stage of the visit" above "behind the scenes".
+ * That split asked a buyer to decide which half of the business their problem
+ * lived in before it would show them a price, and the stage half was the
+ * confusing one: nobody arrives asking for departure.
+ *
+ * What somebody does arrive asking for is a risk assessment, a set of
+ * procedures, the reporting pack, something for recruitment, something for
+ * training. So that is the order, and the two "buy everything" options are
+ * kept separate underneath, because they answer a different question.
+ */
+export function categoryPacks(prices: Prices = {}): Pack[] {
+  const tiers = tierPacks(prices)
+  const stages = journeyPacks(prices).filter(pack => !pack.retired)
+  const bySlug = (slug: string) => [...tiers, ...stages].find(pack => pack.slug === slug)!
+  return [
+    bySlug('risk-assessments'),
+    bySlug('pool-safety'),
+    bySlug('journey-safety'),
+    bySlug('financial-reporting'),
+    bySlug('journey-money'),
+    guestJourneyPack(prices),
+    bySlug('daily-checklists'),
+    bySlug('journey-running-the-day'),
+    bySlug('journey-people'),
+    bySlug('journey-training'),
+    bySlug('journey-systems'),
+  ]
+}
+
+/** The two that answer "just give me all of it". */
+export function everythingPacks(prices: Prices = {}): Pack[] {
+  const tiers = tierPacks(prices)
+  return ['before-the-first-guest', 'the-complete-library']
+    .map(slug => tiers.find(pack => pack.slug === slug)!)
+}
+
 export function packBySlug(slug: string, prices: Prices = {}): Pack | null {
   // Every pack that has ever been sold has to resolve here, whatever the
   // shop happens to show today. A slug is written into an order and that
   // order is the buyer's entitlement for as long as they have an account.
-  return [...tierPacks(prices), ...journeyPacks(prices), ...departmentPacks(prices)]
+  return [...tierPacks(prices), ...journeyPacks(prices), ...departmentPacks(prices), guestJourneyPack(prices)]
     .find(pack => pack.slug === slug) || null
 }
 

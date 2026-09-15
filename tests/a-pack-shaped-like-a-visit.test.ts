@@ -113,18 +113,20 @@ test('a stage a buyer paid for still resolves, and so does every pack ever sold'
   assert.ok(ownedReferences([{ pack_slug: departmentPacks()[0].slug }]).size > 0)
 })
 
-test('the shop leads with the visit and keeps departments underneath', () => {
+test('the shop leads with the categories and keeps departments underneath', () => {
+  // This used to assert two sections, by stage of the visit above behind the
+  // scenes. That split asked a buyer to decide which half of the business
+  // their problem lived in before it would show them a price, and the stage
+  // half was the confusing one: nobody arrives asking for departure. One grid
+  // now, in the order people ask for things.
   const catalogue = body('src/components/StandardsCatalogue.tsx')
-  assert.ok(catalogue.includes('journeyPacks'))
-  // Both halves are rendered. A group filtered but never shown is a pack
-  // nobody can buy, which is worse than not splitting at all.
-  assert.ok(catalogue.includes("stage.group === 'visit'"))
-  assert.ok(catalogue.includes("stage.group === 'behind'"))
-  assert.ok(catalogue.indexOf('id="stages"') < catalogue.indexOf('id="departments"'),
-    'the stages come first')
+  assert.ok(catalogue.includes('categoryPacks'))
+  assert.doesNotMatch(catalogue, /stage\.group === '(visit|behind)'/, 'the split is gone')
+  assert.ok(catalogue.indexOf('id="packs"') < catalogue.indexOf('id="departments"'),
+    'the categories come first')
   assert.ok(catalogue.includes('departmentPacks'), 'and departments are still buyable')
 
   const page = body('src/app/standards/page.tsx')
-  assert.ok(page.includes("href: '#stages'"), 'Ways to buy points at them')
+  assert.ok(page.includes("href: '#packs'"), 'Ways to buy points at them')
   assert.ok(!page.includes("price: 'From £"), 'the price is worked out, not typed')
 })
