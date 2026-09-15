@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAcademyCatalog } from '@/lib/academy-catalog-server'
 import { codeMatchKey } from '@/lib/ambassador-codes'
 import { LAUNCH_COURSE_SLUGS } from '@/lib/launch-offers'
 
@@ -43,11 +44,26 @@ export async function GET() {
     ? await admin.from('ambassador_redemptions').select('code_id,user_id,granted,created_at').in('code_id', codeIds).order('created_at', { ascending: false })
     : { data: [] as any[] }
 
+  // The courses themselves, so a code can be pointed at one by ticking it
+  // rather than by typing its slug. A slug typed by hand into a textarea is a
+  // slug that gets a letter wrong, and a wrong slug grants nothing at all:
+  // the redemption succeeds, the count goes up, and the member is told their
+  // code worked while their Academy stays empty.
+  const catalogue = await getAcademyCatalog().catch(() => [])
+
   return NextResponse.json({
     ambassadors: ambassadors || [],
     codes: codes || [],
     redemptions: redemptions || [],
     defaults: { courseSlugs: [...LAUNCH_COURSE_SLUGS] },
+    courses: catalogue
+      .filter((course: any) => course.is_active !== false)
+      .map((course: any) => ({
+        slug: course.slug,
+        title: course.title,
+        category: course.category,
+        minutes: course.minutes,
+      })),
   })
 }
 
@@ -101,6 +117,21 @@ export async function POST(req: NextRequest) {
     const slugs = Array.isArray(body.reward_slugs)
       ? body.reward_slugs.map((slug: unknown) => trim(slug, 120)).filter(Boolean).slice(0, 20)
       : []
+
+    // A slug that is not a course grants nothing, and does it quietly: the
+    // redemption succeeds, the count goes up, and somebody is told their code
+    // worked while their Academy stays empty. Refuse it here, where there is
+    // a person to tell.
+    if (slugs.length) {
+      const catalogue = await getAcademyCatalog().catch(() => [])
+      const known = new Set(catalogue.map((course: any) => course.slug))
+      const unknown = slugs.filter((slug: string) => !known.has(slug))
+      if (unknown.length && known.size) {
+        return NextResponse.json({
+          error: `${unknown.join(', ')} ${unknown.length === 1 ? 'is not a course' : 'are not courses'} in the Academy, so the code would give nothing. Check the spelling.`,
+        }, { status: 400 })
+      }
+    }
 
     // Two codes that differ only by a hyphen are one code to whoever types
     // them, and the database would hand back whichever row it found first.
