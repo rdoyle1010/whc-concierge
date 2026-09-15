@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
-import { PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageSlug } from '../src/lib/public-page-content'
+import { PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, DEFAULT_PUBLIC_PAGES_CONTENT, DEFAULT_FAQ_SECTIONS, type PublicPageSlug } from '../src/lib/public-page-content'
 
 // An editor box that changes nothing.
 //
@@ -29,6 +29,7 @@ const PAGE_FILE: Record<PublicPageSlug, string> = {
   'how-to-use': 'src/app/how-to-use/page.tsx',
   academy: 'src/app/academy/page.tsx',
   'agency-cover': 'src/app/agency/page.tsx',
+  contact: 'src/app/contact/page.tsx',
 }
 
 test('every page in the editor is a page that exists', () => {
@@ -97,4 +98,37 @@ test('the five new pages start as what the site already said', () => {
     assert.ok(pages[slug].hero.heading.trim(), `${slug} has no default heading`)
     assert.ok(pages[slug].label.trim(), `${slug} has no label`)
   }
+})
+
+test('the questions are editable, and their prices are not typed in', () => {
+  // FAQ was left out of the first pass because a list of lists does not fit a
+  // hero and three blocks, and squeezing it in would have produced exactly the
+  // editor this whole file exists to prevent: three of her twenty-three
+  // questions editable and the rest not.
+  const page = readFileSync('src/app/faq/page.tsx', 'utf8')
+  assert.match(page, /DEFAULT_FAQ_SECTIONS/, 'the page must take its questions from the shared default')
+  assert.doesNotMatch(page, /const faqSections: FAQSection\[\] = \[/,
+    'the second copy in the page is the thing that would drift')
+  assert.match(page, /part=faq/, 'and it must fetch the edited version')
+
+  // One answer quotes what a featured listing costs. Storing that number would
+  // mean the FAQ kept quoting it the first afternoon somebody changed a price,
+  // which is what the pricing screen exists to prevent.
+  assert.match(page, /withLivePrices\(answer\)/)
+  const defaults = readFileSync('src/lib/public-page-content-values.ts', 'utf8')
+  assert.match(defaults, /\{featured_7day_price\}/)
+  assert.doesNotMatch(defaults, /\$\{formatPrice/, 'a price must not be baked into the stored answer')
+})
+
+test('every default question has both halves', () => {
+  for (const section of DEFAULT_FAQ_SECTIONS) {
+    assert.ok(section.title.trim(), 'a group with no heading')
+    assert.ok(section.items.length, `${section.title} has no questions`)
+    for (const item of section.items) {
+      assert.ok(item.question.trim(), `${section.title} has a question with no text`)
+      assert.ok(item.answer.trim(), `${item.question} has no answer`)
+    }
+  }
+  const total = DEFAULT_FAQ_SECTIONS.reduce((sum, s) => sum + s.items.length, 0)
+  assert.ok(total >= 20, `only ${total} questions survived the move out of the page`)
 })

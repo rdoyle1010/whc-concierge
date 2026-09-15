@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -15,6 +16,17 @@ const TYPES = [
 ] as const
 
 export default function ContactPage() {
+  // Header wording, hers to change without a deploy. The code default is
+  // the same words, so nothing flickers while the real one loads.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['contact'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=contact${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   const supabase = createClient()
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', type: 'general' })
   const [sent, setSent] = useState(false)
@@ -48,9 +60,9 @@ export default function ContactPage() {
       <main id="main-content" className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="public-eyebrow mb-4">Contact</p>
-            <h1 className="public-title mb-4">Get in touch.</h1>
-            <p className="public-intro max-w-2xl mx-auto">Questions, partnerships or feedback - we read every message.</p>
+            <p className="public-eyebrow mb-4">{cms.hero.eyebrow}</p>
+            <h1 className="public-title mb-4">{cms.hero.heading}</h1>
+            <p className="public-intro max-w-2xl mx-auto">{cms.hero.text}</p>
           </div>
         </section>
 
