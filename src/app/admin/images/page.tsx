@@ -5,7 +5,7 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { Upload, RefreshCw, Send, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import { cloneDefaultWebsiteContent, type WebsiteContent } from '@/lib/site-content'
-import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPagesContent } from '@/lib/public-page-content'
+import { cloneDefaultPublicPagesContent, PAGE_NAMES, PAGE_PATHS, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPagesContent } from '@/lib/public-page-content'
 
 // Every picture on the public site, on one screen. The two content stores
 // behind the site (homepage/brand, and the standalone public pages) each
@@ -18,14 +18,8 @@ type Store = 'website' | 'pages'
 type PanelKey = 'homepageCta' | 'authPanel' | 'intelligenceHero' | 'intelligenceJournal' | 'agencyProfessional'
 type Slot = { store: Store; field: string; group: string; label: string; url: string; href?: string; panelKey?: PanelKey }
 
-const pageNames: Record<string, string> = {
-  properties: 'Properties', agency: 'Agency', residency: 'Residency',
-  pricing: 'Pricing', 'coming-soon': 'Coming Soon',
-}
-const pagePaths: Record<string, string> = {
-  properties: '/properties', agency: '/agency/about', residency: '/residency',
-  pricing: '/pricing', 'coming-soon': '/coming-soon',
-}
+const pageNames = PAGE_NAMES
+const pagePaths = PAGE_PATHS
 
 const asMb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1) + 'MB'
 
@@ -59,11 +53,20 @@ function pageSlots(content: PublicPagesContent): Slot[] {
   }))
   for (const slug of PUBLIC_PAGE_SLUGS) {
     const page = content.pages[slug]
-    slots.push({ store: 'pages', field: `pages.${slug}.hero.image.url`, group: pageNames[slug], label: 'Hero image', url: page.hero.image.url, href: pagePaths[slug] })
-    page.blocks.forEach((block, index) => slots.push({
-      store: 'pages', field: `pages.${slug}.blocks.${index}.image.url`, group: pageNames[slug],
-      label: `Section ${index + 1}${block.visible ? '' : ' (hidden)'}`, url: block.image.url, href: pagePaths[slug],
-    }))
+    // Only the pictures a page actually shows. Six of these pages have text
+    // headers with no photograph and no section band, so offering an upload
+    // for them would put a picture somewhere nobody can see it and leave
+    // somebody wondering which of the two screens was lying.
+    const sections = PAGE_SECTIONS[slug]
+    if (sections.heroImage) {
+      slots.push({ store: 'pages', field: `pages.${slug}.hero.image.url`, group: pageNames[slug], label: 'Hero image', url: page.hero.image.url, href: pagePaths[slug] })
+    }
+    if (sections.blocks) {
+      page.blocks.forEach((block, index) => slots.push({
+        store: 'pages', field: `pages.${slug}.blocks.${index}.image.url`, group: pageNames[slug],
+        label: `Section ${index + 1}${block.visible ? '' : ' (hidden)'}`, url: block.image.url, href: pagePaths[slug],
+      }))
+    }
   }
   return slots
 }

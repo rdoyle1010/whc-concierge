@@ -29,6 +29,28 @@ export const PUBLIC_PAGE_SLUGS = [
  * A test holds this against what the pages consume. If a page starts rendering
  * its blocks, or stops, the map is wrong until somebody changes it here.
  */
+/**
+ * What each page is called and where it lives.
+ *
+ * Kept here because there were two copies, one on the page editor and one on
+ * the Pictures screen, and the second was typed as Record<string, string> so
+ * nothing complained when six pages were added and only one copy was updated.
+ * The Pictures screen quietly rendered them with no heading at all.
+ */
+export const PAGE_NAMES: Record<PublicPageSlug, string> = {
+  properties: 'Properties', agency: 'Agency', residency: 'Residency',
+  pricing: 'Pricing', 'coming-soon': 'Coming Soon', about: 'About',
+  advertise: 'Advertise', 'how-to-use': 'How It Works', academy: 'Academy',
+  'agency-cover': 'Agency Cover', contact: 'Contact',
+}
+
+export const PAGE_PATHS: Record<PublicPageSlug, string> = {
+  properties: '/properties', agency: '/agency/about', residency: '/residency',
+  pricing: '/pricing', 'coming-soon': '/coming-soon', about: '/about',
+  advertise: '/advertise', 'how-to-use': '/how-to-use', academy: '/academy',
+  'agency-cover': '/agency', contact: '/contact',
+}
+
 export type PageSections = { heroImage: boolean; blocks: boolean }
 
 export const PAGE_SECTIONS: Record<PublicPageSlug, PageSections> = {
@@ -99,8 +121,50 @@ export function cloneDefaultPublicPagesContent(): PublicPagesContent {
   return JSON.parse(JSON.stringify(DEFAULT_PUBLIC_PAGES_CONTENT)) as PublicPagesContent
 }
 
+/**
+ * Fill the gaps rather than throw the lot away.
+ *
+ * This is the fix for a bug I caused. Stored content was validated strictly
+ * and, on any failure, discarded in favour of the code defaults. That was
+ * survivable while the shape never changed. The moment six pages and a list of
+ * questions were added to the schema, every draft and every published version
+ * saved before that stopped validating - so every read returned the defaults,
+ * and the owner watched her photographs revert to stock every time she opened
+ * the screen. Nothing said why. The editor simply showed old pictures again.
+ *
+ * Adding a field must never be able to erase somebody's work. Stored values
+ * now sit on top of the defaults, key by key, so anything missing fills itself
+ * in and anything present survives.
+ */
+function fillGaps(stored: any, defaults: any): any {
+  if (Array.isArray(defaults)) {
+    // A stored array wins outright. Merging element by element would quietly
+    // resurrect a question she deleted, or a fifth footer tile.
+    return Array.isArray(stored) ? stored : defaults
+  }
+  if (defaults && typeof defaults === 'object') {
+    if (!stored || typeof stored !== 'object') return defaults
+    const merged: any = { ...defaults }
+    for (const key of Object.keys(defaults)) merged[key] = fillGaps(stored[key], defaults[key])
+    // Anything stored that the defaults no longer know about is dropped, which
+    // is what removing a page from the schema should mean.
+    return merged
+  }
+  return stored === undefined || stored === null ? defaults : stored
+}
+
 export function parsePublicPagesContent(value: unknown): PublicPagesContent {
   const raw = typeof value === 'string' ? (() => { try { return JSON.parse(value) } catch { return null } })() : value
+
   const parsed = PublicPagesContentSchema.safeParse(raw)
-  return parsed.success ? normaliseLegacySiteLinks(parsed.data) : cloneDefaultPublicPagesContent()
+  if (parsed.success) return normaliseLegacySiteLinks(parsed.data)
+
+  // Second attempt, with the gaps filled from the defaults. A version saved
+  // before a field existed is not corrupt, it is just older than the schema.
+  const repaired = PublicPagesContentSchema.safeParse(fillGaps(raw, DEFAULT_PUBLIC_PAGES_CONTENT))
+  if (repaired.success) return normaliseLegacySiteLinks(repaired.data)
+
+  // Genuinely unreadable. Now the defaults are the right answer.
+  console.error('[public pages] stored content could not be read even after filling gaps')
+  return cloneDefaultPublicPagesContent()
 }
