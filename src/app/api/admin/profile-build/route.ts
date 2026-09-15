@@ -632,29 +632,29 @@ const escape = (value: string) =>
 function handoverHtml(fullName: string, url: string): string {
   const firstName = String(fullName || '').trim().split(/\s+/)[0] || 'there'
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:560px;margin:32px auto;border:1px solid #dddddd;">
-      <div style="background:#262626;padding:26px 32px;">
+    <div style="max-width:560px;margin:32px auto;border:1px solid #dcd4c8;">
+      <div style="background:#28322b;padding:26px 32px;">
         <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.75;">Talent House Collective</p>
         <p style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">Your profile is ready</p>
       </div>
       <div style="padding:28px 32px;">
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">Hello ${escape(firstName)},</p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">Hello ${escape(firstName)},</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">
           We have built it from what you sent. Have a look, change anything that is not right, and it
           is yours. Setting a password is the only thing left to do.
         </p>
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#3a3832;">
           <strong>It is private.</strong> No property can see you, and none will until you decide
           otherwise. When you are ready there is a middle setting as well, where a spa can find you by
           what you can do without learning your name until you agree to an introduction.
         </p>
         <p style="margin:0 0 22px;">
-          <a href="${url}" style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:14px 28px;font-size:14px;font-weight:600;">See your profile and set a password</a>
+          <a href="${url}" style="display:inline-block;background:#222321;color:#ffffff;text-decoration:none;padding:14px 28px;font-size:14px;font-weight:600;">See your profile and set a password</a>
         </p>
-        <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6e6a60;">
           Anything we have got wrong, just reply to this email and we will fix it.
         </p>
-        <p style="margin:22px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+        <p style="margin:22px 0 0;font-size:12px;color:#6e6a60;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     </div>
   </body></html>`

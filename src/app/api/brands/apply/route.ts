@@ -79,17 +79,17 @@ export async function POST(req: NextRequest) {
     <div style="font-family: Inter, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
       <p style="font-size: 16px; font-weight: 600; margin-bottom: 28px;">Talent House Collective</p>
       <p style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">${escape(brandName)} would like a brand page</p>
-      <p style="font-size: 13px; color: #6b6b6b; margin-bottom: 22px;">
+      <p style="font-size: 13px; color: #6e6a60; margin-bottom: 22px;">
         ${application.offers_masterclass ? 'They have offered the Academy a masterclass.' : 'No masterclass offered yet.'}
       </p>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px;">
-        <tr><td style="padding: 7px 0; color: #6b6b6b; font-size: 13px; width: 130px;">Contact</td><td style="padding: 7px 0; font-size: 14px; color: #1c1c1c;">${escape(contactName)}${application.contact_role ? `, ${escape(application.contact_role)}` : ''}</td></tr>
-        <tr><td style="padding: 7px 0; color: #6b6b6b; font-size: 13px;">Email</td><td style="padding: 7px 0; font-size: 14px;">${escape(contactEmail)}</td></tr>
-        ${application.contact_phone ? `<tr><td style="padding: 7px 0; color: #6b6b6b; font-size: 13px;">Phone</td><td style="padding: 7px 0; font-size: 14px; color: #1c1c1c;">${escape(application.contact_phone)}</td></tr>` : ''}
-        ${application.website_url ? `<tr><td style="padding: 7px 0; color: #6b6b6b; font-size: 13px;">Website</td><td style="padding: 7px 0; font-size: 14px;">${escape(application.website_url)}</td></tr>` : ''}
+        <tr><td style="padding: 7px 0; color: #6e6a60; font-size: 13px; width: 130px;">Contact</td><td style="padding: 7px 0; font-size: 14px; color: #222321;">${escape(contactName)}${application.contact_role ? `, ${escape(application.contact_role)}` : ''}</td></tr>
+        <tr><td style="padding: 7px 0; color: #6e6a60; font-size: 13px;">Email</td><td style="padding: 7px 0; font-size: 14px;">${escape(contactEmail)}</td></tr>
+        ${application.contact_phone ? `<tr><td style="padding: 7px 0; color: #6e6a60; font-size: 13px;">Phone</td><td style="padding: 7px 0; font-size: 14px; color: #222321;">${escape(application.contact_phone)}</td></tr>` : ''}
+        ${application.website_url ? `<tr><td style="padding: 7px 0; color: #6e6a60; font-size: 13px;">Website</td><td style="padding: 7px 0; font-size: 14px;">${escape(application.website_url)}</td></tr>` : ''}
       </table>
-      ${application.usp ? `<div style="background: #f1f1f1; padding: 16px; margin-bottom: 16px;"><p style="font-size: 12px; color: #6b6b6b; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em;">Their proposition</p><p style="font-size: 14px; color: #374151; line-height: 1.7; margin: 0; white-space: pre-wrap;">${escape(application.usp)}</p></div>` : ''}
-      <p style="font-size: 13px; color: #555555;">The full application is in Admin, Brands, where it can be turned into a draft page in one click.</p>
+      ${application.usp ? `<div style="background: #ede8df; padding: 16px; margin-bottom: 16px;"><p style="font-size: 12px; color: #6e6a60; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em;">Their proposition</p><p style="font-size: 14px; color: #374151; line-height: 1.7; margin: 0; white-space: pre-wrap;">${escape(application.usp)}</p></div>` : ''}
+      <p style="font-size: 13px; color: #57544c;">The full application is in Admin, Brands, where it can be turned into a draft page in one click.</p>
     </div>
   `
 

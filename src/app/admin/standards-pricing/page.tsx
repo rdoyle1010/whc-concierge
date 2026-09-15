@@ -127,7 +127,7 @@ export default function StandardsPricingPage() {
                       />
                       <button type="button" disabled={busy === price.key}
                         onClick={() => act('set_price', { key: price.key, pricePence: Math.round(Number(draft[price.key]) * 100) }, price.key)}
-                        className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                        className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                         {busy === price.key ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
                       </button>
                       {price.overridden && (
@@ -155,7 +155,7 @@ export default function StandardsPricingPage() {
               </div>
               <button type="button"
                 onClick={() => setEditing({ name: '', blurb: '', pricePence: 0, packSlugs: [], documentReferences: [], isLive: false, sortOrder: 0 })}
-                className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+                className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink">
                 <Plus size={13} /> New bundle
               </button>
             </div>
@@ -194,7 +194,7 @@ export default function StandardsPricingPage() {
             </div>
 
             {editing && (
-              <div className="mt-8 border border-[#1c1c1c] p-5">
+              <div className="mt-8 border border-[#222321] p-5">
                 <h3 className="text-[16px] font-semibold text-ink">{editing.id ? 'Edit bundle' : 'New bundle'}</h3>
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -245,7 +245,7 @@ export default function StandardsPricingPage() {
                     onClick={async () => {
                       if (await act('save_bundle', { ...editing }, 'bundle')) setEditing(null)
                     }}
-                    className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40">
+                    className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40">
                     {busy === 'bundle' ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save bundle
                   </button>
                   <button type="button" onClick={() => setEditing(null)}

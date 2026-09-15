@@ -149,7 +149,7 @@ test('a role with history is closed, never deleted', () => {
 test('a withdrawn application does not look like a live one', () => {
   const page = read('src/app/employer/applications/page.tsx')
   assert.match(page, /status==='withdrawn'\?'Withdrawn'/)
-  assert.match(page, /status==='withdrawn'\?'bg-\[#e7e7e7\] text-secondary'/)
+  assert.match(page, /status==='withdrawn'\?'bg-\[#e3dcd1\] text-secondary'/)
 })
 
 // The Stripe refund is issued before the record is written, and a refund

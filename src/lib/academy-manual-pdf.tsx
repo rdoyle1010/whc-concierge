@@ -9,9 +9,9 @@ import type { CourseContent, RichLesson, LessonVisual } from '@/lib/academy-type
 // and Helvetica faces so nothing needs downloading at runtime.
 
 const INK = '#1a1a1a'
-const MUTED = '#555555'
-const FAINT = '#8a8a8a'
-const RULE = '#c9c9c9'
+const MUTED = '#57544c'
+const FAINT = '#7e7a70'
+const RULE = '#c7bdae'
 
 const styles = StyleSheet.create({
   page: {

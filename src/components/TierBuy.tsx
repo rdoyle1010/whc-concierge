@@ -62,10 +62,10 @@ export default function TierBuy({ slug, label }: { slug: string; label: string }
   return (
     <div className="mt-5 flex flex-wrap items-center gap-4">
       <Link href="/contact"
-        className="inline-flex items-center border border-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-[#1c1c1c]">
+        className="inline-flex items-center border border-[#28322b] px-4 py-2 text-[13px] font-semibold text-[#222321]">
         Ask us about this
       </Link>
-      <p className="text-[13px] text-[#6b6b6b]">
+      <p className="text-[13px] text-[#6e6a60]">
         {ready} of {total} signed off. We do not sell a pack part-finished.
       </p>
     </div>

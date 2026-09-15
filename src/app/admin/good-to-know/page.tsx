@@ -148,7 +148,7 @@ export default function AdminGoodToKnowPage() {
       </div>
 
       {error ? <div role="alert" className="mb-5 border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</div> : null}
-      {message ? <div className="mb-5 border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[13px] text-ink">{message}</div> : null}
+      {message ? <div className="mb-5 border border-[#dcd4c8] bg-[#ede8df] px-4 py-3 text-[13px] text-ink">{message}</div> : null}
       {unavailable ? (
         <div className="mb-5 border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] leading-6 text-amber-800">
           <strong className="font-semibold">The table is not there yet.</strong> Run the Good to Know migration and this
@@ -251,7 +251,7 @@ export default function AdminGoodToKnowPage() {
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-semibold text-ink">
                         {row.name}{row.short_name ? <span className="ml-2 text-[12px] font-normal text-muted">{row.short_name}</span> : null}
-                        {row.is_published === false ? <span className="ml-2 rounded-full bg-[#e7e7e7] px-2 py-0.5 text-[10px] text-secondary">Hidden</span> : null}
+                        {row.is_published === false ? <span className="ml-2 rounded-full bg-[#e3dcd1] px-2 py-0.5 text-[10px] text-secondary">Hidden</span> : null}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-muted">{row.url}</p>
                     </div>

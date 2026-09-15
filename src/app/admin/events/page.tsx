@@ -175,7 +175,7 @@ export default function AdminEventsPage() {
                   <button type="button" disabled={busy || !row.is_published || !!row.announced_at}
                     onClick={() => announce(row)}
                     title={!row.is_published ? 'Publish it first' : row.announced_at ? 'Already announced' : ''}
-                    className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                    className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                     <Megaphone size={13} /> Tell the register
                   </button>
 

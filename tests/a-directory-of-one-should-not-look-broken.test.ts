@@ -37,10 +37,10 @@ test('the wide card earns the room it takes', () => {
 
 test('the directory keeps to the public-page rules', () => {
   // Public marketing pages carry no drop shadows on this platform, and the
-  // neutral palette is warm white and #f1f1f1 only. Readiness enforces both;
+  // neutral palette is warm white and #ede8df only. Readiness enforces both;
   // this pins them at the point they are easiest to break by eye.
   assert.doesNotMatch(page, /shadow-(sm|md|lg|xl)/, 'no card drop shadows on a public page')
-  assert.doesNotMatch(page, /#fafafa|#f7f7f7/i, 'no off-palette greys')
+  assert.doesNotMatch(page, /#fafafa|#f6f3ed/i, 'no off-palette greys')
 })
 
 // Consultancy was the one that got noticed, but it was never the only one.

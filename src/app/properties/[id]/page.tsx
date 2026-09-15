@@ -190,7 +190,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   const data = await getPropertyPageData(id)
 
   if (!data) {
-    return <div className="min-h-screen bg-white"><Navbar /><section className="pt-[120px] pb-20"><div className="max-w-6xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-accent font-semibold">Back to Properties</Link></div></section><Footer /></div>
+    return <div className="min-h-screen bg-parchment"><Navbar /><section className="pt-[120px] pb-20"><div className="max-w-6xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-accent font-semibold">Back to Properties</Link></div></section><Footer /></div>
   }
 
   const { property, jobs, reviews: staffReviews, summary: reviewSummary } = data
@@ -254,7 +254,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   const showReputation = awards.length > 0 || Boolean(property.guest_review_summary) || Boolean(reviewScore) || Boolean(externalUrl(property.tripadvisor_url)) || Boolean(externalUrl(property.website))
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <Navbar />
 
       <div className="border-b border-border bg-white pt-[76px]">

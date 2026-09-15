@@ -120,7 +120,7 @@ export default function AdminConsultancyPage() {
                   ))}
                 </div>
               )}
-              {row.approval_notes && <p className="mt-3 bg-[#f1f1f1] p-3 text-[12px] text-secondary">Last decision: {row.approval_notes}</p>}
+              {row.approval_notes && <p className="mt-3 bg-[#ede8df] p-3 text-[12px] text-secondary">Last decision: {row.approval_notes}</p>}
 
               {rejecting === row.id && (
                 <div className="mt-4 border-t border-border pt-4">

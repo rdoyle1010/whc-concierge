@@ -53,7 +53,7 @@ const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] 
 
 function barColour(score: number): string {
   if (score >= 80) return '#22C55E'
-  if (score >= 60) return '#1c1c1c'
+  if (score >= 60) return '#222321'
   if (score >= 40) return '#D97706'
   return '#e5e5e5'
 }
@@ -76,11 +76,11 @@ function hasDetail(entry?: MatchEvidence[string]) {
 function EvidencePanel({ entry, id, dense }: { entry: MatchEvidence[string]; id: string; dense?: boolean }) {
   const chip = dense ? 'text-[9px] px-1.5 py-0.5' : 'text-[10px] px-2 py-0.5'
   return (
-    <div id={id} className={`${dense ? 'ml-[88px] mt-1.5' : 'ml-[100px] mt-2'} rounded-lg border border-[#dddddd] bg-[#f1f1f1] px-3 py-2.5`}>
+    <div id={id} className={`${dense ? 'ml-[88px] mt-1.5' : 'ml-[100px] mt-2'} rounded-lg border border-[#dcd4c8] bg-[#ede8df] px-3 py-2.5`}>
       {entry.note && <p className={`${dense ? 'text-[10px] leading-4' : 'text-[11px] leading-5'} text-secondary`}>{entry.note}</p>}
       {!!entry.met?.length && (
         <div className={entry.note ? 'mt-2' : ''}>
-          <p className="text-[9px] font-semibold uppercase tracking-[.12em] text-[#555555]">Has</p>
+          <p className="text-[9px] font-semibold uppercase tracking-[.12em] text-[#57544c]">Has</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {entry.met.map(item => (
               <span key={item} className={`${chip} rounded-full border border-emerald-200 bg-emerald-50 font-medium text-emerald-700`}>{item}</span>
@@ -90,10 +90,10 @@ function EvidencePanel({ entry, id, dense }: { entry: MatchEvidence[string]; id:
       )}
       {!!entry.missing?.length && (
         <div className={entry.note || entry.met?.length ? 'mt-2' : ''}>
-          <p className="text-[9px] font-semibold uppercase tracking-[.12em] text-[#555555]">Not evidenced</p>
+          <p className="text-[9px] font-semibold uppercase tracking-[.12em] text-[#57544c]">Not evidenced</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {entry.missing.map(item => (
-              <span key={item} className={`${chip} rounded-full border border-[#dddddd] bg-white font-medium text-[#555555]`}>{item}</span>
+              <span key={item} className={`${chip} rounded-full border border-[#dcd4c8] bg-white font-medium text-[#57544c]`}>{item}</span>
             ))}
           </div>
         </div>
@@ -164,7 +164,7 @@ export default function MatchBreakdown({
               const row = (
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-muted w-[80px] shrink-0 text-right">{cat.label}</span>
-                  <div className="flex-1 h-[6px] bg-[#f1f1f1] rounded-full overflow-hidden">
+                  <div className="flex-1 h-[6px] bg-[#ede8df] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${val}%`, backgroundColor: barColour(val) }}
@@ -213,7 +213,7 @@ export default function MatchBreakdown({
       <div className="flex items-center gap-4">
         <div className="relative w-16 h-16 shrink-0">
           <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f1f1" strokeWidth="2.5" />
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#ede8df" strokeWidth="2.5" />
             <circle
               cx="18" cy="18" r="16" fill="none" stroke={colour} strokeWidth="2.5"
               strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round"
@@ -240,7 +240,7 @@ export default function MatchBreakdown({
           const row = (
             <div className="flex items-center gap-2.5">
               <span className="text-[11px] text-muted w-[90px] shrink-0 text-right">{cat.label}</span>
-              <div className="flex-1 h-[8px] bg-[#f1f1f1] rounded-full overflow-hidden">
+              <div className="flex-1 h-[8px] bg-[#ede8df] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${val}%`, backgroundColor: barColour(val) }}
@@ -261,7 +261,7 @@ export default function MatchBreakdown({
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                   aria-label={`Why ${cat.label} scored ${barLabel(val)}`}
-                  className="w-full rounded-lg text-left hover:bg-[#f1f1f1]/70"
+                  className="w-full rounded-lg text-left hover:bg-[#ede8df]/70"
                 >
                   {row}
                 </button>
@@ -280,11 +280,11 @@ export default function MatchBreakdown({
           Saying so in the small print was not enough: the badge above it
           said "Perfect Match" and that is what a hiring manager reads. */}
       {notAssessedCount > 0 && specified.length < 5 && (
-        <div className="rounded-lg border border-[#dddddd] bg-[#f1f1f1] px-3 py-2.5">
-          <p className="text-[11px] font-semibold text-[#1c1c1c]">
+        <div className="rounded-lg border border-[#dcd4c8] bg-[#ede8df] px-3 py-2.5">
+          <p className="text-[11px] font-semibold text-[#222321]">
             This score is based on {specified.length} of {specified.length + notAssessedCount} factors.
           </p>
-          <p className="mt-1 text-[10.5px] leading-4 text-[#555555]">
+          <p className="mt-1 text-[10.5px] leading-4 text-[#57544c]">
             The role does not state the rest, so they could not be judged either way. Add the qualifications, product houses and systems that genuinely matter to the role and the score becomes worth acting on.
           </p>
         </div>

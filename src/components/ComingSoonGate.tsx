@@ -68,7 +68,7 @@ export default function ComingSoonGate({ logo }: { logo?: { url: string; alt: st
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#f1f1f1] px-6 py-12">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#ede8df] px-6 py-12">
       <div {...dialog.panelProps} className="w-full max-w-xl">
         {logo?.url && (
           // This is the first thing anyone sees of the brand, and for a launch

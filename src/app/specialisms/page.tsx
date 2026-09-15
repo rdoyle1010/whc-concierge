@@ -79,7 +79,7 @@ export default async function SpecialismsPage() {
   const totalLive = open.reduce((sum, item) => sum + item.liveRoles, 0)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <Navbar />
       <main id="main-content">
         <section className="pt-[76px] border-b border-border">

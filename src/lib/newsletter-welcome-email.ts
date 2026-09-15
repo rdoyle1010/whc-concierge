@@ -31,13 +31,13 @@ export function newsletterWelcomeHtml({ unsubscribeUrl }: { unsubscribeUrl?: str
   return `<!doctype html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;background:#f3f6f8;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;color:#1c1c1c">
+<body style="margin:0;background:#f3f6f8;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;color:#222321">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0">Roles, industry insight and what is actually happening in luxury spa - roughly twice a month.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6f8;padding:28px 12px">
     <tr><td align="center">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e5e5e5;border-radius:20px;overflow:hidden">
 
-        <tr><td style="background:#1c1c1c;padding:30px;color:#fff">
+        <tr><td style="background:#222321;padding:30px;color:#fff">
           <div style="font-size:11px;letter-spacing:1.7px;text-transform:uppercase;color:#b9c8d3">Talent House Collective</div>
           <div style="font-size:26px;line-height:1.15;font-weight:650;margin-top:10px">You are on the list</div>
         </td></tr>
@@ -59,15 +59,15 @@ export function newsletterWelcomeHtml({ unsubscribeUrl }: { unsubscribeUrl?: str
           </p>
 
           <div style="margin:0 0 8px">
-            <a href="${SITE}/jobs" style="display:inline-block;background:#1c1c1c;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:13px;font-weight:650">See what is live now</a>
+            <a href="${SITE}/jobs" style="display:inline-block;background:#222321;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:13px;font-weight:650">See what is live now</a>
           </div>
           <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#73818a">
-            Curious about the platform itself? <a href="${SITE}/register/talent" style="color:#1c1c1c">Create a profile</a>
-            if you are a professional, or <a href="${SITE}/register/employer" style="color:#1c1c1c">list a property</a> if you hire.
+            Curious about the platform itself? <a href="${SITE}/register/talent" style="color:#222321">Create a profile</a>
+            if you are a professional, or <a href="${SITE}/register/employer" style="color:#222321">list a property</a> if you hire.
           </p>
         </td></tr>
 
-        <tr><td style="background:#f1f1f1;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
+        <tr><td style="background:#ede8df;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
           <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Talent House Collective</div>
           <div>Better matches. Better careers. Better teams.</div>
           <div style="margin-top:10px">talenthousecollective.co.uk</div>

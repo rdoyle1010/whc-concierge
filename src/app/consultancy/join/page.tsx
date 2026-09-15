@@ -45,7 +45,7 @@ export default function ConsultancyJoinPage() {
           <p className="mt-3 text-[12px] text-muted">Free to list. No commission on work you win.</p>
         </section>
 
-        <section className="border-y border-border bg-[#f1f1f1]">
+        <section className="border-y border-border bg-[#ede8df]">
           <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-14 grid gap-8 lg:grid-cols-3">
             {STEPS.map(step => (
               <div key={step.n}>

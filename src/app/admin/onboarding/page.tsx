@@ -130,7 +130,7 @@ export default function AdminOnboardingPage() {
         <div className="flex flex-wrap items-center gap-2 mt-6">
           {FILTERS.map(option => (
             <button key={option.key} type="button" onClick={() => setFilter(option.key)}
-              className={`px-3.5 py-1.5 text-[12px] font-medium border ${filter === option.key ? 'bg-[#1c1c1c] text-white border-[#1c1c1c]' : 'border-border text-secondary'}`}>
+              className={`px-3.5 py-1.5 text-[12px] font-medium border ${filter === option.key ? 'bg-[#222321] text-white border-[#222321]' : 'border-border text-secondary'}`}>
               {option.label}
             </button>
           ))}
@@ -171,8 +171,8 @@ export default function AdminOnboardingPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 h-1.5 w-full bg-[#eeeeee]">
-                  <div className="h-full bg-[#1c1c1c]" style={{ width: `${account.score}%` }} />
+                <div className="mt-3 h-1.5 w-full bg-[#e7e1d6]">
+                  <div className="h-full bg-[#222321]" style={{ width: `${account.score}%` }} />
                 </div>
 
                 {account.missing.length > 0 && (
@@ -207,7 +207,7 @@ export default function AdminOnboardingPage() {
                       setSubject('A hand with your Talent House profile')
                       setMessage(suggestedNote(account))
                     }}
-                    className="flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                    className="flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                     <MessageSquare size={13} /> Offer them help
                   </button>
                 </div>

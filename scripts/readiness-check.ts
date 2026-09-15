@@ -604,6 +604,48 @@ check('no API answers a person with a bare status word', () => {
 })
 
 
+// Taupe and sage never carry a word.
+//
+// The palette has five colours and only three of them can be read. Warm taupe
+// is 2.10:1 on the ivory and muted sage is 2.99:1, where 4.5 is the floor for
+// body text and 3.0 is the floor for a control somebody has to find. They are
+// there for hairlines, for quiet fills behind dark type, and for detail.
+//
+// This is the kind of rule that holds for a month. Somebody wants a softer
+// caption, reaches for the colour named "muted sage", and ships a sentence
+// most people cannot read on a laptop in daylight. So it is a check rather
+// than a note, and it names the numbers so the next person does not have to
+// measure them again.
+check('nothing readable is written in taupe or sage', () => {
+  const offenders: string[] = []
+  for (const file of listFiles('src').filter(name => /\.(tsx?|css)$/.test(name))) {
+    const source = read(file)
+    for (const [index, line] of source.split('\n').entries()) {
+      // text-taupe, text-sage, and the raw values behind them.
+      if (/\b(text|placeholder|decoration)-(taupe|sage)\b/.test(line)
+        || /\b(color|text)-\[#(b5a898|879080)\]/i.test(line)
+        || /(^|[^-])color:\s*#(b5a898|879080)/i.test(line)) {
+        offenders.push(`${file}:${index + 1}`)
+      }
+    }
+  }
+  assert.deepEqual(offenders, [])
+})
+
+// The accent is not the ink.
+//
+// It was, for the life of the project: accent and ink were both #1c1c1c, so
+// every eyebrow, link and primary button was the same near-black as the
+// paragraph beside it and the site had no accent at all while appearing to
+// have one. Anybody reading the config would have said it was accented.
+check('the accent is a colour of its own', () => {
+  const config = readFileSync(`${root}/tailwind.config.js`, 'utf8')
+  const value = (name: string) => config.match(new RegExp(`\\n\\s+${name}: '#([0-9a-f]{6})'`, 'i'))?.[1]?.toLowerCase()
+  assert.ok(value('accent'), 'accent must be defined')
+  assert.notEqual(value('accent'), value('ink'), 'an accent equal to the ink is not an accent')
+})
+
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

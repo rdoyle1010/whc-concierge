@@ -94,8 +94,14 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
     // the point of it being a setting. If the site still shows a sans serif
     // heading, it is because a saved brand is overriding this default: change
     // it there rather than here.
-    headingFont: 'editorial', bodyFont: 'system', accent: '#1C1C1C', ink: '#1C1C1C',
-    background: '#F7F7F7', surface: '#F1F1F1', buttonStyle: 'square', spacing: 'airy',
+    // Ivory, forest, stone. The accent used to be set to the same value as
+    // the ink, which meant the site had no accent at all: every eyebrow,
+    // every link and every primary button was the same near-black as the
+    // paragraph next to it. Deep forest carries all of that at 11.99:1 on the
+    // ivory, and there is no fifth colour, because the one proposed was
+    // brass and brass is gold with a better name.
+    headingFont: 'editorial', bodyFont: 'system', accent: '#28322B', ink: '#222321',
+    background: '#F6F3ED', surface: '#EDE8DF', buttonStyle: 'square', spacing: 'airy',
     logo: { ...DEFAULT_LOGO },
   },
   navigation: {

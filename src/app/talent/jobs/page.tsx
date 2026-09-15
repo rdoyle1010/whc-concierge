@@ -85,7 +85,7 @@ export default function TalentJobsPage() {
         const companyName = j.employer_profiles?.property_name || j.employer_profiles?.company_name
         let matchScore: number | null = null
         let matchLabel = 'Complete your profile'
-        let matchColour = '#555555'
+        let matchColour = '#57544c'
         let matchBg = '#F3F4F6'
         let matchBreakdown: any = null
         let matchEvidence: any = null
@@ -197,7 +197,7 @@ export default function TalentJobsPage() {
         <div>
           <p className="dashboard-eyebrow">Jobs & matches</p>
           <h1 className="dashboard-title">Find your next role</h1>
-          <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#dddddd] bg-white p-1 text-[12px] font-semibold"><span className="rounded-lg bg-[#1c1c1c] px-4 py-2 text-white">Browse list</span><a href="/roles/match" className="rounded-lg px-4 py-2 text-[#555555] hover:text-[#1c1c1c]">Match deck</a></div>
+          <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#dcd4c8] bg-white p-1 text-[12px] font-semibold"><span className="rounded-lg bg-[#222321] px-4 py-2 text-white">Browse list</span><a href="/roles/match" className="rounded-lg px-4 py-2 text-[#57544c] hover:text-[#222321]">Match deck</a></div>
           <p className="dashboard-intro">Roles are ranked from your skills, experience, location and working preferences. Your match helps you decide, but you stay in control of whether to apply.</p>
         </div>
         <p className="text-[12px] text-muted whitespace-nowrap">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
@@ -237,7 +237,7 @@ export default function TalentJobsPage() {
 
               return (
                 <article key={job.id} className="card p-0 overflow-hidden">
-                  <div className="relative h-36 bg-[#f1f1f1] overflow-hidden">
+                  <div className="relative h-36 bg-[#ede8df] overflow-hidden">
                     {job.employer_profiles?.property_photos?.[0]
                       ? <img loading="lazy" decoding="async" src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" />
                       : <div className="h-full w-full flex items-center justify-center"><Building2 size={30} className="text-muted/50" /></div>}
@@ -316,7 +316,7 @@ export default function TalentJobsPage() {
                           {job.hardStop ? 'Requirement missing' : needsProfile ? 'Complete profile' : 'Not eligible'}
                         </button>
                       )}
-                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#f1f1f1] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave role' : 'Save role for later'}>
+                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#ede8df] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave role' : 'Save role for later'}>
                         <Bookmark size={14} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
                       </button>
                     </div>

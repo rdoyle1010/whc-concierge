@@ -80,25 +80,25 @@ function Sheet({ pack, onClose }: { pack: Props; onClose: () => void }) {
         className="max-h-[92vh] w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-xl sm:p-8">
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0">
-            <h2 id="pack-contents-heading" className="text-[24px] font-semibold leading-tight text-[#1c1c1c]">
+            <h2 id="pack-contents-heading" className="text-[24px] font-semibold leading-tight text-[#222321]">
               {pack.name}
             </h2>
-            <p className="mt-1 font-serif text-[26px] leading-none text-[#1c1c1c]">{pack.price}</p>
+            <p className="mt-1 font-serif text-[26px] leading-none text-[#222321]">{pack.price}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"
-            className="shrink-0 border border-[#dddddd] p-1.5 text-[#555555] hover:text-[#1c1c1c]">
+            className="shrink-0 border border-[#dcd4c8] p-1.5 text-[#57544c] hover:text-[#222321]">
             <X size={15} />
           </button>
         </div>
 
         {pack.detail && (
-          <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-[#555555]">{pack.detail}</p>
+          <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">{pack.detail}</p>
         )}
 
-        <p className="mt-5 border-y border-[#dddddd] py-3 text-[13px] text-[#1c1c1c]">
+        <p className="mt-5 border-y border-[#dcd4c8] py-3 text-[13px] text-[#222321]">
           {formatSummary(counts)}
           {notReady > 0 && (
-            <span className="text-[#6b6b6b]">
+            <span className="text-[#6e6a60]">
               {' · '}{notReady} still being written
             </span>
           )}
@@ -109,14 +109,14 @@ function Sheet({ pack, onClose }: { pack: Props; onClose: () => void }) {
             {pack.files.map(file => (
               <li key={file.name} className="flex items-start gap-2">
                 <span className={`mt-px shrink-0 border px-1.5 py-px text-[10px] uppercase tracking-[.08em] ${
-                  FORMAT_TONE[file.format] || 'border-[#dddddd] text-[#6b6b6b]'}`}>
+                  FORMAT_TONE[file.format] || 'border-[#dcd4c8] text-[#6e6a60]'}`}>
                   {file.format}
                 </span>
-                <span className="min-w-0 text-[13.5px] text-[#1c1c1c]">
+                <span className="min-w-0 text-[13.5px] text-[#222321]">
                   {file.name}
-                  <span className="text-[#6b6b6b]"> · {readableSize(file.sizeBytes)}</span>
+                  <span className="text-[#6e6a60]"> · {readableSize(file.sizeBytes)}</span>
                   {file.description && (
-                    <span className="block text-[12.5px] leading-relaxed text-[#6b6b6b]">{file.description}</span>
+                    <span className="block text-[12.5px] leading-relaxed text-[#6e6a60]">{file.description}</span>
                   )}
                 </span>
               </li>
@@ -131,16 +131,16 @@ function Sheet({ pack, onClose }: { pack: Props; onClose: () => void }) {
           <div className="mt-5 grid gap-x-8 gap-y-2 sm:grid-cols-2">
             {stages.length > 1 && (
               <div>
-                <p className="text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">Across the visit</p>
-                <p className="mt-1 text-[13.5px] leading-relaxed text-[#1c1c1c]">
+                <p className="text-[11px] uppercase tracking-[.1em] text-[#6e6a60]">Across the visit</p>
+                <p className="mt-1 text-[13.5px] leading-relaxed text-[#222321]">
                   {stages.map(stage => `${stage.label} ${stage.count}`).join(' · ')}
                 </p>
               </div>
             )}
             {kinds.length > 0 && (
               <div>
-                <p className="text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">What they are</p>
-                <p className="mt-1 text-[13.5px] leading-relaxed text-[#1c1c1c]">
+                <p className="text-[11px] uppercase tracking-[.1em] text-[#6e6a60]">What they are</p>
+                <p className="mt-1 text-[13.5px] leading-relaxed text-[#222321]">
                   {kinds.map(kind =>
                     `${kind.count} ${kind.label.toLowerCase()}${kind.count === 1 ? '' : 's'}`).join(' · ')}
                 </p>
@@ -151,18 +151,18 @@ function Sheet({ pack, onClose }: { pack: Props; onClose: () => void }) {
 
         {shown.length > 0 && (
           <>
-            <p className="mt-6 text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">Including</p>
+            <p className="mt-6 text-[11px] uppercase tracking-[.1em] text-[#6e6a60]">Including</p>
             {/* Two columns, because twelve titles down one side of a wide
                 panel is a list with a hole beside it. */}
             <ul className="mt-2 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
               {shown.map(entry => (
-                <li key={entry.reference} className="text-[14px] leading-snug text-[#1c1c1c]">
+                <li key={entry.reference} className="text-[14px] leading-snug text-[#222321]">
                   {entry.title}
                 </li>
               ))}
             </ul>
             {rest > 0 && (
-              <p className="mt-3 text-[13.5px] leading-relaxed text-[#555555]">
+              <p className="mt-3 text-[13.5px] leading-relaxed text-[#57544c]">
                 and {rest} more.{' '}
                 <Link href="#every-document" onClick={onClose} className="underline underline-offset-2">
                   Search every title
@@ -172,7 +172,7 @@ function Sheet({ pack, onClose }: { pack: Props; onClose: () => void }) {
           </>
         )}
 
-        <p className="mt-6 border-t border-[#dddddd] pt-4 text-[13px] leading-relaxed text-[#6b6b6b]">
+        <p className="mt-6 border-t border-[#dcd4c8] pt-4 text-[13px] leading-relaxed text-[#6e6a60]">
           Every document is a PDF with fillable fields, so your muster point, your plant room and your supplier
           go into it in the free Adobe Reader rather than being retyped into a new file. {pack.name} arrives as
           one download.
@@ -197,9 +197,9 @@ export default function PackContents(props: Props) {
       {/* Said on the card without opening anything. The formats are what a
           buyer repeats to whoever holds the budget, and behind a click is
           where that goes to be unread. */}
-      <p className="mt-1 text-[12px] text-[#6b6b6b]">{formatSummary(counts)}</p>
+      <p className="mt-1 text-[12px] text-[#6e6a60]">{formatSummary(counts)}</p>
       <button type="button" onClick={() => setOpen(true)}
-        className="mt-1.5 self-start text-[12px] font-medium text-[#1c1c1c] underline underline-offset-2">
+        className="mt-1.5 self-start text-[12px] font-medium text-[#28322b] underline underline-offset-2">
         See what is in it
       </button>
       {open && <Sheet pack={props} onClose={() => setOpen(false)} />}

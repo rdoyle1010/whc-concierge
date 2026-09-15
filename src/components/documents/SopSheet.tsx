@@ -15,13 +15,13 @@ import { DOCUMENT_FOOTER, DOCUMENT_STATUS, disclaimersFor } from '@/lib/document
 // rows, because who wrote it and who is accountable for it are different
 // questions and only one of them is asked in an audit.
 
-const cell = 'border border-[#c9c9c9] px-3 py-2 align-top text-[10.5pt] leading-[1.45]'
+const cell = 'border border-[#c7bdae] px-3 py-2 align-top text-[10.5pt] leading-[1.45]'
 const head = `${cell} bg-[#f2f2f2] font-semibold uppercase tracking-[.06em] text-[9pt]`
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-7 break-inside-avoid">
-      <h2 className="border-b-2 border-[#1c1c1c] pb-1 text-[11pt] font-bold uppercase tracking-[.1em] text-[#1c1c1c]">
+      <h2 className="border-b-2 border-[#222321] pb-1 text-[11pt] font-bold uppercase tracking-[.1em] text-[#222321]">
         {title}
       </h2>
       <div className="mt-3">{children}</div>
@@ -33,7 +33,7 @@ function Rule({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <tr>
       <th scope="row" className={`${head} w-[34%] text-left`}>{label}</th>
-      <td className={cell}>{value || <span className="text-[#8a8a8a]">To be completed</span>}</td>
+      <td className={cell}>{value || <span className="text-[#7e7a70]">To be completed</span>}</td>
     </tr>
   )
 }
@@ -42,8 +42,8 @@ function Rule({ label, value }: { label: string; value: React.ReactNode }) {
 function Blank({ label, wide = false }: { label: string; wide?: boolean }) {
   return (
     <div className={wide ? 'sm:col-span-2' : ''}>
-      <p className="text-[9pt] uppercase tracking-[.08em] text-[#6b6b6b]">{label}</p>
-      <div className="mt-5 border-b border-[#1c1c1c]" />
+      <p className="text-[9pt] uppercase tracking-[.08em] text-[#6e6a60]">{label}</p>
+      <div className="mt-5 border-b border-[#222321]" />
     </div>
   )
 }
@@ -52,23 +52,23 @@ export default function SopSheet({ document }: { document: SopDocument }) {
   const disclaimers = disclaimersFor(document.kind)
 
   return (
-    <article className="mx-auto w-full max-w-[210mm] bg-white px-[14mm] py-[12mm] text-[#1c1c1c] print:max-w-none print:px-0 print:py-0">
-      <header className="border-b-4 border-[#1c1c1c] pb-4">
+    <article className="mx-auto w-full max-w-[210mm] bg-white px-[14mm] py-[12mm] text-[#222321] print:max-w-none print:px-0 print:py-0">
+      <header className="border-b-4 border-[#222321] pb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[9pt] font-semibold uppercase tracking-[.18em] text-[#6b6b6b]">
+            <p className="text-[9pt] font-semibold uppercase tracking-[.18em] text-[#6e6a60]">
               Standard Operating Procedure
             </p>
             <h1 className="mt-1 font-serif text-[24pt] leading-[1.15]">{document.title}</h1>
-            <p className="mt-1.5 text-[11pt] text-[#3a3a3a]">{document.property}</p>
+            <p className="mt-1.5 text-[11pt] text-[#3a3832]">{document.property}</p>
           </div>
-          <div className="shrink-0 border-2 border-[#1c1c1c] px-4 py-2 text-right">
-            <p className="text-[8.5pt] uppercase tracking-[.1em] text-[#6b6b6b]">Reference</p>
+          <div className="shrink-0 border-2 border-[#222321] px-4 py-2 text-right">
+            <p className="text-[8.5pt] uppercase tracking-[.1em] text-[#6e6a60]">Reference</p>
             <p className="font-mono text-[12pt] font-bold">{document.reference}</p>
-            <p className="mt-1 text-[9pt] text-[#3a3a3a]">Version {document.version}</p>
+            <p className="mt-1 text-[9pt] text-[#3a3832]">Version {document.version}</p>
           </div>
         </div>
-        <p className="mt-3 inline-block border border-[#1c1c1c] px-2 py-1 text-[8.5pt] font-semibold uppercase tracking-[.08em]">
+        <p className="mt-3 inline-block border border-[#222321] px-2 py-1 text-[8.5pt] font-semibold uppercase tracking-[.08em]">
           {DOCUMENT_STATUS}
         </p>
       </header>
@@ -189,7 +189,7 @@ export default function SopSheet({ document }: { document: SopDocument }) {
 
       <div className="break-before-page">
         <Section title="Learner knowledge check">
-          <p className="text-[10pt] text-[#3a3a3a]">
+          <p className="text-[10pt] text-[#3a3832]">
             Verbal or written. The learner must be able to explain each of the following.
           </p>
           <table className="mt-3 w-full border-collapse">
@@ -210,7 +210,7 @@ export default function SopSheet({ document }: { document: SopDocument }) {
         </Section>
 
         <Section title="Practical check, observed">
-          <p className="text-[10pt] text-[#3a3a3a]">The learner must demonstrate the following in real time.</p>
+          <p className="text-[10pt] text-[#3a3832]">The learner must demonstrate the following in real time.</p>
           <table className="mt-3 w-full border-collapse">
             <tbody>
               {[
@@ -230,7 +230,7 @@ export default function SopSheet({ document }: { document: SopDocument }) {
         </Section>
 
         <Section title="Sign-off">
-          <p className="text-[10pt] leading-relaxed text-[#3a3a3a]">
+          <p className="text-[10pt] leading-relaxed text-[#3a3832]">
             I confirm that the learner has demonstrated both knowledge and practical competence in line with
             this procedure.
           </p>
@@ -269,12 +269,12 @@ export default function SopSheet({ document }: { document: SopDocument }) {
 
         <Section title="Status of this document">
           {disclaimers.map(text => (
-            <p key={text.slice(0, 40)} className="mb-3 text-[9.5pt] leading-[1.6] text-[#3a3a3a]">{text}</p>
+            <p key={text.slice(0, 40)} className="mb-3 text-[9.5pt] leading-[1.6] text-[#3a3832]">{text}</p>
           ))}
         </Section>
       </div>
 
-      <footer className="mt-8 border-t border-[#c9c9c9] pt-3 text-[8.5pt] text-[#6b6b6b]">
+      <footer className="mt-8 border-t border-[#c7bdae] pt-3 text-[8.5pt] text-[#6e6a60]">
         <p>{document.reference} &middot; Version {document.version} &middot; Issued {document.issued} &middot; Review by {document.reviewBy}</p>
         <p className="mt-0.5">{DOCUMENT_FOOTER}</p>
       </footer>

@@ -56,7 +56,7 @@ export function PolishButton({ field, text, role, jobId, onApply }: {
     {tooShort && <span className="ml-2 text-[10.5px] text-muted">Write a line or two first.</span>}
     {error && <p className="mt-1.5 text-[11px] text-red-600">{error}</p>}
 
-    {suggestion && <div className="mt-2 rounded-xl border border-border bg-[#f1f1f1] p-3">
+    {suggestion && <div className="mt-2 rounded-xl border border-border bg-[#ede8df] p-3">
       <p className="text-[10px] uppercase tracking-[.12em] font-semibold text-muted">Suggested</p>
       <p className="mt-1.5 whitespace-pre-wrap text-[12.5px] leading-6 text-ink">{suggestion}</p>
       <div className="mt-3 flex gap-2">

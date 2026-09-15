@@ -56,7 +56,7 @@ export function CountryMultiSelect({
   return <div>
     {label && <p className="block text-sm font-medium text-gray-700 mb-1.5">{label}</p>}
     {hint && <p className="mb-3 text-xs text-gray-400">{hint}</p>}
-    <div className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-border bg-[#f1f1f1] p-4">
+    <div className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-border bg-[#ede8df] p-4">
       {countriesByRegion().map(group => <div key={group.region}>
         <p className="dashboard-eyebrow !text-[9px] mb-1.5">{group.region}</p>
         <div className="flex flex-wrap gap-1.5">
@@ -68,7 +68,7 @@ export function CountryMultiSelect({
               onClick={() => toggle(country.code)}
               aria-pressed={on}
               className={`rounded-full px-3 py-1.5 text-[12px] transition-colors ${
-                on ? 'bg-[#1c1c1c] text-white' : 'border border-border bg-white text-secondary hover:border-[#1c1c1c]'}`}
+                on ? 'bg-[#222321] text-white' : 'border border-border bg-white text-secondary hover:border-[#222321]'}`}
             >{country.name}</button>
           })}
         </div>

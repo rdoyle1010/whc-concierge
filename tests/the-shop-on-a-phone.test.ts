@@ -61,7 +61,7 @@ test('the second hero paragraph waits until there is room for it', () => {
   // A good line, and the third thing said. On a 390 pixel screen that is the
   // difference between a price being visible and being a scroll away.
   const hero = page.slice(0, page.indexOf('See what it costs'))
-  assert.match(hero, /hidden max-w-xl text-\[15px\] leading-relaxed text-\[#555555\] sm:block/)
+  assert.match(hero, /hidden max-w-xl text-\[15px\] leading-relaxed text-\[#57544c\] sm:block/)
 })
 
 test('the first screen offers a document to open, not a statistic to read', () => {

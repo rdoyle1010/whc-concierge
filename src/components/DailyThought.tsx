@@ -27,16 +27,16 @@ export default function DailyThought({ className = '' }: { className?: string })
   if (!thought) return null
 
   return (
-    <div className={`border-l-2 border-[#1c1c1c] pl-5 ${className}`}>
-      <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#8a8a8a]">Today</p>
-      <p className="mt-1.5 font-serif text-[19px] leading-[1.45] text-[#1c1c1c] md:text-[22px]">
+    <div className={`border-l-2 border-[#222321] pl-5 ${className}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#7e7a70]">Today</p>
+      <p className="mt-1.5 font-serif text-[19px] leading-[1.45] text-[#222321] md:text-[22px]">
         {thought.text}
       </p>
-      <p className="mt-2 text-[11px] uppercase tracking-[.12em] text-[#8a8a8a]">
+      <p className="mt-2 text-[11px] uppercase tracking-[.12em] text-[#7e7a70]">
         {thought.author || 'Talent House Collective'}
       </p>
-      <p className="mt-3 max-w-2xl border-t border-[#e7e7e7] pt-3 text-[13px] leading-relaxed text-[#555555]">
-        <span className="font-semibold text-[#1c1c1c]">What to do with it. </span>
+      <p className="mt-3 max-w-2xl border-t border-[#e3dcd1] pt-3 text-[13px] leading-relaxed text-[#57544c]">
+        <span className="font-semibold text-[#222321]">What to do with it. </span>
         {thought.why}
       </p>
     </div>

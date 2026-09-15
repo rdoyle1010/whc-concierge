@@ -109,7 +109,7 @@ export default function AdminAmbassadorsPage() {
       </div>
 
       {error ? <div role="alert" className="mb-5 border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</div> : null}
-      {message ? <div className="mb-5 border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[13px] text-ink">{message}</div> : null}
+      {message ? <div className="mb-5 border border-[#dcd4c8] bg-[#ede8df] px-4 py-3 text-[13px] text-ink">{message}</div> : null}
 
       <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {AREAS.map(area => {
@@ -247,7 +247,7 @@ export default function AdminAmbassadorsPage() {
                       <td className="py-3 pr-4 text-secondary">{REWARDS.find(r => r.value === row.reward)?.label || row.reward}</td>
                       <td className="py-3 pr-4 text-secondary">{used} / {row.max_redemptions}</td>
                       <td className="py-3 pr-4">
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] ${!row.is_active || expired ? 'bg-[#e7e7e7] text-secondary' : 'bg-[#f1f1f1] font-semibold text-ink'}`}>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] ${!row.is_active || expired ? 'bg-[#e3dcd1] text-secondary' : 'bg-[#ede8df] font-semibold text-ink'}`}>
                           {!row.is_active ? 'Paused' : expired ? 'Expired' : used >= row.max_redemptions ? 'Full' : 'Live'}
                         </span>
                       </td>

@@ -249,8 +249,8 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-240 API routes, 174 pages, 134 migrations, 169 test files. 1,218 tests and
-41 production-readiness checks, all green.
+240 API routes, 174 pages, 134 migrations, 169 test files. 1,219 tests and
+43 production-readiness checks, all green.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
@@ -259,6 +259,15 @@ stored as `candidate`). Admin is a third role on the same column.
 
 - **British English** everywhere, including code comments and user-facing copy.
 - **No em dashes.** A readiness check enforces this across `src/`.
+- **The palette is ivory, forest, stone and charcoal, and there is no metal.**
+  Ground `#F6F3ED`, structure and accent `#28322B`, body copy `#222321`, warm
+  taupe `#B5A898` and muted sage `#879080` for hairlines and quiet detail only.
+  Roughly 65 per cent ivory, 20 forest, 10 taupe and sage. Forest carries
+  anything you press or follow, charcoal anything you read. Two readiness
+  checks hold it: taupe and sage never carry a word (2.10:1 and 2.99:1 on the
+  ivory), and the accent is never equal to the ink. No gold and no brass: brass
+  measures 2.89:1, and white on a brass button is 3.2:1 where 4.5 is the floor.
+  The printed documents stay neutral black, because they are printed.
 - **One price per kind of document, not one price for everything.** A
   procedure is 10 pounds, a checklist 35, a job description 29, a policy 39, a
   risk assessment 75, a management report 75, the pool NOP and EAP 250 each.

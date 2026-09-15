@@ -21,13 +21,13 @@ function Reading({ data, caution }: { data: any; caution: string }) {
   const pct = Math.min(100, Math.max(0, data.pctOfThreshold))
   const alarming = data.over || pct >= 75
   return (
-    <div className={`border p-4 ${alarming ? 'border-[#1c1c1c] bg-[#f1f1f1]' : 'border-border bg-white'}`}>
+    <div className={`border p-4 ${alarming ? 'border-[#222321] bg-[#ede8df]' : 'border-border bg-white'}`}>
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{data.label}</p>
       <div className="mt-2 flex items-baseline gap-2">
         <p className="text-[26px] font-semibold text-ink">{money(data.turnoverPence)}</p>
         {alarming && <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">{data.over ? 'Over' : 'Close'}</span>}
       </div>
-      <div className="mt-3 h-1.5 w-full bg-[#e7e7e7]">
+      <div className="mt-3 h-1.5 w-full bg-[#e3dcd1]">
         <div className="h-full bg-ink" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-2 text-[12px] text-secondary">
@@ -74,7 +74,7 @@ export default function VatExposurePanel() {
       </div>
 
       {worst && (
-        <div className="mt-4 flex gap-2.5 border border-[#1c1c1c] bg-[#f1f1f1] p-3">
+        <div className="mt-4 flex gap-2.5 border border-[#222321] bg-[#ede8df] p-3">
           <AlertTriangle size={15} className="mt-0.5 shrink-0 text-ink" />
           <p className="text-[12px] leading-5 text-ink">
             On the principal reading you are at or near the threshold. Get the question settled with an accountant now:

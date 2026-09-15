@@ -40,7 +40,7 @@ export default function PaymentDocument({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="print:hidden border-b border-[#dddddd] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
+      <div className="print:hidden border-b border-[#dcd4c8] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
         <Link href={backHref} className="text-[13px] text-secondary hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> {backLabel}</Link>
         <button type="button" onClick={() => window.print()} className="btn-primary text-[13px] inline-flex items-center gap-2"><Printer size={14} /> Print / Save as PDF</button>
       </div>
@@ -75,14 +75,14 @@ export default function PaymentDocument({
 
         <table className="w-full text-left text-[13px] mb-8">
           <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#dddddd]">
+            <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#dcd4c8]">
               <th className="py-2 pr-4">Description</th>
               <th className="py-2 pr-4 text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line, index) => (
-              <tr key={`${line.description}-${index}`} className="border-b border-[#dddddd]">
+              <tr key={`${line.description}-${index}`} className="border-b border-[#dcd4c8]">
                 <td className="py-3 pr-4">
                   {line.description}
                   {line.detail && <span className="block text-[12px] text-secondary">{line.detail}</span>}
@@ -97,7 +97,7 @@ export default function PaymentDocument({
           </tbody>
         </table>
 
-        <div className="text-[11px] text-muted space-y-1 border-t border-[#dddddd] pt-6">
+        <div className="text-[11px] text-muted space-y-1 border-t border-[#dcd4c8] pt-6">
           {notes.map(note => <p key={note}>{note}</p>)}
           {vat && <p>{vat}</p>}
           <p>Questions about this receipt? {identity?.billingEmail ? `Email ${identity.billingEmail}` : 'Reply to any Talent House Collective email'} quoting {reference}.</p>

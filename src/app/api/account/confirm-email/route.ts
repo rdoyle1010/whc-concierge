@@ -94,24 +94,24 @@ const escape = (value: string) =>
 
 function confirmEmailHtml(url: string, address: string): string {
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:560px;margin:32px auto;border:1px solid #dddddd;">
-      <div style="background:#262626;padding:24px 30px;">
+    <div style="max-width:560px;margin:32px auto;border:1px solid #dcd4c8;">
+      <div style="background:#28322b;padding:24px 30px;">
         <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.75;">Talent House Collective</p>
         <p style="margin:0;color:#ffffff;font-size:21px;font-weight:600;">Confirm your email address</p>
       </div>
       <div style="padding:26px 30px;">
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#3a3832;">
           One click and we know we can reach you. Until then, anything we send - a job alert, an
           interview invitation, a message from a property - could be going nowhere.
         </p>
         <p style="margin:0 0 22px;">
-          <a href="${url}" style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:13px 26px;font-size:14px;font-weight:600;">Confirm ${escape(address)}</a>
+          <a href="${url}" style="display:inline-block;background:#222321;color:#ffffff;text-decoration:none;padding:13px 26px;font-size:14px;font-weight:600;">Confirm ${escape(address)}</a>
         </p>
-        <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6e6a60;">
           The link signs you in as well, so you will land back on the platform. If you did not sign up
           with us, ignore this and nothing happens.
         </p>
-        <p style="margin:22px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+        <p style="margin:22px 0 0;font-size:12px;color:#6e6a60;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     </div>
   </body></html>`

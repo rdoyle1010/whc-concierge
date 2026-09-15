@@ -58,7 +58,7 @@ export function listInWords(items: string[]): string {
 export function briefingDetailRows(briefing: InterviewBriefing): string[] {
   const rows: string[] = []
   const cell = (label: string, value: string) =>
-    `<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">${label}</td><td style="padding:6px 0;">${value}</td></tr>`
+    `<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#57544c;">${label}</td><td style="padding:6px 0;">${value}</td></tr>`
 
   const venueAddress = clean(briefing.venueAddress)
   const meetingLink = clean(briefing.meetingLink)
@@ -69,9 +69,9 @@ export function briefingDetailRows(briefing: InterviewBriefing): string[] {
     // A link is made clickable; a phone number is not a URL and must not be
     // dressed up as one.
     const value = /^https?:\/\//i.test(meetingLink)
-      ? `<a href="${escapeHtml(meetingLink)}" style="color:#1c1c1c;">${escapeHtml(meetingLink)}</a>`
+      ? `<a href="${escapeHtml(meetingLink)}" style="color:#222321;">${escapeHtml(meetingLink)}</a>`
       : escapeHtml(meetingLink)
-    rows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">${label}</td><td style="padding:6px 0;word-break:break-all;">${value}</td></tr>`)
+    rows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#57544c;">${label}</td><td style="padding:6px 0;word-break:break-all;">${value}</td></tr>`)
   }
 
   const contactName = clean(briefing.contactName)
@@ -103,5 +103,5 @@ export function briefingEmailHtml(options: {
   ctaLabel: string
   ctaHref: string
 }) {
-  return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c;"><div style="max-width:560px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#1c1c1c;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(options.eyebrow)}</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">${escapeHtml(options.heading)}</h2><p>${options.intro}</p>${options.bodyHtml || ''}${options.detailsHtml || ''}<p><a href="${escapeHtml(options.ctaHref)}" style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:12px 18px;">${escapeHtml(options.ctaLabel)}</a></p></div></div></body></html>`
+  return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#222321;"><div style="max-width:560px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#222321;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(options.eyebrow)}</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">${escapeHtml(options.heading)}</h2><p>${options.intro}</p>${options.bodyHtml || ''}${options.detailsHtml || ''}<p><a href="${escapeHtml(options.ctaHref)}" style="display:inline-block;background:#222321;color:#ffffff;text-decoration:none;padding:12px 18px;">${escapeHtml(options.ctaLabel)}</a></p></div></div></body></html>`
 }

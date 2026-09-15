@@ -66,9 +66,9 @@ export default function DesktopInvite() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[70] p-3 print:hidden animate-slide-up">
-      <div className="mx-auto max-w-md border border-[#1c1c1c] bg-white shadow-xl">
+      <div className="mx-auto max-w-md border border-[#222321] bg-white shadow-xl">
         <div className="flex items-start gap-3 p-4">
-          <span className="mt-0.5 shrink-0 text-[#1c1c1c]"><Laptop size={20} /></span>
+          <span className="mt-0.5 shrink-0 text-[#222321]"><Laptop size={20} /></span>
           <div className="flex-1">
             <p className="text-[15px] font-semibold text-ink">A tip before you start</p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-secondary">
@@ -78,7 +78,7 @@ export default function DesktopInvite() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={copy}
-                className="border border-[#1c1c1c] bg-[#1c1c1c] px-3.5 py-2 text-[12px] font-semibold text-white">
+                className="border border-[#222321] bg-[#222321] px-3.5 py-2 text-[12px] font-semibold text-white">
                 {copied ? 'Link copied' : 'Copy the link for later'}
               </button>
               <button type="button" onClick={dismiss}

@@ -112,7 +112,7 @@ export default function StandardsFilesPage() {
 
         <div className="mt-6 border border-dashed border-border px-5 py-6">
           <label className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex cursor-pointer items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+            <span className="inline-flex cursor-pointer items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
               {busy === 'upload' ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
               {busy === 'upload' ? 'Uploading...' : 'Choose a file'}
             </span>
@@ -136,7 +136,7 @@ export default function StandardsFilesPage() {
             {(['all', ...presentFormats] as const).map(option => (
               <button key={option} type="button" onClick={() => setFormat(option as Format | 'all')}
                 className={format === option
-                  ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-2.5 py-1 text-[11px] font-medium text-white'
+                  ? 'border border-[#222321] bg-[#222321] px-2.5 py-1 text-[11px] font-medium text-white'
                   : 'border border-border px-2.5 py-1 text-[11px] text-secondary'}>
                 {option === 'all' ? 'Everything' : option}
                 <span className="ml-1.5 text-[10px] opacity-60">
@@ -200,7 +200,7 @@ export default function StandardsFilesPage() {
                           pricePounds: draft.pricePence ? draft.pricePence / 100 : null,
                           sortOrder: draft.sortOrder || 0,
                         }, attachment.id)}
-                        className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                        className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                         {busy === attachment.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
                       </button>
                       <button type="button" disabled={busy === attachment.id}
@@ -222,7 +222,7 @@ export default function StandardsFilesPage() {
                         <button key={option.slug} type="button"
                           onClick={() => togglePack(attachment.id, option.slug)}
                           className={on
-                            ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-2.5 py-1 text-[11px] font-medium text-white'
+                            ? 'border border-[#222321] bg-[#222321] px-2.5 py-1 text-[11px] font-medium text-white'
                             : 'border border-border px-2.5 py-1 text-[11px] text-secondary'}>
                           {option.name}
                         </button>
@@ -245,7 +245,7 @@ export default function StandardsFilesPage() {
                       onChange={event => edit(attachment.id, { isLive: event.target.checked })}
                       className="mt-0.5 h-3.5 w-3.5" />
                     <span>
-                      <span className="font-semibold text-[#1c1c1c]">Live</span>
+                      <span className="font-semibold text-[#222321]">Live</span>
                       <span className="block text-[11px] text-muted">
                         Delivered to everybody who already owns one of the packs ticked above, and buyable
                         on its own if it is priced below. Until this is ticked, nobody gets it.

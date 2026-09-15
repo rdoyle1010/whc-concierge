@@ -23,9 +23,9 @@ test('a phone is told what this is before it saves it', () => {
 // Android address bar both read these rather than the stylesheet.
 test('an installed page is still the right colour', () => {
   const web = manifest()
-  assert.equal(web.theme_color, '#1c1c1c', 'the site ink')
-  assert.equal(web.background_color, '#f1f1f1', 'the site surface')
-  assert.match(read('src/app/layout.tsx'), /export const viewport: Viewport = \{\s*themeColor: '#1c1c1c',/)
+  assert.equal(web.theme_color, '#222321', 'the site ink')
+  assert.equal(web.background_color, '#ede8df', 'the site surface')
+  assert.match(read('src/app/layout.tsx'), /export const viewport: Viewport = \{\s*themeColor: '#222321',/)
 })
 
 test('the icons a launcher asks for are all there', () => {

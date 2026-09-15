@@ -108,7 +108,7 @@ const baseMetadata: Metadata = {
 // The colour Android paints the address bar and the task switcher. Left unset
 // it uses white, which is the one colour this platform never uses.
 export const viewport: Viewport = {
-  themeColor: '#1c1c1c',
+  themeColor: '#222321',
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -156,7 +156,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="dns-prefetch" href="https://klfsemvrxvgrbuzrqyer.supabase.co" />
       </head>
       <body>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#1c1c1c] focus:shadow-xl focus:border focus:border-[#1c1c1c]">Skip to main content</a>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#222321] focus:shadow-xl focus:border focus:border-[#222321]">Skip to main content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(logo.url)) }} />
         <div className="website-theme min-h-screen" style={brandStyle}>
           <SiteBrandProvider logo={logo}>{children}</SiteBrandProvider>

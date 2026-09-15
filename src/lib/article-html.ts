@@ -19,8 +19,8 @@ import sanitizeHtml from 'sanitize-html'
 // to it, and anything else is dropped back to the default ink.
 export const ARTICLE_COLOURS = [
   { label: 'Default', value: '' },
-  { label: 'Charcoal', value: '#1c1c1c' },
-  { label: 'Muted grey', value: '#6b6b6b' },
+  { label: 'Charcoal', value: '#222321' },
+  { label: 'Muted grey', value: '#6e6a60' },
   { label: 'Success green', value: '#287548' },
   { label: 'Alert red', value: '#b3261e' },
 ] as const

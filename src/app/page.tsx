@@ -384,12 +384,12 @@ function SellingBand() {
         <Eyebrow>Work with us</Eyebrow>
         <div className="mt-7 grid gap-x-14 gap-y-10 md:grid-cols-2">
           {cards.map(card => (
-            <div key={card.eyebrow} className="border-t border-[#1c1c1c] pt-6">
+            <div key={card.eyebrow} className="border-t border-[#222321] pt-6">
               <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted">{card.eyebrow}</p>
               <h2 className="site-heading mt-2 text-[24px] font-semibold leading-tight md:text-[28px]">{card.heading}</h2>
               <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-secondary">{card.body}</p>
               <div className="mt-5 flex flex-wrap items-center gap-5">
-                <Link href={card.href} className="border border-[#1c1c1c] bg-[#1c1c1c] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.1em] text-white">
+                <Link href={card.href} className="border border-[#222321] bg-[#222321] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.1em] text-white">
                   {card.action}
                 </Link>
                 <Link href={card.secondaryHref} className="text-[12px] font-semibold text-ink underline underline-offset-4">
@@ -407,7 +407,7 @@ function SellingBand() {
 function FeaturedPlacementsSection({ placements }: { placements: { properties: FeaturedEntry[]; professionals: FeaturedEntry[] } }) {
   if (!placements.properties.length && !placements.professionals.length) return null
   return (
-    <section className="border-b border-border bg-[#f1f1f1]">
+    <section className="border-b border-border bg-[#ede8df]">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
         <Eyebrow>Featured on Talent House</Eyebrow>
         <div className="mt-6 grid gap-x-14 gap-y-8 md:grid-cols-2">

@@ -9,7 +9,7 @@ import { Eye, EyeOff, BriefcaseBusiness, Sparkles, Lightbulb } from 'lucide-reac
 import Wordmark from '@/components/Wordmark'
 
 export default function LoginPage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f1f1f1]" />}><LoginForm /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#ede8df]" />}><LoginForm /></Suspense>
 }
 
 function LoginForm() {
@@ -91,7 +91,7 @@ function LoginForm() {
     : `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
 
   return (
-    <main id="main-content" className="min-h-screen bg-[#f1f1f1] flex items-stretch">
+    <main id="main-content" className="min-h-screen bg-[#ede8df] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
@@ -101,12 +101,12 @@ function LoginForm() {
             <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
             {safeDestination === '/roles/match' && (
-              <div className="mb-5 rounded-xl border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[12px] leading-5 text-[#555555]">
+              <div className="mb-5 rounded-xl border border-[#dcd4c8] bg-[#ede8df] px-4 py-3 text-[12px] leading-5 text-[#57544c]">
                 Sign in as Talent to continue to your role matches. We&apos;ll take you straight back to Match after sign-in.
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2 bg-[#f1f1f1] rounded-xl p-1.5 mb-3">
+            <div className="grid grid-cols-3 gap-2 bg-[#ede8df] rounded-xl p-1.5 mb-3">
               {([
                 { value: 'talent', label: 'Talent', icon: <Sparkles size={13} /> },
                 { value: 'employer', label: 'Hotel', icon: <BriefcaseBusiness size={13} /> },
@@ -115,7 +115,7 @@ function LoginForm() {
                 <button
                   type="button" key={option.value}
                   onClick={() => { setDoor(option.value); setError('') }}
-                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${door === option.value ? 'bg-[#1c1c1c] text-white shadow-sm' : 'text-secondary hover:text-[#1c1c1c]'}`}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${door === option.value ? 'bg-[#222321] text-white shadow-sm' : 'text-secondary hover:text-[#222321]'}`}
                 >{option.icon}{option.label}</button>
               ))}
             </div>
@@ -135,17 +135,17 @@ function LoginForm() {
                 <label htmlFor="login-password" className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>
                 <div className="relative">
                   <input id="login-password" type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
-                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#1c1c1c]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#222321]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-secondary">You will stay signed in on this device.</p>
-                <Link href="/forgot-password" className="text-[12px] text-[#1c1c1c] hover:underline">Forgot password?</Link>
+                <Link href="/forgot-password" className="text-[12px] text-[#222321] hover:underline">Forgot password?</Link>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${doorLabel}`}</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#222321] hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${doorLabel}`}</button>
             </form>
 
-            <p className="text-[13px] text-muted mt-7">New to Talent House Collective? <Link href={registerHref} className="text-[#1c1c1c] font-semibold hover:underline">Create an account →</Link></p>
+            <p className="text-[13px] text-muted mt-7">New to Talent House Collective? <Link href={registerHref} className="text-[#222321] font-semibold hover:underline">Create an account →</Link></p>
           </div>
         </div>
       </div>

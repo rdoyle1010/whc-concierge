@@ -40,30 +40,30 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const past = !isUpcoming(event)
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-parchment flex flex-col">
       <Navbar />
       <main id="main-content" className="flex-1 pt-[76px]">
         <div className="mx-auto max-w-3xl px-6 py-14">
-          <Link href="/events" className="text-[12px] font-semibold text-[#6b6b6b] hover:text-[#1c1c1c]">← All events</Link>
+          <Link href="/events" className="text-[12px] font-semibold text-[#6e6a60] hover:text-[#222321]">← All events</Link>
 
-          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">
+          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[.16em] text-[#6e6a60]">
             {eventKindLabel(event.kind)}{event.host ? ` · ${event.host}` : ''}
           </p>
-          <h1 className="mt-2 text-[34px] md:text-[42px] font-semibold leading-[1.1] text-[#1c1c1c]">{event.title}</h1>
+          <h1 className="mt-2 text-[34px] md:text-[42px] font-semibold leading-[1.1] text-[#222321]">{event.title}</h1>
 
           {past && (
-            <p className="mt-4 border border-[#dddddd] bg-[#f6f6f6] px-4 py-3 text-[13px] text-[#555555]">
+            <p className="mt-4 border border-[#dcd4c8] bg-[#f6f6f6] px-4 py-3 text-[13px] text-[#57544c]">
               This one has been and gone. It is left here because the record is worth keeping.
             </p>
           )}
 
-          <div className="mt-6 border-y border-[#dddddd] py-5">
-            <p className="text-[16px] font-semibold text-[#1c1c1c]">{eventDateLabel(event.starts_at, event.ends_at)}</p>
-            <p className="mt-1 text-[15px] text-[#3a3a3a]">{eventWhereLabel(event)}</p>
+          <div className="mt-6 border-y border-[#dcd4c8] py-5">
+            <p className="text-[16px] font-semibold text-[#222321]">{eventDateLabel(event.starts_at, event.ends_at)}</p>
+            <p className="mt-1 text-[15px] text-[#3a3832]">{eventWhereLabel(event)}</p>
             {event.members_only && (
-              <p className="mt-3 text-[13px] text-[#555555]">
+              <p className="mt-3 text-[13px] text-[#57544c]">
                 Open to Talent House members.{' '}
-                <Link href="/register/talent" className="font-semibold text-[#1c1c1c] underline">Join free</Link>.
+                <Link href="/register/talent" className="font-semibold text-[#222321] underline">Join free</Link>.
               </p>
             )}
           </div>
@@ -74,13 +74,13 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           )}
 
           {event.summary && (
-            <p className="mt-8 text-[17px] leading-relaxed text-[#1c1c1c]">{event.summary}</p>
+            <p className="mt-8 text-[17px] leading-relaxed text-[#222321]">{event.summary}</p>
           )}
 
           {event.description && (
             <div className="mt-6 space-y-4">
               {event.description.split(/\n{2,}/).map((paragraph, index) => (
-                <p key={index} className="text-[15px] leading-relaxed text-[#3a3a3a]">{paragraph}</p>
+                <p key={index} className="text-[15px] leading-relaxed text-[#3a3832]">{paragraph}</p>
               ))}
             </div>
           )}
@@ -88,20 +88,20 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           {event.booking_url && !past && (
             <p className="mt-9">
               <a href={event.booking_url} target="_blank" rel="noopener noreferrer"
-                className="inline-block bg-[#1c1c1c] px-6 py-3 text-[13px] font-semibold text-white">
+                className="inline-block bg-[#222321] px-6 py-3 text-[13px] font-semibold text-white">
                 Book your place
               </a>
             </p>
           )}
 
-          <div className="mt-12 border-t border-[#dddddd] pt-8">
-            <p className="text-[15px] leading-relaxed text-[#3a3a3a]">
+          <div className="mt-12 border-t border-[#dcd4c8] pt-8">
+            <p className="text-[15px] leading-relaxed text-[#3a3832]">
               Members hear about these first. Joining Talent House says nothing about whether you are
               looking for work, and you decide who can see you.
             </p>
             <p className="mt-5">
               <Link href="/register/talent"
-                className="inline-block border border-[#1c1c1c] px-6 py-3 text-[13px] font-semibold text-[#1c1c1c]">
+                className="inline-block border border-[#222321] px-6 py-3 text-[13px] font-semibold text-[#222321]">
                 Create your free profile
               </Link>
             </p>

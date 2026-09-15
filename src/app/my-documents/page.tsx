@@ -102,7 +102,7 @@ export default function MyDocumentsPage() {
               No account? The link in your receipt email opens your documents without one.
             </p>
             <Link href="/login?redirect=%2Fmy-documents"
-              className="mt-5 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+              className="mt-5 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
               Sign in
             </Link>
           </div>
@@ -121,7 +121,7 @@ export default function MyDocumentsPage() {
               with the address you paid with. If it has not, the link in your receipt email still works.
             </p>
             <Link href="/standards"
-              className="mt-5 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+              className="mt-5 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
               <ShoppingBag size={14} /> Browse the library
             </Link>
           </div>
@@ -146,7 +146,7 @@ export default function MyDocumentsPage() {
                   </div>
                   {entry.ready ? (
                     <a href={`/api/standards/download?reference=${encodeURIComponent(entry.reference)}`}
-                      className="inline-flex shrink-0 items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+                      className="inline-flex shrink-0 items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink">
                       <Download size={13} /> PDF
                     </a>
                   ) : (
@@ -163,20 +163,20 @@ export default function MyDocumentsPage() {
             {/* Tools they bought, above the reporting workbook because a
                 tool is opened weekly and a reporting pack monthly. */}
             {tools.map(tool => (
-              <div key={tool.slug} className="mt-10 border border-[#1c1c1c] p-5">
+              <div key={tool.slug} className="mt-10 border border-[#222321] p-5">
                 <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
                   <FileSpreadsheet size={16} className="shrink-0 text-muted" /> {tool.name}
                 </h2>
                 <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-secondary">{tool.blurb}</p>
                 <a href={`/api/standards/tool?slug=${encodeURIComponent(tool.slug)}`}
-                  className="mt-4 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+                  className="mt-4 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
                   <Download size={13} /> Download it
                 </a>
               </div>
             ))}
 
             {workbook && (
-              <div className="mt-10 border border-[#1c1c1c] p-5">
+              <div className="mt-10 border border-[#222321] p-5">
                 <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
                   <FileSpreadsheet size={16} className="shrink-0 text-muted" /> Spa Reporting Pack workbook
                 </h2>
@@ -186,7 +186,7 @@ export default function MyDocumentsPage() {
                   themselves out. The PDFs are how you present the month; this is where you work it out.
                 </p>
                 <a href="/api/standards/workbook"
-                  className="mt-4 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+                  className="mt-4 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
                   <Download size={13} /> Download the workbook
                 </a>
               </div>
@@ -216,7 +216,7 @@ export default function MyDocumentsPage() {
                         <p className="mt-0.5 text-[11px] text-muted">{file.fileName} · {readable(file.sizeBytes)}</p>
                       </div>
                       <a href={`/api/standards/file?id=${encodeURIComponent(file.id)}`}
-                        className="inline-flex shrink-0 items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+                        className="inline-flex shrink-0 items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink">
                         <Download size={13} /> Download
                       </a>
                     </div>

@@ -101,11 +101,11 @@ export default function StandardsCatalogue() {
         was the confusing one. Nobody arrives asking for departure, and the
         five stages overlapped: a reception procedure sat inside three of
         them, sold three times under three names. */}
-    <section className="border-b border-[#dddddd]" id="packs">
+    <section className="border-b border-[#dcd4c8]" id="packs">
       <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">What do you need</h2>
+            <h2 className="text-[28px] font-semibold text-[#222321] md:text-[32px]">What do you need</h2>
             {/* The claim that was here said every pack costs roughly a third
                 of its documents bought singly. For five of the fourteen it is
                 the other way round: the pool safety pack is four documents at
@@ -113,37 +113,37 @@ export default function StandardsCatalogue() {
                 further down the same page. A buyer who can do that sum in
                 their head, in front of both numbers, does not conclude they
                 have found a discount. So the page no longer claims one. */}
-            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">
               Each pack is everything a spa needs in writing for one part of the operation, written to be
               adopted together rather than assembled. Buy the pack, or any document in it on its own.
             </p>
           </div>
           {available !== null && !unavailable && (
-            <p className="text-[13px] text-[#6b6b6b]">
+            <p className="text-[13px] text-[#6e6a60]">
               {readyTotal} of {sellableCatalogue().length} ready to send today
             </p>
           )}
         </div>
 
         {unavailable && (
-          <p className="mt-6 border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[13px] text-[#555555]">
+          <p className="mt-6 border border-[#dcd4c8] bg-[#ede8df] px-4 py-3 text-[13px] text-[#57544c]">
             We cannot reach the library just now. The prices below are right; ask us and we will confirm what
             is ready before you pay anything.
           </p>
         )}
 
-        <div className="mt-9 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-9 grid gap-px border border-[#dcd4c8] bg-[#dcd4c8] sm:grid-cols-2 lg:grid-cols-3">
           {categories.map(pack => {
             const ready = readyIn(pack)
             const all = ready >= pack.count && pack.count > 0
             return (
               <div key={pack.slug} className="flex flex-col bg-white p-6">
-                <h3 className="text-[19px] font-semibold leading-tight text-[#1c1c1c]">{pack.name}</h3>
-                <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">{formatPrice(pack.price)}</p>
-                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">
+                <h3 className="text-[19px] font-semibold leading-tight text-[#222321]">{pack.name}</h3>
+                <p className="mt-2 font-serif text-[26px] leading-none text-[#222321]">{formatPrice(pack.price)}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#57544c]">
                   {pack.detail || pack.blurb}
                 </p>
-                <p className="mt-4 text-[12px] text-[#6b6b6b]">
+                <p className="mt-4 text-[12px] text-[#6e6a60]">
                   {pack.count} documents
                   {available !== null && !unavailable && (
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
@@ -157,7 +157,7 @@ export default function StandardsCatalogue() {
                     all
                       ? <BuyButton packSlug={pack.slug} label={`Buy ${pack.name.toLowerCase()}`} />
                       : <Link href="/contact"
-                          className="inline-block border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
+                          className="inline-block border border-[#dcd4c8] px-3 py-2 text-[13px] font-medium text-[#57544c]">
                           Ask us
                         </Link>
                   )}
@@ -170,17 +170,17 @@ export default function StandardsCatalogue() {
         {/* A different question, so a different block. Somebody who wants all
             of it is not comparing categories, and burying the library among
             eleven packs makes it look like a twelfth. */}
-        <h3 className="mt-14 text-[22px] font-semibold text-[#1c1c1c]">Or all of it</h3>
-        <div className="mt-5 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2">
+        <h3 className="mt-14 text-[22px] font-semibold text-[#222321]">Or all of it</h3>
+        <div className="mt-5 grid gap-px border border-[#dcd4c8] bg-[#dcd4c8] sm:grid-cols-2">
           {everything.map(pack => {
             const ready = readyIn(pack)
             const all = ready >= pack.count && pack.count > 0
             return (
               <div key={pack.slug} className="flex flex-col bg-white p-6">
-                <h4 className="text-[19px] font-semibold text-[#1c1c1c]">{pack.name}</h4>
-                <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">{formatPrice(pack.price)}</p>
-                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{pack.blurb}</p>
-                <p className="mt-4 text-[12px] text-[#6b6b6b]">
+                <h4 className="text-[19px] font-semibold text-[#222321]">{pack.name}</h4>
+                <p className="mt-2 font-serif text-[26px] leading-none text-[#222321]">{formatPrice(pack.price)}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#57544c]">{pack.blurb}</p>
+                <p className="mt-4 text-[12px] text-[#6e6a60]">
                   {pack.count} documents
                   {available !== null && !unavailable && (
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
@@ -194,7 +194,7 @@ export default function StandardsCatalogue() {
                     all
                       ? <BuyButton packSlug={pack.slug} label={`Buy ${pack.name.toLowerCase()}`} />
                       : <Link href="/contact"
-                          className="inline-block border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
+                          className="inline-block border border-[#dcd4c8] px-3 py-2 text-[13px] font-medium text-[#57544c]">
                           Ask us
                         </Link>
                   )}
@@ -204,7 +204,7 @@ export default function StandardsCatalogue() {
           })}
         </div>
 
-        <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
+        <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#57544c]">
           Buying every pack costs more than the complete library, so if you want most of them, buy the
           library. The risk assessment suite and the safety operating procedure are sold on their own and are
           in the library, not in the other packs.
@@ -212,12 +212,12 @@ export default function StandardsCatalogue() {
       </div>
     </section>
 
-    <section className="border-b border-[#dddddd]" id="departments">
+    <section className="border-b border-[#dcd4c8]" id="departments">
       <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By department</h2>
-            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+            <h2 className="text-[28px] font-semibold text-[#222321] md:text-[32px]">By department</h2>
+            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">
               If you are equipping one team rather than one stage. Everything that team owns, whatever part of
               the visit it falls in.
             </p>
@@ -225,21 +225,21 @@ export default function StandardsCatalogue() {
         </div>
 
         {unavailable && (
-          <p className="mt-6 border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[13px] text-[#555555]">
+          <p className="mt-6 border border-[#dcd4c8] bg-[#ede8df] px-4 py-3 text-[13px] text-[#57544c]">
             We cannot reach the library just now. The prices below are right; ask us and we will confirm what is
             ready before you pay anything.
           </p>
         )}
 
-        <div className="mt-8 border-t border-[#dddddd]">
+        <div className="mt-8 border-t border-[#dcd4c8]">
           {packs.map(pack => {
             const ready = readyIn(pack)
             return (
               <div key={pack.slug}
-                className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 border-b border-[#dddddd] py-5">
+                className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 border-b border-[#dcd4c8] py-5">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[17px] font-semibold text-[#1c1c1c]">{pack.name}</h3>
-                  <p className="mt-1 text-[13px] text-[#6b6b6b]">
+                  <h3 className="text-[17px] font-semibold text-[#222321]">{pack.name}</h3>
+                  <p className="mt-1 text-[13px] text-[#6e6a60]">
                     {pack.count} documents
                     {available !== null && !unavailable && (
                       ready >= pack.count
@@ -254,7 +254,7 @@ export default function StandardsCatalogue() {
                     files={filesFor(pack.slug)} readySet={readySet} showReady={ready < pack.count} />
                 </div>
                 <div className="flex items-center gap-5">
-                  <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(pack.price)}</p>
+                  <p className="font-serif text-[22px] text-[#222321]">{formatPrice(pack.price)}</p>
                   {/* Buyable only when every document in it is signed off.
                       A pack sold part-finished is a refund and a story told
                       to every other spa director in the county, and the
@@ -264,7 +264,7 @@ export default function StandardsCatalogue() {
                       <BuyButton packSlug={pack.slug} label="Buy this pack" />
                     ) : (
                       <Link href="/contact"
-                        className="border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
+                        className="border border-[#dcd4c8] px-3 py-2 text-[13px] font-medium text-[#57544c]">
                         Ask us
                       </Link>
                     )
@@ -276,7 +276,7 @@ export default function StandardsCatalogue() {
         </div>
 
         {available !== null && !unavailable && readyTotal < sellableCatalogue().length && (
-          <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
+          <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#57544c]">
             {/* Said plainly rather than hidden. A buyer told what is ready
                 trusts what is ready; a buyer who orders a department and
                 receives half of it does not come back, and tells people. */}
@@ -292,18 +292,18 @@ export default function StandardsCatalogue() {
           assemble for themselves. */}
       {bundles.length > 0 && (
         <div className="mx-auto max-w-5xl px-6 pb-14 lg:px-8">
-          <h3 className="text-[20px] font-semibold text-[#1c1c1c]">Bundles</h3>
-          <div className="mt-5 border-t border-[#dddddd]">
+          <h3 className="text-[20px] font-semibold text-[#222321]">Bundles</h3>
+          <div className="mt-5 border-t border-[#dcd4c8]">
             {bundles.map(bundle => {
               const ready = bundle.references.filter(reference => readySet.has(reference)).length
               const all = ready === bundle.references.length && bundle.references.length > 0
               return (
                 <div key={bundle.slug}
-                  className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 border-b border-[#dddddd] py-5">
+                  className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 border-b border-[#dcd4c8] py-5">
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-[17px] font-semibold text-[#1c1c1c]">{bundle.name}</h4>
-                    {bundle.blurb && <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-[#555555]">{bundle.blurb}</p>}
-                    <p className="mt-1.5 text-[13px] text-[#6b6b6b]">
+                    <h4 className="text-[17px] font-semibold text-[#222321]">{bundle.name}</h4>
+                    {bundle.blurb && <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">{bundle.blurb}</p>}
+                    <p className="mt-1.5 text-[13px] text-[#6e6a60]">
                       {bundle.references.length} documents
                       {available !== null && !unavailable && (all ? ' · all ready' : ` · ${ready} ready now, the rest in preparation`)}
                     </p>
@@ -312,11 +312,11 @@ export default function StandardsCatalogue() {
                       files={filesFor(bundle.slug)} readySet={readySet} showReady={!all} />
                   </div>
                   <div className="flex shrink-0 items-center gap-5">
-                    <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(bundle.price)}</p>
+                    <p className="font-serif text-[22px] text-[#222321]">{formatPrice(bundle.price)}</p>
                     {available !== null && !unavailable && (
                       all
                         ? <BuyButton packSlug={bundle.slug} label="Buy this bundle" />
-                        : <Link href="/contact" className="border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">Ask us</Link>
+                        : <Link href="/contact" className="border border-[#dcd4c8] px-3 py-2 text-[13px] font-medium text-[#57544c]">Ask us</Link>
                     )}
                   </div>
                 </div>

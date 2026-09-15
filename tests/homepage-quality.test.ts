@@ -40,7 +40,7 @@ test('homepage mockup heading does not skip a heading level', () => {
 test('footer copy uses readable public-site contrast', () => {
   const source = read('src/components/Footer.tsx')
   const footer = source.slice(source.indexOf('<footer className='))
-  assert.match(footer, /bg-\[#f1f1f1\]/, 'the footer band is light grey')
+  assert.match(footer, /bg-\[#ede8df\]/, 'the footer band is light grey')
   assert.doesNotMatch(footer, /text-white\//, 'no faded white text on a light band')
   assert.match(source, /block text-\[12px\] text-secondary hover:text-ink/, 'the link columns must be ink, not white')
   assert.match(footer, /text-secondary/)

@@ -65,7 +65,7 @@ function ConsultantCard({ profile, wide }: { profile: any; wide?: boolean }) {
     </p>
   )
 
-  const surface = profile.featured ? 'border-ink bg-[#f1f1f1]' : 'border-border bg-white'
+  const surface = profile.featured ? 'border-ink bg-[#ede8df]' : 'border-border bg-white'
 
   if (wide) {
     return (
@@ -211,7 +211,7 @@ export default function ConsultancyDirectory() {
         </section>
 
         {profiles.length > 0 && (
-          <section className="border-t border-border bg-[#f1f1f1]">
+          <section className="border-t border-border bg-[#ede8df]">
             <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-14 flex flex-wrap items-center justify-between gap-6">
               <div className="max-w-xl">
                 <p className="eyebrow mb-2">For consultants</p>

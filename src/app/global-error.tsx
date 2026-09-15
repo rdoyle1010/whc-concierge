@@ -24,17 +24,17 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 margin: '0 auto 32px',
               }}
             >
-              <span style={{ fontSize: 20, color: '#555555' }}>!</span>
+              <span style={{ fontSize: 20, color: '#57544c' }}>!</span>
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 500, color: '#1c1c1c', margin: '0 0 12px' }}>Something went wrong</h1>
-            <p style={{ fontSize: 14, color: '#555555', lineHeight: 1.6, margin: '0 0 40px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 500, color: '#222321', margin: '0 0 12px' }}>Something went wrong</h1>
+            <p style={{ fontSize: 14, color: '#57544c', lineHeight: 1.6, margin: '0 0 40px' }}>
               An unexpected error occurred. Please try again or return to the home page.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
               <button
                 onClick={reset}
                 style={{
-                  padding: '10px 24px', background: '#1c1c1c', color: '#FFFFFF',
+                  padding: '10px 24px', background: '#222321', color: '#FFFFFF',
                   fontSize: 13, fontWeight: 500, borderRadius: 8, border: 'none', cursor: 'pointer',
                 }}
               >
@@ -44,7 +44,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 href="/"
                 style={{
                   padding: '10px 24px', background: '#FFFFFF',
-                  color: '#555555', fontSize: 13, fontWeight: 500,
+                  color: '#57544c', fontSize: 13, fontWeight: 500,
                   borderRadius: 8, border: '1px solid #E5E5E5',
                   textDecoration: 'none', cursor: 'pointer',
                 }}

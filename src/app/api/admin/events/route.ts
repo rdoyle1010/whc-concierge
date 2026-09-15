@@ -150,24 +150,24 @@ function announcementHtml(event: any): string {
   const where = eventWhereLabel(event)
   const link = `${SITE}/events/${event.slug}`
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:580px;margin:32px auto;border:1px solid #dddddd;">
-      <div style="background:#262626;padding:26px 32px;">
+    <div style="max-width:580px;margin:32px auto;border:1px solid #dcd4c8;">
+      <div style="background:#28322b;padding:26px 32px;">
         <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.75;">First to know</p>
         <p style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">${escape(event.title)}</p>
       </div>
       ${event.image_url ? `<img src="${escape(event.image_url)}" alt="" style="display:block;width:100%;height:auto;" />` : ''}
       <div style="padding:28px 32px;">
-        <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b6b6b;">${escape(eventKindLabel(event.kind))}${event.host ? ` &middot; ${escape(event.host)}` : ''}</p>
-        <p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#1c1c1c;">${escape(when)}</p>
-        <p style="margin:4px 0 0;font-size:15px;color:#3a3a3a;">${escape(where)}</p>
-        ${event.summary ? `<p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:#3a3a3a;">${escape(event.summary)}</p>` : ''}
+        <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6e6a60;">${escape(eventKindLabel(event.kind))}${event.host ? ` &middot; ${escape(event.host)}` : ''}</p>
+        <p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#222321;">${escape(when)}</p>
+        <p style="margin:4px 0 0;font-size:15px;color:#3a3832;">${escape(where)}</p>
+        ${event.summary ? `<p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:#3a3832;">${escape(event.summary)}</p>` : ''}
         <p style="margin:24px 0 0;">
-          <a href="${link}" style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:13px 26px;font-size:14px;font-weight:600;">See the details</a>
+          <a href="${link}" style="display:inline-block;background:#222321;color:#ffffff;text-decoration:none;padding:13px 26px;font-size:14px;font-weight:600;">See the details</a>
         </p>
-        <p style="margin:26px 0 0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+        <p style="margin:26px 0 0;font-size:13px;line-height:1.7;color:#6e6a60;">
           You are on the Talent House register, so you hear about these before they are announced anywhere else.
         </p>
-        <p style="margin:20px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+        <p style="margin:20px 0 0;font-size:12px;color:#6e6a60;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     </div>
   </body></html>`

@@ -63,7 +63,7 @@ export default function PanelPicture({
   if (!picture) return null
 
   const label = tone === 'dark'
-    ? 'border-white/25 bg-[#1c1c1c]/70 text-white'
+    ? 'border-white/25 bg-[#222321]/70 text-white'
     : 'border-border bg-white/90 text-ink'
 
   return (

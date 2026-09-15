@@ -122,17 +122,17 @@ const escape = (value: string) =>
 
 function personalNote(firstName: string, message: string): string {
   const paragraphs = message.split(/\n{2,}/).map(part =>
-    `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">${escape(part).replace(/\n/g, '<br/>')}</p>`).join('')
+    `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">${escape(part).replace(/\n/g, '<br/>')}</p>`).join('')
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:560px;margin:32px auto;border:1px solid #dddddd;">
-      <div style="background:#262626;padding:24px 30px;">
+    <div style="max-width:560px;margin:32px auto;border:1px solid #dcd4c8;">
+      <div style="background:#28322b;padding:24px 30px;">
         <p style="margin:0;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.75;">Talent House Collective</p>
       </div>
       <div style="padding:26px 30px;">
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">${firstName ? `Hello ${escape(firstName)},` : 'Hello,'}</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">${firstName ? `Hello ${escape(firstName)},` : 'Hello,'}</p>
         ${paragraphs}
-        <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#3a3a3a;">Just reply to this email and it comes straight to us.</p>
-        <p style="margin:22px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+        <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#3a3832;">Just reply to this email and it comes straight to us.</p>
+        <p style="margin:22px 0 0;font-size:12px;color:#6e6a60;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     </div>
   </body></html>`
