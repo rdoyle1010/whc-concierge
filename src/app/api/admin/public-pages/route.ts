@@ -50,7 +50,20 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const parsed = PublicPagesContentSchema.safeParse(body.content)
-    if (!parsed.success) return NextResponse.json({ error: 'Some page fields are invalid.' }, { status: 400 })
+    if (!parsed.success) {
+      // "Some page fields are invalid" names nothing, so the only way to find
+      // out which field was to change one thing at a time and press save. It
+      // now says where, which turned out to matter: the message somebody
+      // actually saw was caused by six pages being added to the schema while
+      // their saved draft predated them, and no part of that sentence would
+      // have helped them guess it.
+      const first = parsed.error.issues[0]
+      const where = first?.path?.join(' → ') || 'somewhere in the content'
+      console.error('[public pages] rejected save:', JSON.stringify(parsed.error.issues.slice(0, 5)))
+      return NextResponse.json({
+        error: `That could not be saved: ${where} ${first?.message ? `(${first.message})` : 'is not valid'}.`,
+      }, { status: 400 })
+    }
     if (body.action === 'save') {
       await saveValue(PUBLIC_PAGES_DRAFT_KEY, JSON.stringify(parsed.data))
       return NextResponse.json({ success: true })

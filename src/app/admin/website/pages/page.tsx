@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { Upload, Save, Send, Eye, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
-import { cloneDefaultPublicPagesContent, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPageSlug, type PublicPagesContent } from '@/lib/public-page-content'
+import { cloneDefaultPublicPagesContent, PAGE_NAMES, PAGE_PATHS, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPageSlug, type PublicPagesContent } from '@/lib/public-page-content'
 
-const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon', about:'About', advertise:'Advertise', 'how-to-use':'How It Works', academy:'Academy', 'agency-cover':'Agency Cover', contact:'Contact' }
-const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon', about:'/about', advertise:'/advertise', 'how-to-use':'/how-to-use', academy:'/academy', 'agency-cover':'/agency', contact:'/contact' }
+const pageNames = PAGE_NAMES
+const pagePaths = PAGE_PATHS
 
 // Where "Preview page" goes.
 //
