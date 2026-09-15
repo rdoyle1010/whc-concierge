@@ -71,7 +71,7 @@ export default function EmailAddressPanel() {
 
   return <div className="dashboard-card">
     <div className="mb-4 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e7e7e7] text-[#1c1c1c]"><Mail size={18} /></div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e3dcd1] text-[#222321]"><Mail size={18} /></div>
       <div>
         <h3 className="font-serif text-lg font-semibold">Your email address</h3>
         <p className="mt-1 text-sm text-gray-500">
@@ -81,7 +81,7 @@ export default function EmailAddressPanel() {
       </div>
     </div>
 
-    <p className="rounded-xl bg-[#f1f1f1] px-4 py-3 text-[13px] text-ink">
+    <p className="rounded-xl bg-[#ede8df] px-4 py-3 text-[13px] text-ink">
       Signing in as <span className="font-semibold">{current || '...'}</span>
     </p>
 

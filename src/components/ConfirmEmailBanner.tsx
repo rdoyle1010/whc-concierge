@@ -53,9 +53,9 @@ export default function ConfirmEmailBanner() {
   if (state !== 'unconfirmed') return null
 
   return (
-    <div className="mb-6 border border-[#1c1c1c] bg-[#f6f6f6] px-5 py-4">
+    <div className="mb-6 border border-[#222321] bg-[#f6f6f6] px-5 py-4">
       <div className="flex flex-wrap items-start gap-3">
-        <span className="mt-0.5 shrink-0 text-[#1c1c1c]"><MailWarning size={18} /></span>
+        <span className="mt-0.5 shrink-0 text-[#222321]"><MailWarning size={18} /></span>
         <div className="flex-1 min-w-[240px]">
           <p className="text-[14px] font-semibold text-ink">Confirm your email address</p>
           <p className="mt-1 text-[13px] leading-relaxed text-secondary">
@@ -68,7 +68,7 @@ export default function ConfirmEmailBanner() {
         </div>
         {!sent && (
           <button type="button" onClick={send} disabled={sending}
-            className="shrink-0 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-50">
+            className="shrink-0 border border-[#222321] bg-[#222321] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-50">
             {sending ? 'Sending...' : 'Send me the link'}
           </button>
         )}

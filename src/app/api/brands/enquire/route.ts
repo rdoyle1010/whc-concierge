@@ -86,10 +86,10 @@ export async function POST(req: NextRequest) {
       <p style="font-size: 16px; font-weight: 600; margin-bottom: 28px;">Talent House Collective</p>
       <p style="font-size: 20px; font-weight: 700; margin-bottom: 18px;">A spa is asking about ${escape(brand.name)}</p>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px;">
-        ${rows.map(([label, value]) => `<tr><td style="padding: 7px 0; color: #6b6b6b; font-size: 13px; width: 140px;">${escape(label)}</td><td style="padding: 7px 0; font-size: 14px; color: #1c1c1c;">${escape(value)}</td></tr>`).join('')}
+        ${rows.map(([label, value]) => `<tr><td style="padding: 7px 0; color: #6e6a60; font-size: 13px; width: 140px;">${escape(label)}</td><td style="padding: 7px 0; font-size: 14px; color: #222321;">${escape(value)}</td></tr>`).join('')}
       </table>
-      ${enquiry.message ? `<div style="background: #f1f1f1; padding: 16px; margin-bottom: 22px;"><p style="font-size: 12px; color: #6b6b6b; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em;">What they asked</p><p style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap; margin: 0;">${escape(enquiry.message)}</p></div>` : ''}
-      <p style="font-size: 12px; color: #6b6b6b;">Reply to them directly at ${escape(enquiry.contact_email)}.</p>
+      ${enquiry.message ? `<div style="background: #ede8df; padding: 16px; margin-bottom: 22px;"><p style="font-size: 12px; color: #6e6a60; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em;">What they asked</p><p style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap; margin: 0;">${escape(enquiry.message)}</p></div>` : ''}
+      <p style="font-size: 12px; color: #6e6a60;">Reply to them directly at ${escape(enquiry.contact_email)}.</p>
     </div>
   `
 

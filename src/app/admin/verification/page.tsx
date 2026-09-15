@@ -102,7 +102,7 @@ export default function AdminVerificationPage() {
                 outcome recorded here is what that page said, which is the audit
                 trail a statutory excuse rests on. */}
             {r.right_to_work_share_code ? (
-              <div className="mt-2 border border-border bg-[#f1f1f1] p-3">
+              <div className="mt-2 border border-border bg-[#ede8df] p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Home Office share code</p>
                 <p className="mt-1 font-mono text-[15px] tracking-[0.18em] text-ink">{r.right_to_work_share_code}</p>
                 <p className="mt-1 text-[11px] text-secondary">
@@ -228,7 +228,7 @@ export default function AdminVerificationPage() {
       )}
 
       {rejecting && (
-        <div className="fixed inset-0 bg-[#0f0f0f]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
+        <div className="fixed inset-0 bg-[#161814]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
           <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6 border border-border">
             <div className="flex items-center justify-between mb-2">
               <h2 id="admin-verification-reject-heading" className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>

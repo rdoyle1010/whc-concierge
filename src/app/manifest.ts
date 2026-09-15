@@ -23,8 +23,8 @@ export default function manifest(): MetadataRoute.Manifest {
     // around, and taking the back gesture away from them to save a status bar
     // is a bad trade.
     display: 'standalone',
-    background_color: '#f1f1f1',
-    theme_color: '#1c1c1c',
+    background_color: '#ede8df',
+    theme_color: '#222321',
     orientation: 'portrait',
     categories: ['business', 'productivity'],
     lang: 'en-GB',

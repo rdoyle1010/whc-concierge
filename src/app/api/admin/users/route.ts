@@ -146,9 +146,9 @@ export async function POST(req: NextRequest) {
           html: `<div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
             <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
             <p style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Here is your way in, ${name}</p>
-            <p style="color: #555555;">This link signs you straight in, and confirms your email address at the same time. It works once and then expires.</p>
-            <p style="margin-top: 24px;"><a href="${actionLink}" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in to Talent House</a></p>
-            <p style="color: #555555; font-size: 12px; margin-top: 24px;">If you did not ask for this, ignore it and nothing changes.</p>
+            <p style="color: #57544c;">This link signs you straight in, and confirms your email address at the same time. It works once and then expires.</p>
+            <p style="margin-top: 24px;"><a href="${actionLink}" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in to Talent House</a></p>
+            <p style="color: #57544c; font-size: 12px; margin-top: 24px;">If you did not ask for this, ignore it and nothing changes.</p>
           </div>`,
         })
         return result.ok
@@ -183,9 +183,9 @@ export async function POST(req: NextRequest) {
       html: `<div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
         <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
         <p style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Just checking this reaches you, ${name}</p>
-        <p style="color: #555555;">Nothing needs doing. We are confirming that messages from Talent House arrive properly, so that when a property is interested in you, or a shift needs answering, you actually hear about it.</p>
-        <p style="color: #555555;">If this landed in your junk folder, marking it as safe will keep the ones that matter out of there.</p>
-        <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/login" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in</a></p>
+        <p style="color: #57544c;">Nothing needs doing. We are confirming that messages from Talent House arrive properly, so that when a property is interested in you, or a shift needs answering, you actually hear about it.</p>
+        <p style="color: #57544c;">If this landed in your junk folder, marking it as safe will keep the ones that matter out of there.</p>
+        <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/login" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in</a></p>
       </div>`,
     })
 

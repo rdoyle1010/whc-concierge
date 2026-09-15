@@ -48,26 +48,26 @@ export async function sendStandardsReceiptEmail(input: {
   <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
     <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">${greeting}</p>
-    <p style="color: #555555;">You have bought <strong>${what}</strong> for ${formatPrice(input.amountPence)}. ${VAT_NOTE}</p>
+    <p style="color: #57544c;">You have bought <strong>${what}</strong> for ${formatPrice(input.amountPence)}. ${VAT_NOTE}</p>
 
     <p style="margin: 28px 0;">
       <a href="${input.libraryUrl}"
-         style="display: inline-block; background: #1c1c1c; color: #ffffff; text-decoration: none;
+         style="display: inline-block; background: #222321; color: #ffffff; text-decoration: none;
                 padding: 14px 24px; font-size: 15px; font-weight: 600;">Open My Documents</a>
     </p>
 
-    <p style="color: #555555;">
+    <p style="color: #57544c;">
       Everything you buy is kept in your account, under <strong>My Documents</strong>. It will still be there in a
       year, on any device you sign in from. Each one downloads as a PDF you can type into with the free Adobe
       Reader.
     </p>
 
-    <p style="color: #555555; margin-top: 24px;">
+    <p style="color: #57544c; margin-top: 24px;">
       Each document has a page at the front listing what your property needs to fill in. Type each entry once and
       it fills in wherever it appears.
     </p>
 
-    <p style="color: #555555; border-left: 3px solid #dddddd; padding-left: 14px; margin-top: 28px;">
+    <p style="color: #57544c; border-left: 3px solid #dcd4c8; padding-left: 14px; margin-top: 28px;">
       ${DOCUMENT_STATUS} Anything concerning life safety must be checked against your building by a competent
       person and signed off before it is issued to anybody.
     </p>

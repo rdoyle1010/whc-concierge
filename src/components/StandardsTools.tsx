@@ -49,10 +49,10 @@ export default function StandardsTools(
   if (!sold.length && !tools.length) return null
 
   return (
-    <section className="border-b border-[#dddddd]" id="tools">
+    <section className="border-b border-[#dcd4c8]" id="tools">
       <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
-        <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">Tools</h2>
-        <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+        <h2 className="text-[28px] font-semibold text-[#222321] md:text-[32px]">Tools</h2>
+        <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">
           Not everything worth having is a procedure. These are working files you complete with your own
           numbers, sold on their own and included with the packs they belong to.
         </p>
@@ -61,39 +61,39 @@ export default function StandardsTools(
             costs to a buyer who is adding up, and the saving is worked out
             from the prices rather than typed beside them. */}
         {toolkit && tools.length > 1 && (
-          <div className="mt-8 border border-[#1c1c1c] p-6">
+          <div className="mt-8 border border-[#28322b] p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="text-[21px] font-semibold text-[#1c1c1c]">{toolkit.name}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-[#1c1c1c]">{toolkit.blurb}</p>
+                <h3 className="text-[21px] font-semibold text-[#222321]">{toolkit.name}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-[#222321]">{toolkit.blurb}</p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="font-serif text-[30px] leading-none text-[#1c1c1c]">{formatPrice(toolkit.price)}</p>
-                <p className="mt-1.5 text-[12px] text-[#6b6b6b]">
+                <p className="font-serif text-[30px] leading-none text-[#222321]">{formatPrice(toolkit.price)}</p>
+                <p className="mt-1.5 text-[12px] text-[#6e6a60]">
                   {formatPrice(toolkit.singly)} bought separately
                 </p>
               </div>
             </div>
-            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-[#555555]">{toolkit.detail}</p>
+            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-[#57544c]">{toolkit.detail}</p>
             <div className="mt-4">
               <BuyButton packSlug={toolkit.slug} label={`Buy all ${toolkit.count} tools`} />
             </div>
           </div>
         )}
 
-        <div className="mt-8 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2">
+        <div className="mt-8 grid gap-px border border-[#dcd4c8] bg-[#dcd4c8] sm:grid-cols-2">
           {tools.map(tool => (
             <div key={tool.slug} className="flex flex-col bg-white p-6">
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-[19px] font-semibold leading-tight text-[#1c1c1c]">{tool.name}</h3>
+                <h3 className="text-[19px] font-semibold leading-tight text-[#222321]">{tool.name}</h3>
                 <span className="mt-1 shrink-0 border border-[#1a6b3c]/40 px-1.5 py-px text-[10px] uppercase tracking-[.08em] text-[#1a6b3c]">
                   Excel
                 </span>
               </div>
-              <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">{formatPrice(tool.price)}</p>
-              <p className="mt-3 text-[14px] leading-relaxed text-[#1c1c1c]">{tool.blurb}</p>
-              <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{tool.detail}</p>
-              <p className="mt-4 text-[12px] text-[#6b6b6b]">
+              <p className="mt-2 font-serif text-[26px] leading-none text-[#222321]">{formatPrice(tool.price)}</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-[#222321]">{tool.blurb}</p>
+              <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-[#57544c]">{tool.detail}</p>
+              <p className="mt-4 text-[12px] text-[#6e6a60]">
                 {tool.sheets} sheets · every figure a formula, nothing pre-filled
               </p>
               <div className="mt-4">
@@ -104,19 +104,19 @@ export default function StandardsTools(
           {sold.map(file => (
             <div key={file.slug} className="flex flex-col bg-white p-6">
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-[19px] font-semibold leading-tight text-[#1c1c1c]">{file.name}</h3>
+                <h3 className="text-[19px] font-semibold leading-tight text-[#222321]">{file.name}</h3>
                 <span className={`mt-1 shrink-0 border px-1.5 py-px text-[10px] uppercase tracking-[.08em] ${
-                  TONE[file.format] || 'border-[#dddddd] text-[#6b6b6b]'}`}>
+                  TONE[file.format] || 'border-[#dcd4c8] text-[#6e6a60]'}`}>
                   {file.format}
                 </span>
               </div>
-              <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">
+              <p className="mt-2 font-serif text-[26px] leading-none text-[#222321]">
                 {formatPrice(file.price as number)}
               </p>
               {file.description && (
-                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{file.description}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#57544c]">{file.description}</p>
               )}
-              <p className="mt-4 text-[12px] text-[#6b6b6b]">
+              <p className="mt-4 text-[12px] text-[#6e6a60]">
                 {file.format === 'Excel' ? 'Editable workbook' : file.format} · {readableSize(file.sizeBytes)}
                 {file.packSlugs.length > 0 && ' · also included with the packs it belongs to'}
               </p>

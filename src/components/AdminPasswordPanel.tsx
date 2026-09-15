@@ -79,7 +79,7 @@ export default function AdminPasswordPanel() {
 
   return <div className="dashboard-card">
     <div className="flex items-center gap-2.5">
-      <KeyRound size={17} className="text-[#1c1c1c]" />
+      <KeyRound size={17} className="text-[#222321]" />
       <div>
         <p className="text-[14px] font-semibold text-ink">Your password</p>
         <p className="text-[12px] text-secondary">Change the password you use to sign in at /admin.</p>

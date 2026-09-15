@@ -255,11 +255,11 @@ export default function AdminProfileBuildPage() {
                 </div>
 
                 {row.note && (
-                  <p className="mt-3 border-l-2 border-[#dddddd] pl-3 text-[13px] leading-relaxed text-secondary">{row.note}</p>
+                  <p className="mt-3 border-l-2 border-[#dcd4c8] pl-3 text-[13px] leading-relaxed text-secondary">{row.note}</p>
                 )}
 
                 {answered(row.answers).length > 0 && (
-                  <dl className="mt-3 grid gap-x-6 gap-y-1.5 border-l-2 border-[#dddddd] pl-3 text-[12px] sm:grid-cols-2">
+                  <dl className="mt-3 grid gap-x-6 gap-y-1.5 border-l-2 border-[#dcd4c8] pl-3 text-[12px] sm:grid-cols-2">
                     {answered(row.answers).map(item => (
                       <div key={item.label} className="flex gap-2">
                         <dt className="shrink-0 text-muted">{item.label}</dt>
@@ -284,7 +284,7 @@ export default function AdminProfileBuildPage() {
                       could not be, which the note on the row explains. */}
                   {!row.created_user_id ? (
                     <button type="button" disabled={busy === row.id} onClick={() => act(row, 'create')}
-                      className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                      className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                       <UserPlus size={13} /> Make their account
                     </button>
                   ) : (
@@ -294,7 +294,7 @@ export default function AdminProfileBuildPage() {
                         <ExternalLink size={13} /> Copy their sign-in link
                       </button>
                       <button type="button" disabled={busy === row.id} onClick={() => sendItToThem(row)}
-                        className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                        className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                         <Send size={13} /> {confirming === row.id ? 'Send it anyway' : 'Send it to them'}
                       </button>
                     </>
@@ -331,7 +331,7 @@ export default function AdminProfileBuildPage() {
                           const result = await act(row, 'read_cv', { text: pasted[row.id] || '' })
                           if (result?.reading) setReadings(current => ({ ...current, [row.id]: result.reading }))
                         }}
-                        className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
+                        className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
                         <Sparkles size={13} /> {busy === row.id ? 'Reading...' : 'Read the CV'}
                       </button>
                       <span className="text-[11px] text-muted">

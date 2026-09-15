@@ -29,7 +29,7 @@ function PictureField({ label, hint, value, aspect, busy, onPick, onClear }: {
       <p className="eyebrow mb-1.5">{label}</p>
       {value ? (
         <div className="relative inline-block">
-          <div className={`${aspect} overflow-hidden border border-border bg-[#f1f1f1]`}>
+          <div className={`${aspect} overflow-hidden border border-border bg-[#ede8df]`}>
             <img src={value} alt="" className="h-full w-full object-contain" />
           </div>
           <button
@@ -195,7 +195,7 @@ export default function TalentConsultancyPage() {
           <p className="text-[13px] font-medium text-ink">Three steps, about ten minutes</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {steps.map(step => (
-              <div key={step.n} className={`border p-4 ${step.done ? 'border-ink bg-[#f1f1f1]' : 'border-border'}`}>
+              <div key={step.n} className={`border p-4 ${step.done ? 'border-ink bg-[#ede8df]' : 'border-border'}`}>
                 <div className="flex items-center gap-2">
                   <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${step.done ? 'bg-ink text-white' : 'border border-border text-muted'}`}>
                     {step.done ? '✓' : step.n}

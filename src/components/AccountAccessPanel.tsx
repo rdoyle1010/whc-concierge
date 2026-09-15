@@ -69,7 +69,7 @@ export default function AccountAccessPanel() {
 
   return <div className="dashboard-card">
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e7e7e7] text-[#1c1c1c]"><KeyRound size={18} /></div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e3dcd1] text-[#222321]"><KeyRound size={18} /></div>
       <div>
         <p className="text-[15px] font-semibold text-ink">Somebody cannot sign in</p>
         <p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">
@@ -98,7 +98,7 @@ export default function AccountAccessPanel() {
       <Check size={14} className="mt-0.5 shrink-0" />{outcome}
     </div>}
 
-    {result && <div className="mt-4 rounded-2xl border border-border bg-[#f1f1f1] p-4">
+    {result && <div className="mt-4 rounded-2xl border border-border bg-[#ede8df] p-4">
       <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 text-[12.5px] leading-5 ${
         result.found ? 'bg-white text-ink' : 'bg-amber-50 text-amber-800'}`}>
         <AlertTriangle size={14} className="mt-0.5 shrink-0" />

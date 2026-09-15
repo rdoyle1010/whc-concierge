@@ -34,15 +34,15 @@ export default function StandardsStickyBuy({ from }: { from: string }) {
   return (
     <div
       aria-hidden={!show}
-      className={`fixed inset-x-0 bottom-0 z-40 border-t border-[#dddddd] bg-white px-4 py-3
+      className={`fixed inset-x-0 bottom-0 z-40 border-t border-[#dcd4c8] bg-white px-4 py-3
         transition-transform duration-200 sm:hidden
         ${show ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] leading-tight text-[#555555]">
-          From <strong className="font-semibold text-[#1c1c1c]">{from}</strong> a document
+        <p className="text-[13px] leading-tight text-[#57544c]">
+          From <strong className="font-semibold text-[#222321]">{from}</strong> a document
         </p>
         <a href="#ways-to-buy"
-          className="shrink-0 bg-[#1c1c1c] px-4 py-2.5 text-[13px] font-semibold text-white">
+          className="shrink-0 bg-[#28322b] px-4 py-2.5 text-[13px] font-semibold text-white">
           See prices
         </a>
       </div>

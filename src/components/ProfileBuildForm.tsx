@@ -81,7 +81,7 @@ export default function ProfileBuildForm() {
     return (
       <div className="border border-[#166534] bg-[#f3fbf5] p-6">
         <p className="text-[16px] font-semibold text-[#166534]">That is with us.</p>
-        <p className="mt-2 text-[14px] leading-relaxed text-[#1c1c1c]">
+        <p className="mt-2 text-[14px] leading-relaxed text-[#222321]">
           We have sent you a note confirming it. Give us a couple of days and your profile will land
           in your inbox for you to look at. Nothing goes anywhere until you have said yes.
         </p>
@@ -91,7 +91,7 @@ export default function ProfileBuildForm() {
 
   const label = (text: string, hint?: string) => (
     <>
-      <span className="block text-[12px] font-semibold text-[#1c1c1c]">{text}</span>
+      <span className="block text-[12px] font-semibold text-[#222321]">{text}</span>
       {hint && <span className="mt-0.5 block text-[11px] leading-4 text-[#777777]">{hint}</span>}
     </>
   )
@@ -102,27 +102,27 @@ export default function ProfileBuildForm() {
         <label className="block">
           {label('Your name')}
           <input value={fullName} onChange={e => setFullName(e.target.value)}
-            className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
+            className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px]" />
         </label>
         <label className="block">
           {label('Email')}
           <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
+            className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px]" />
         </label>
         <label className="block">
           {label('Phone (optional)')}
           <input value={phone} onChange={e => setPhone(e.target.value)}
-            className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
+            className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px]" />
         </label>
         <label className="block">
           {label('Your CV', 'PDF or Word. Optional, but it is what we build from.')}
           <input type="file" accept=".pdf,.doc,.docx" onChange={e => setFile(e.target.files?.[0] || null)}
-            className="mt-1.5 w-full border border-[#dddddd] px-3 py-2 text-[13px]" />
+            className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2 text-[13px]" />
         </label>
       </div>
 
-      <div className="border-t border-[#eeeeee] pt-5">
-        <p className="text-[13px] font-semibold text-[#1c1c1c]">The bits a CV never says</p>
+      <div className="border-t border-[#e7e1d6] pt-5">
+        <p className="text-[13px] font-semibold text-[#222321]">The bits a CV never says</p>
         <p className="mt-1 text-[12px] leading-5 text-[#777777]">
           Eight questions, most of them one tap. Everything else we take from your CV.
         </p>
@@ -139,7 +139,7 @@ export default function ProfileBuildForm() {
                       const on = held.includes(option.value)
                       return (
                         <button type="button" key={option.value} onClick={() => toggle(question.key, option.value)}
-                          className={`border px-2.5 py-1 text-[12px] ${on ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-[#dddddd] text-[#555555]'}`}>
+                          className={`border px-2.5 py-1 text-[12px] ${on ? 'border-[#222321] bg-[#222321] text-white' : 'border-[#dcd4c8] text-[#57544c]'}`}>
                           {option.label}
                         </button>
                       )
@@ -156,7 +156,7 @@ export default function ProfileBuildForm() {
                   {label(question.label, question.hint)}
                   <select value={String(answers[question.key] || '')}
                     onChange={e => answer(question.key, e.target.value)}
-                    className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]">
+                    className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px]">
                     <option value="">Choose one</option>
                     {(question.options || []).map(option => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -172,7 +172,7 @@ export default function ProfileBuildForm() {
                 <input type={question.kind === 'number' ? 'number' : 'text'}
                   value={String(answers[question.key] ?? '')} placeholder={question.placeholder}
                   onChange={e => answer(question.key, e.target.value)}
-                  className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
+                  className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px]" />
               </label>
             )
           })}
@@ -182,7 +182,7 @@ export default function ProfileBuildForm() {
       <label className="block">
         {label('Anything else worth knowing (optional)', 'The treatments you are best at, the houses you have trained with, what you are hoping for next.')}
         <textarea rows={3} value={note} onChange={e => setNote(e.target.value)}
-          className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
+          className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px]" />
       </label>
 
       {/* Not visible to a person, and named so no browser recognises it.
@@ -206,13 +206,13 @@ export default function ProfileBuildForm() {
       <label className="flex cursor-pointer items-start gap-3">
         <input type="checkbox" checked={consent} onChange={e => { setError(''); setConsent(e.target.checked) }}
           className="mt-0.5 h-4 w-4 shrink-0" />
-        <span className="text-[12px] leading-5 text-[#555555]">{BUILD_CONSENT_WORDING}</span>
+        <span className="text-[12px] leading-5 text-[#57544c]">{BUILD_CONSENT_WORDING}</span>
       </label>
 
       {error && <p className="border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</p>}
 
       <button type="submit" disabled={sending}
-        className="bg-[#1c1c1c] px-6 py-3 text-[13px] font-semibold text-white disabled:opacity-50">
+        className="bg-[#222321] px-6 py-3 text-[13px] font-semibold text-white disabled:opacity-50">
         {sending ? 'Sending...' : 'Send it over'}
       </button>
     </form>

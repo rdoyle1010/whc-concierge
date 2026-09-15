@@ -99,7 +99,7 @@ export default function AdminActivityPage() {
         type="button"
         onClick={() => setDays(window.days)}
         className={`rounded-full px-4 py-2 text-[12px] transition-colors ${
-          days === window.days ? 'bg-[#1c1c1c] text-white' : 'border border-border bg-white text-secondary hover:border-[#1c1c1c]'}`}
+          days === window.days ? 'bg-[#222321] text-white' : 'border border-border bg-white text-secondary hover:border-[#222321]'}`}
       >{window.label}</button>)}
     </div>
 
@@ -109,7 +109,7 @@ export default function AdminActivityPage() {
         will be recorded here.
       </p>
     </div> : loading ? <div className="flex h-64 items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1c1c1c] border-t-transparent" />
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#222321] border-t-transparent" />
     </div> : <>
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(card => <button
@@ -117,7 +117,7 @@ export default function AdminActivityPage() {
           type="button"
           onClick={() => setGroup(card.key)}
           className={`rounded-2xl border p-4 text-left transition-colors ${
-            group === card.key ? 'border-[#1c1c1c] bg-white' : 'border-border bg-[#f1f1f1] hover:border-[#1c1c1c]'}`}
+            group === card.key ? 'border-[#222321] bg-white' : 'border-border bg-[#ede8df] hover:border-[#222321]'}`}
         >
           <div className="flex items-center gap-2 text-muted">{card.icon}<span className="dashboard-eyebrow !text-[9px]">{card.label}</span></div>
           <p className="mt-2 text-[26px] font-semibold leading-none text-ink">{card.value}</p>

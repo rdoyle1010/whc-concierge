@@ -34,7 +34,7 @@ const TONES: Record<StatusTone, { card: string; pill: string; word: string }> = 
     word: 'Needs you',
   },
   quiet: {
-    card: 'border-l-4 border-l-[#dddddd]',
+    card: 'border-l-4 border-l-[#dcd4c8]',
     pill: '',
     word: '',
   },

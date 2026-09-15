@@ -263,7 +263,7 @@ export default function AgencySettingsPage() {
                 <p className="text-[12px] leading-5 text-muted">{readiness.qualifications > 0
                   ? `${readiness.qualifications} on your profile. This is what a spa director reads first.`
                   : 'The single thing a spa director reads first. Upload them on your profile - reviewed certificates are shown apart from self-declared ones.'}</p>
-                {readiness.qualifications === 0 && <Link href="/talent/profile" className="mt-2 inline-flex text-[12px] font-semibold text-[#1c1c1c] underline">Add your certificates</Link>}
+                {readiness.qualifications === 0 && <Link href="/talent/profile" className="mt-2 inline-flex text-[12px] font-semibold text-[#222321] underline">Add your certificates</Link>}
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -275,7 +275,7 @@ export default function AgencySettingsPage() {
                 <p className="text-[12px] leading-5 text-muted">{readiness.insured
                   ? 'On file, and shown to properties as an Insured mark.'
                   : 'Not every placement needs your own cover - many sit under the property\u2019s. But properties can filter the register to insured professionals only, so having it widens the work you are offered.'}</p>
-                {!readiness.insured && <p className="mt-2 text-[12px] leading-5 text-muted">Freelance and mobile therapist policies are widely available - <a href="https://www.salongold.co.uk/mobile-freelance-insurance" target="_blank" rel="noreferrer noopener" className="font-semibold text-[#1c1c1c] underline">Salon Gold</a> is one option. Talent House does not sell insurance or take a commission on it; once you hold a policy, upload it on your profile and the Insured mark appears.</p>}
+                {!readiness.insured && <p className="mt-2 text-[12px] leading-5 text-muted">Freelance and mobile therapist policies are widely available - <a href="https://www.salongold.co.uk/mobile-freelance-insurance" target="_blank" rel="noreferrer noopener" className="font-semibold text-[#222321] underline">Salon Gold</a> is one option. Talent House does not sell insurance or take a commission on it; once you hold a policy, upload it on your profile and the Insured mark appears.</p>}
               </div>
             </div>
           </div>
@@ -306,9 +306,9 @@ export default function AgencySettingsPage() {
               </div>
             </div>
           ) : (
-            <div className="mb-6 border border-[#1c1c1c]/25 bg-[#f1f1f1] px-5 py-4">
+            <div className="mb-6 border border-[#222321]/25 bg-[#ede8df] px-5 py-4">
               <div className="flex items-start gap-3">
-                <Banknote size={18} className="text-[#1c1c1c] mt-0.5 shrink-0" />
+                <Banknote size={18} className="text-[#222321] mt-0.5 shrink-0" />
                 <div>
                   <p className="text-[14px] font-medium text-ink">{payoutState === 'incomplete' ? 'Finish connecting your payouts' : 'Get paid the moment a property pays'}</p>
                   <p className="text-[12px] leading-5 text-secondary mt-1">
@@ -357,8 +357,8 @@ export default function AgencySettingsPage() {
             <div className="mt-5 border-t border-border pt-5">
               <p className="text-[11px] font-semibold text-ink mb-2">Can you work this day?</p>
               <div className="inline-flex border border-border bg-surface p-1">
-                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#1c1c1c] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
-                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#1c1c1c] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
+                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#222321] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
+                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#222321] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
               </div>
             </div>
 
@@ -375,7 +375,7 @@ export default function AgencySettingsPage() {
                   <button type="button" onClick={() => { setStartTime('09:00'); setEndTime('17:00') }} className="btn-secondary !px-3 !py-2 text-[11px]">Full day · 09:00–17:00</button>
                   <span className="self-center text-[11px] text-muted">or enter any custom hours</span>
                 </div>
-                <div className="mt-4 bg-[#f1f1f1] border border-border px-4 py-3">
+                <div className="mt-4 bg-[#ede8df] border border-border px-4 py-3">
                   <p className="text-[12px] font-semibold text-ink">You are setting: {startTime}–{endTime}{selectedDuration > 0 ? ` · ${selectedDuration % 1 === 0 ? selectedDuration : selectedDuration.toFixed(1)} hours` : ''}</p>
                   <p className="mt-1 text-[11px] leading-5 text-muted">Example: if you set 09:00–13:00, you can be matched to a 4-hour shift inside that window. If you set 09:00–17:00, you can be matched to shifts that start and finish within that full window.</p>
                 </div>
@@ -392,7 +392,7 @@ export default function AgencySettingsPage() {
             {days[selectedDate] === 'unavailable' && <p className="mt-3 text-[12px] font-medium text-secondary">Saved: Not available</p>}
           </div>
 
-          <div className="mb-4 border border-border bg-[#f1f1f1] p-4">
+          <div className="mb-4 border border-border bg-[#ede8df] p-4">
             <p className="text-[11px] font-semibold text-ink mb-2">How availability works</p>
             <div className="grid gap-2 text-[11px] leading-5 text-secondary sm:grid-cols-2">
               <p><strong className="text-ink">Available:</strong> set the real start and finish time you could accept work.</p>
@@ -412,7 +412,7 @@ export default function AgencySettingsPage() {
                 const state = days[key]
                 const window = state === 'available' ? windows[key]?.[0] : undefined
                 return (
-                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-[#f1f1f1] text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#1c1c1c]/20 border-[#1c1c1c]' : ''} ${isToday ? 'font-bold' : ''}`}>
+                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-[#ede8df] text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#222321]/20 border-[#222321]' : ''} ${isToday ? 'font-bold' : ''}`}>
                     <span className="block text-[9px] uppercase tracking-wide opacity-65">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                     <span className="block mt-0.5 text-[13px]">{day.getDate()}</span>
                     <span className="block text-[8px] uppercase opacity-60">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>

@@ -25,8 +25,8 @@ test('the app config points at them', () => {
     'Android needs an adaptive foreground, or the launcher draws its own placeholder')
 
   // The ground behind the cropped foreground, and behind the app itself.
-  assert.equal(config.android?.adaptiveIcon?.backgroundColor, '#1C1C1C')
-  assert.equal(config.backgroundColor, '#1C1C1C')
+  assert.equal(config.android?.adaptiveIcon?.backgroundColor, '#222321')
+  assert.equal(config.backgroundColor, '#222321')
 })
 
 test('the icons can be rebuilt rather than only found', () => {

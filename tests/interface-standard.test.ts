@@ -51,12 +51,12 @@ test('the secondary text colour is legible against white', () => {
   assert.ok(contrast(match[1], '#ffffff') >= 4.5, `secondary ${match[1]} is too pale against white`)
 })
 
-// #555555 on the brand charcoal is 1.9:1. It was carrying primary calls to
+// #57544c on the brand charcoal is 1.9:1. It was carrying primary calls to
 // action and section eyebrows on four public pages.
 test('the secondary grey is never used as a fill or a label on charcoal', () => {
   const offenders = sources.filter(file =>
-    /bg-\[#555555\][^"'`]*text-\[#1c1c1c\]/.test(file.text)
-    || /text-\[#555555\][^"'`]*(?=.*bg-\[#1c1c1c\])/.test(''),
+    /bg-\[#57544c\][^"'`]*text-\[#222321\]/.test(file.text)
+    || /text-\[#57544c\][^"'`]*(?=.*bg-\[#222321\])/.test(''),
   )
   assert.equal(offenders.length, 0, `unreadable grey-on-charcoal in: ${offenders.map(f => f.path).join(', ')}`)
 })
@@ -146,7 +146,7 @@ const PUBLIC_PAGES = [
 test('no public page opens on a full-width charcoal band', () => {
   for (const path of PUBLIC_PAGES) {
     const text = readFileSync(join(APP, path), 'utf8')
-    const band = text.match(/<section[^>]*\bbg-(?:ink|\[#1c1c1c\]|\[#1c1b1a\])\b/)
+    const band = text.match(/<section[^>]*\bbg-(?:ink|\[#222321\]|\[#1c1b1a\])\b/)
     assert.ok(!band, `${path} still carries a charcoal <section>: ${band?.[0]}`)
   }
 })
@@ -159,7 +159,7 @@ test('no element sets two conflicting text colours', () => {
     const text = readFileSync(join(APP, path), 'utf8')
     for (const [, classes] of text.matchAll(/className="([^"]*)"/g)) {
       const light = /(?:^|\s)text-white(?:\s|$)/.test(classes)
-      const dark = /(?:^|\s)text-(?:ink|\[#1c1c1c\])(?:\s|$)/.test(classes)
+      const dark = /(?:^|\s)text-(?:ink|\[#222321\])(?:\s|$)/.test(classes)
       assert.ok(!(light && dark), `${path} sets both a light and a dark text colour: ${classes}`)
     }
   }
@@ -345,7 +345,7 @@ test('the dashboard sidebar measures itself rather than guessing', () => {
   assert.match(aside, /dashboard-sidebar[^`]*flex[^`]*flex-col/, 'the sidebar must be a column')
   assert.match(aside, /min-h-0 flex-1 overflow-y-auto/, 'without min-h-0 a flex child never scrolls')
   assert.ok(
-    !/absolute bottom-0 left-0 right-0 px-4 py-4 bg-\[#f1f1f1\]/.test(aside),
+    !/absolute bottom-0 left-0 right-0 px-4 py-4 bg-\[#ede8df\]/.test(aside),
     'an absolutely positioned sign-out bar sits on top of the last nav item',
   )
 })
@@ -552,11 +552,20 @@ test('the public navigation does not ship the database client', () => {
 // Bound to it, every primary button on the platform got lighter the moment the
 // accent was set lighter, and a mid-grey button with white text reads as
 // disabled.
-test('primary buttons are ink, not whatever the accent happens to be', () => {
+test('primary buttons are a fixed colour, not whatever the accent happens to be', () => {
+  // The rule this protects has not changed: a user-set accent must not be
+  // able to grey out every button on the platform, so .btn-primary carries a
+  // literal rather than var(--site-accent).
+  //
+  // The colour has changed. It was the ink, back when the accent was also the
+  // ink and the distinction cost nothing. Forest now carries anything you
+  // press or follow and charcoal carries anything you read, which is the one
+  // rule that keeps a five-colour palette from being painted everywhere.
+  // White on it is 13.28:1.
   const css = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8')
   const primary = css.slice(css.indexOf('.btn-primary {'), css.indexOf('.btn-primary:hover'))
   assert.ok(!/var\(--site-accent/.test(primary), 'a light accent must not be able to grey out every button')
-  assert.match(primary, /background: #1c1c1c/)
+  assert.match(primary, /background: #28322b/)
 })
 
 // Half-opacity on an already-light button is indistinguishable from an enabled
@@ -564,6 +573,6 @@ test('primary buttons are ink, not whatever the accent happens to be', () => {
 test('a disabled button looks disabled', () => {
   const css = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8')
   assert.match(css, /\.btn-primary:disabled/)
-  assert.match(css, /background: #dddddd/, 'disabled is a different colour, not a faded version of the same one')
+  assert.match(css, /background: #dcd4c8/, 'disabled is a different colour, not a faded version of the same one')
   assert.match(css, /cursor: not-allowed/)
 })

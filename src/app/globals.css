@@ -13,7 +13,7 @@
   html { font-family: var(--font-poppins), "Segoe UI", sans-serif; }
   body { @apply bg-parchment text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
   h1, h2, h3, h4 {
-    color: var(--site-ink, #1c1c1c);
+    color: var(--site-ink, #222321);
     font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
     font-weight: 600;
     letter-spacing: var(--site-heading-tracking, -0.02em);
@@ -25,11 +25,11 @@
 @layer components {
   /* One button language: colour + transform transition ~150ms, existing
      hover colours, a 1px press on :active and a grey focus-visible ring. */
-  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: #1c1c1c; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-primary:hover { background: #333333; }
+  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: #28322b; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-primary:hover { background: #3a4239; }
   .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #1c1c1c); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-accent:hover { background: #333333; }
+  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #222321); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-accent:hover { background: #3a4239; }
   .btn-primary:active, .btn-secondary:active, .btn-accent:active { transform: translateY(1px); }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
   .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/40 transition-all duration-150 placeholder:text-muted; border-radius: 0; }
@@ -40,9 +40,9 @@
   .section-heading { @apply text-[34px] md:text-[44px] font-semibold text-ink leading-[1.08]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -.02em; }
 
   .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-gold { background:#1c1c1c; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-gold { background:#222321; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-silver { @apply bg-neutral-400 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-bronze { background:#555555; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-bronze { background:#57544c; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
 
   .match-perfect { @apply bg-match-perfect-bg text-match-perfect-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-strong { @apply bg-match-strong-bg text-match-strong-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
@@ -52,7 +52,7 @@
 
   .public-page { @apply min-h-screen bg-parchment text-body; }
   .public-hero { @apply bg-white border-b border-border; }
-  .public-eyebrow { color:var(--site-accent, #1c1c1c); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
+  .public-eyebrow { color:var(--site-accent, #222321); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
   .public-title { @apply text-ink font-semibold leading-[1.06]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -0.02em; font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
   .public-intro { @apply text-secondary text-[15px] leading-7; }
   .public-panel { @apply bg-white border border-border; border-radius: 0; box-shadow: none; }
@@ -60,7 +60,7 @@
   /* One intentional loading shimmer: surface base with a moving highlight. */
   .skeleton {
     @apply rounded;
-    background: #f1f1f1 linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 100%) no-repeat -60% 0 / 55% 100%;
+    background: #ede8df linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 100%) no-repeat -60% 0 / 55% 100%;
     animation: skeleton-shimmer 1.4s ease infinite;
   }
 }
@@ -74,7 +74,7 @@
    interactive elements. Mouse focus keeps existing styling untouched. */
 a:focus-visible, button:focus-visible, input:focus-visible,
 select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
-  outline: 2px solid #1c1c1c;
+  outline: 2px solid #222321;
   outline-offset: 2px;
 }
 
@@ -83,8 +83,8 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 @keyframes fadeRise { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Honest indeterminate upload progress: a thin grey sweep, no fake numbers. */
-.progress-track { height: 3px; background: #dddddd; overflow: hidden; }
-.progress-indeterminate { height: 100%; width: 36%; background: #1c1c1c; animation: progressSweep 1.2s ease-in-out infinite; }
+.progress-track { height: 3px; background: #dcd4c8; overflow: hidden; }
+.progress-indeterminate { height: 100%; width: 36%; background: #222321; animation: progressSweep 1.2s ease-in-out infinite; }
 @keyframes progressSweep { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
 
 @media (prefers-reduced-motion: reduce) {
@@ -97,24 +97,24 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 }
 
 /* Legacy public utilities inherit the monochrome language. */
-.text-black { color: #1c1c1c !important; }
-.bg-black { background-color: #1c1c1c !important; }
-.hover\:text-black:hover { color: #0f0f0f !important; }
-.hover\:bg-black:hover { background-color: #333333 !important; }
-.border-neutral-100 { border-color: #dddddd !important; }
-.text-neutral-400 { color: #6b6b6b !important; }
-.text-neutral-600 { color: #555555 !important; }
-.bg-neutral-100 { background-color: #f1f1f1 !important; }
+.text-black { color: #222321 !important; }
+.bg-black { background-color: #222321 !important; }
+.hover\:text-black:hover { color: #161814 !important; }
+.hover\:bg-black:hover { background-color: #3a4239 !important; }
+.border-neutral-100 { border-color: #dcd4c8 !important; }
+.text-neutral-400 { color: #6e6a60 !important; }
+.text-neutral-600 { color: #57544c !important; }
+.bg-neutral-100 { background-color: #ede8df !important; }
 
 /* Editorial workspace shared by Talent, Employer and Admin. */
 .dashboard-shell {
   background: #ffffff;
-  color: #1c1c1c;
+  color: #222321;
   font-family: var(--font-poppins), "Segoe UI", sans-serif;
 }
 .dashboard-sidebar {
-  background: #f1f1f1;
-  border-right: 1px solid #dddddd;
+  background: #ede8df;
+  border-right: 1px solid #dcd4c8;
   box-shadow: none;
 }
 .dashboard-shell h1,
@@ -124,7 +124,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
   font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
 }
 .dashboard-title {
-  color: #1c1c1c;
+  color: #222321;
   font-size: clamp(2rem, 3vw, 2.9rem);
   line-height: 1.05;
   font-weight: 600;
@@ -132,7 +132,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 }
 .dashboard-eyebrow {
   margin-bottom: .65rem;
-  color: #6b6b6b;
+  color: #6e6a60;
   font-size: 9px;
   line-height: 1.4;
   font-weight: 700;
@@ -142,19 +142,19 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-intro {
   max-width: 720px;
   margin-top: .9rem;
-  color: #555555;
+  color: #57544c;
   font-size: 13px;
   line-height: 1.75;
 }
 .dashboard-shell .dashboard-card,
 .dashboard-panel {
   background: #ffffff;
-  border: 1px solid #dddddd;
+  border: 1px solid #dcd4c8;
   border-radius: 0;
   padding: 1.5rem;
   box-shadow: none;
 }
-.dashboard-shell .dashboard-card:hover { border-color: #6b6b6b; }
+.dashboard-shell .dashboard-card:hover { border-color: #6e6a60; }
 .dashboard-shell .btn-primary,
 .dashboard-shell .btn-secondary,
 .dashboard-shell .btn-accent,
@@ -164,7 +164,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 0; }
 .dashboard-shell table { border-radius: 0; }
 .dashboard-shell .btn-primary,
-.dashboard-shell .btn-accent { background: #1c1c1c; color:#fff; }
+.dashboard-shell .btn-accent { background: #222321; color:#fff; }
 
 /* A disabled button has to look disabled. Half-opacity on a mid-grey button is
    indistinguishable from an enabled one, which is how every button on the
@@ -173,26 +173,26 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-shell .btn-accent:disabled,
 .btn-primary:disabled,
 .btn-accent:disabled {
-  background: #dddddd;
-  color: #6b6b6b;
+  background: #dcd4c8;
+  color: #6e6a60;
   cursor: not-allowed;
 }
 .dashboard-shell .btn-secondary:disabled,
-.btn-secondary:disabled { color: #6b6b6b; border-color: #e7e7e7; cursor: not-allowed; }
+.btn-secondary:disabled { color: #6e6a60; border-color: #e3dcd1; cursor: not-allowed; }
 .dashboard-shell .btn-primary:hover,
-.dashboard-shell .btn-accent:hover { background: #333333; }
-.dashboard-shell .input-field:focus { border-color: #6b6b6b; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
+.dashboard-shell .btn-accent:hover { background: #3a4239; }
+.dashboard-shell .input-field:focus { border-color: #6e6a60; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
 .dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
   background: #ffffff;
-  border-top: 1px solid #dddddd;
-  border-bottom: 1px solid #dddddd;
+  border-top: 1px solid #dcd4c8;
+  border-bottom: 1px solid #dcd4c8;
 }
-.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #dddddd; }
+.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #dcd4c8; }
 .dashboard-metric:nth-child(2n) { border-right: 0; }
 .dashboard-metric-value {
-  color: #1c1c1c;
+  color: #222321;
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
   font-size: 2.3rem;
   line-height: .98;
@@ -200,27 +200,27 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
   letter-spacing: -.02em;
 }
 .dashboard-nav-item { border-radius: 0; }
-.dashboard-metric-label { margin-top: .55rem; color: #6b6b6b; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
-.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #dddddd; }
+.dashboard-metric-label { margin-top: .55rem; color: #6e6a60; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
+.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #dcd4c8; }
 .dashboard-list-row:first-child { border-top: 0; }
-.dashboard-rule { border-top: 1px solid #dddddd; }
-.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #1c1c1c; letter-spacing: -.015em; }
+.dashboard-rule { border-top: 1px solid #dcd4c8; }
+.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #222321; letter-spacing: -.015em; }
 
 /* Older portal screens fold into the same monochrome system. */
-.dashboard-shell .bg-gray-50 { background-color: #f1f1f1; }
-.dashboard-shell .bg-gray-100 { background-color: #dddddd; }
-.dashboard-shell .border-gray-100 { border-color: #dddddd; }
-.dashboard-shell .border-gray-200 { border-color: #dddddd; }
-.dashboard-shell .text-gray-300 { color: #6b6b6b; }
-.dashboard-shell .text-gray-400 { color: #6b6b6b; }
-.dashboard-shell .text-gray-500 { color: #555555; }
-.dashboard-shell .text-gray-600 { color: #555555; }
-.dashboard-shell .text-gray-700 { color: #3a3a3a; }
+.dashboard-shell .bg-gray-50 { background-color: #ede8df; }
+.dashboard-shell .bg-gray-100 { background-color: #dcd4c8; }
+.dashboard-shell .border-gray-100 { border-color: #dcd4c8; }
+.dashboard-shell .border-gray-200 { border-color: #dcd4c8; }
+.dashboard-shell .text-gray-300 { color: #6e6a60; }
+.dashboard-shell .text-gray-400 { color: #6e6a60; }
+.dashboard-shell .text-gray-500 { color: #57544c; }
+.dashboard-shell .text-gray-600 { color: #57544c; }
+.dashboard-shell .text-gray-700 { color: #3a3832; }
 .dashboard-shell .shadow-xl,
 .dashboard-shell .shadow-2xl { box-shadow: 0 18px 54px rgba(0,0,0,.10); }
 .dashboard-shell .ring-1 { --tw-ring-color: rgba(0,0,0,.10); }
-.dashboard-shell .hover\:bg-gray-100:hover { background-color: #dddddd; }
-.dashboard-shell .hover\:bg-gray-50:hover { background-color: #f1f1f1; }
+.dashboard-shell .hover\:bg-gray-100:hover { background-color: #dcd4c8; }
+.dashboard-shell .hover\:bg-gray-50:hover { background-color: #ede8df; }
 .dashboard-shell > main h1.text-2xl,
 .dashboard-shell > main h1.text-3xl {
   font-size: clamp(1.9rem, 2.6vw, 2.6rem) !important;
@@ -234,7 +234,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 
 @media (min-width: 1024px) {
   .dashboard-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
-  .dashboard-metric:nth-child(2n) { border-right: 1px solid #dddddd; }
+  .dashboard-metric:nth-child(2n) { border-right: 1px solid #dcd4c8; }
   .dashboard-metric:last-child { border-right: 0; }
 }
 
@@ -255,24 +255,24 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .swipe-left { transform: translateX(-120%) rotate(-8deg); opacity:0; }
 .swipe-right { transform: translateX(120%) rotate(8deg); opacity:0; }
 
-::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#6b6b6b; border-radius:2px; }
+::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#6e6a60; border-radius:2px; }
 html { scroll-behavior:smooth; }
 
 /* Website & Brand editor variables. Defaults are the WHC monochrome system;
    admin-published values on the root wrapper override them everywhere. */
 .website-theme {
   font-family: var(--site-body-font, var(--font-poppins), "Segoe UI", sans-serif);
-  color: var(--site-ink, #1c1c1c);
+  color: var(--site-ink, #222321);
   background: var(--site-background, #f7f7f7);
 }
 .website-theme .site-heading {
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
-  color: var(--site-ink, #1c1c1c);
+  color: var(--site-ink, #222321);
   letter-spacing: -0.02em;
 }
-.website-theme .site-accent { color: var(--site-accent, #1c1c1c); }
-.website-theme .site-accent-bg { background-color: var(--site-accent, #1c1c1c); }
-.website-theme .site-surface { background-color: var(--site-surface, #f1f1f1); }
+.website-theme .site-accent { color: var(--site-accent, #222321); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #222321); }
+.website-theme .site-surface { background-color: var(--site-surface, #ede8df); }
 .website-theme .site-section {
   padding-top: calc(5rem * var(--site-space, 1));
   padding-bottom: calc(5rem * var(--site-space, 1));
@@ -295,21 +295,21 @@ html { scroll-behavior:smooth; }
    exactly like a paragraph. These are the real styles, applied to both the
    published article and the editing surface, so what a writer sees while
    typing is what a reader gets. */
-.article-body { color: #333333; font-size: 16px; line-height: 1.85; }
+.article-body { color: #3a4239; font-size: 16px; line-height: 1.85; }
 .article-body > * + * { margin-top: 1.15em; }
 .article-body p { margin: 0; }
 .article-body h2 {
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
-  font-size: 1.6rem; font-weight: 600; color: #1c1c1c;
+  font-size: 1.6rem; font-weight: 600; color: #222321;
   letter-spacing: -.02em; line-height: 1.25; margin-top: 2em;
 }
 .article-body h3 {
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
-  font-size: 1.25rem; font-weight: 600; color: #1c1c1c;
+  font-size: 1.25rem; font-weight: 600; color: #222321;
   letter-spacing: -.015em; margin-top: 1.7em;
 }
-.article-body h4 { font-size: 1.05rem; font-weight: 600; color: #1c1c1c; margin-top: 1.5em; }
-.article-body strong, .article-body b { font-weight: 600; color: #1c1c1c; }
+.article-body h4 { font-size: 1.05rem; font-weight: 600; color: #222321; margin-top: 1.5em; }
+.article-body strong, .article-body b { font-weight: 600; color: #222321; }
 .article-body em, .article-body i { font-style: italic; }
 .article-body u { text-decoration: underline; text-underline-offset: 3px; }
 .article-body s { text-decoration: line-through; }
@@ -317,18 +317,18 @@ html { scroll-behavior:smooth; }
 .article-body ul { list-style: disc; }
 .article-body ol { list-style: decimal; }
 .article-body li { margin-top: .4em; padding-left: .2rem; }
-.article-body li::marker { color: #6b6b6b; }
+.article-body li::marker { color: #6e6a60; }
 .article-body blockquote {
-  border-left: 2px solid #1c1c1c; padding: .15rem 0 .15rem 1.15rem;
-  font-size: 1.08rem; line-height: 1.7; color: #1c1c1c;
+  border-left: 2px solid #222321; padding: .15rem 0 .15rem 1.15rem;
+  font-size: 1.08rem; line-height: 1.7; color: #222321;
 }
-.article-body a { color: #1c1c1c; text-decoration: underline; text-underline-offset: 3px; }
-.article-body a:hover { color: #555555; }
+.article-body a { color: #222321; text-decoration: underline; text-underline-offset: 3px; }
+.article-body a:hover { color: #57544c; }
 /* The editing surface is empty on a new article, and an empty contentEditable
    gives no hint of what to do with it. */
 .article-body[contenteditable]:empty::before {
   content: 'Write the article. Use the toolbar for headings, bold, lists and links.';
-  color: #6b6b6b;
+  color: #6e6a60;
 }
 
 /* Printing an operational document.

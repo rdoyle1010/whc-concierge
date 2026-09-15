@@ -1,13 +1,13 @@
 export const colors = {
   black: '#0A0A0A',
   white: '#FFFFFF',
-  background: '#f1f1f1',
-  gold: '#1c1c1c',
+  background: '#ede8df',
+  gold: '#222321',
   success: '#22C55E',
   warning: '#F59E0B',
   error: '#EF4444',
   cardBg: '#FFFFFF',
-  border: '#dddddd',
+  border: '#dcd4c8',
   muted: '#8c8c8c',
   sidebar: '#0A0A0A',
 }
@@ -16,7 +16,7 @@ export const matchColors = {
   perfect: { bg: '#DCFCE7', text: '#16A34A', label: 'Perfect Match' },
   strong: { bg: '#DBEAFE', text: '#1D4ED8', label: 'Strong Match' },
   good: { bg: '#FEF3C7', text: '#D97706', label: 'Good Match' },
-  partial: { bg: '#F3F4F6', text: '#555555', label: 'Partial Match' },
+  partial: { bg: '#F3F4F6', text: '#57544c', label: 'Partial Match' },
 }
 
 export function getMatchStyle(score: number) {

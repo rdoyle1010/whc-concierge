@@ -270,30 +270,30 @@ const escape = (value: string) =>
 function acknowledgementHtml(fullName: string): string {
   const firstName = String(fullName || '').trim().split(/\s+/)[0] || 'there'
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:560px;margin:32px auto;border:1px solid #dddddd;">
-      <div style="background:#262626;padding:24px 30px;">
+    <div style="max-width:560px;margin:32px auto;border:1px solid #dcd4c8;">
+      <div style="background:#28322b;padding:24px 30px;">
         <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.75;">Talent House Collective</p>
         <p style="margin:0;color:#ffffff;font-size:21px;font-weight:600;">We have your details</p>
       </div>
       <div style="padding:26px 30px;">
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">Hello ${escape(firstName)},</p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">Hello ${escape(firstName)},</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">
           Thank you. We will build your profile properly and send it to you to look at before anybody
           else sees a word of it. Give us a couple of days.
         </p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">
           Nothing is visible to any property until you have seen it and said yes, and when you do go
           live you choose how much of you is shown.
         </p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3832;">
           If you think of anything else worth including, just reply to this email.
         </p>
-        <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6e6a60;">
           We have opened an account in your name ready for it. You do not need to do anything with it,
           but if you would rather get on without waiting for us, use "Forgot your password" on the
           sign-in page to set a password and it is yours.
         </p>
-        <p style="margin:22px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+        <p style="margin:22px 0 0;font-size:12px;color:#6e6a60;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     </div>
   </body></html>`

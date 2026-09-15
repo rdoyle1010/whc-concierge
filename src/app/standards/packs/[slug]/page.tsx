@@ -105,20 +105,20 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
         <script type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
 
-        <section className="border-b border-[#dddddd]">
+        <section className="border-b border-[#dcd4c8]">
           <div className="mx-auto max-w-4xl px-6 py-14 lg:px-8">
-            <p className="text-[12px] text-[#6b6b6b]">
+            <p className="text-[12px] text-[#6e6a60]">
               <Link href="/standards" className="underline underline-offset-2">Standards</Link>
               {' / '}{pack.name}
             </p>
-            <h1 className="mt-4 max-w-2xl text-[34px] font-semibold leading-[1.08] text-[#1c1c1c] md:text-[46px]">
+            <h1 className="mt-4 max-w-2xl text-[34px] font-semibold leading-[1.08] text-[#222321] md:text-[46px]">
               {pack.name}
             </h1>
-            <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3a3a]">
+            <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3832]">
               {pack.detail || pack.blurb}
             </p>
-            <p className="mt-6 font-serif text-[34px] leading-none text-[#1c1c1c]">{formatPrice(pack.price)}</p>
-            <p className="mt-1.5 text-[13px] text-[#6b6b6b]">
+            <p className="mt-6 font-serif text-[34px] leading-none text-[#222321]">{formatPrice(pack.price)}</p>
+            <p className="mt-1.5 text-[13px] text-[#6e6a60]">
               {pack.count} documents. {VAT_NOTE}
             </p>
             <div className="mt-6">
@@ -127,21 +127,21 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
           </div>
         </section>
 
-        <section className="border-b border-[#dddddd]">
+        <section className="border-b border-[#dcd4c8]">
           <div className="mx-auto max-w-4xl px-6 py-14 lg:px-8">
-            <h2 className="text-[24px] font-semibold text-[#1c1c1c]">What is in it</h2>
-            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+            <h2 className="text-[24px] font-semibold text-[#222321]">What is in it</h2>
+            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">
               Every document, by name. {DOCUMENT_STATUS}
             </p>
 
             {kinds.map(([label, entries]) => (
               <div key={label} className="mt-8">
-                <h3 className="text-[11px] uppercase tracking-[.12em] text-[#6b6b6b]">
+                <h3 className="text-[11px] uppercase tracking-[.12em] text-[#6e6a60]">
                   {entries.length} {label.toLowerCase()}{entries.length === 1 ? '' : 's'}
                 </h3>
                 <ul className="mt-3 grid gap-x-10 gap-y-2 sm:grid-cols-2">
                   {entries.map(entry => (
-                    <li key={entry.reference} className="text-[14px] leading-snug text-[#1c1c1c]">
+                    <li key={entry.reference} className="text-[14px] leading-snug text-[#222321]">
                       <Link href={`/standards/${entry.reference}`} className="hover:underline">
                         {entry.title}
                       </Link>
@@ -153,14 +153,14 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
           </div>
         </section>
 
-        <section className="bg-[#f1f1f1]">
+        <section className="bg-[#ede8df]">
           <div className="mx-auto max-w-4xl px-6 py-12 lg:px-8">
-            <h2 className="text-[20px] font-semibold text-[#1c1c1c]">Other packs</h2>
+            <h2 className="text-[20px] font-semibold text-[#222321]">Other packs</h2>
             <ul className="mt-4 grid gap-x-10 gap-y-2 sm:grid-cols-2">
               {packs().filter(entry => entry.slug !== pack.slug).slice(0, 10).map(entry => (
-                <li key={entry.slug} className="text-[14px] text-[#1c1c1c]">
+                <li key={entry.slug} className="text-[14px] text-[#222321]">
                   <Link href={`/standards/packs/${entry.slug}`} className="hover:underline">{entry.name}</Link>
-                  <span className="text-[#6b6b6b]"> · {formatPrice(entry.price)}</span>
+                  <span className="text-[#6e6a60]"> · {formatPrice(entry.price)}</span>
                 </li>
               ))}
             </ul>

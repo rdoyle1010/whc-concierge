@@ -63,7 +63,7 @@ export default function DeliveryTestPanel() {
 
   return <div className="dashboard-card">
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e7e7e7] text-[#1c1c1c]"><Send size={18} /></div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e3dcd1] text-[#222321]"><Send size={18} /></div>
       <div>
         <p className="text-[15px] font-semibold text-ink">Is anything actually being delivered?</p>
         <p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">
@@ -77,7 +77,7 @@ export default function DeliveryTestPanel() {
       {rows.map(row => {
         const outcome = result[row.channel]
         const configured = row.status?.providerConfigured
-        return <div key={row.channel} className="rounded-2xl border border-border bg-[#f1f1f1] p-4">
+        return <div key={row.channel} className="rounded-2xl border border-border bg-[#ede8df] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-[13px] font-semibold text-ink">{row.icon}{row.label}</div>
             <button

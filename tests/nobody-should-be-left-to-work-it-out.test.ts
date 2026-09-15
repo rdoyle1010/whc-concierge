@@ -30,7 +30,7 @@ test('every audience gets an email written for the door they came in through', (
     assert.match(html, /Welcome in, Ana/)
     // Not a tour of everything: the two to four things that change what the
     // platform can do for this person.
-    const steps = html.match(/letter-spacing:\.14em;text-transform:uppercase;color:#6b6b6b;">0\d</g) || []
+    const steps = html.match(/letter-spacing:\.14em;text-transform:uppercase;color:#6e6a60;">0\d</g) || []
     assert.ok(steps.length >= 2, `${audience} should get at least two steps, got ${steps.length}`)
     assert.ok(steps.length <= 4, `${audience} should not get a tour, got ${steps.length}`)
     seen.add(onboardingSubject({ firstName: 'Ana', audience, setupOfferOpen: false }))

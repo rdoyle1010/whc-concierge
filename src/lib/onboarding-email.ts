@@ -139,9 +139,9 @@ export function onboardingEmailHtml(context: OnboardingContext): string {
   // a chart, they need to know which two things are worth ten minutes.
   const strength = context.strength
   const strengthBlock = strength && strength.score < 100
-    ? `<div style="border:1px solid #dddddd;background:#f1f1f1;padding:18px 20px;margin:0 0 24px;">
-         <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b6b6b;">Where you are</p>
-         <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#1c1c1c;">Your profile is <strong>${strength.score}% complete</strong>.${
+    ? `<div style="border:1px solid #dcd4c8;background:#ede8df;padding:18px 20px;margin:0 0 24px;">
+         <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6e6a60;">Where you are</p>
+         <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#222321;">Your profile is <strong>${strength.score}% complete</strong>.${
            strength.missing.length
              ? ` The next things worth adding are ${escape(strength.missing.slice(0, 3).map(item => item.toLowerCase()).join(', '))}.`
              : ''
@@ -150,38 +150,38 @@ export function onboardingEmailHtml(context: OnboardingContext): string {
     : ''
 
   const setupBlock = context.setupOfferOpen
-    ? `<div style="border:1px solid #1c1c1c;padding:18px 20px;margin:24px 0 0;">
-         <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#1c1c1c;">Or we will do it for you</p>
-         <p style="margin:8px 0 0;font-size:15px;line-height:1.7;color:#1c1c1c;">
+    ? `<div style="border:1px solid #222321;padding:18px 20px;margin:24px 0 0;">
+         <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#222321;">Or we will do it for you</p>
+         <p style="margin:8px 0 0;font-size:15px;line-height:1.7;color:#222321;">
            You are one of the first fifty people here, and for the first fifty we will set the whole thing up ourselves.
            Send us what you have - a CV, an old profile, a few lines in an email - and we will build it properly and send it
            back for you to approve. No charge, and no catch.
          </p>
          <p style="margin:14px 0 0;">
            <a href="${SITE}/set-up-my-profile"
-              style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:11px 20px;font-size:13px;font-weight:600;">Ask us to set it up</a>
+              style="display:inline-block;background:#222321;color:#ffffff;text-decoration:none;padding:11px 20px;font-size:13px;font-weight:600;">Ask us to set it up</a>
          </p>
        </div>`
     : ''
 
   const stepsHtml = steps.map((step, index) => `
-    <div style="border-top:1px solid #dddddd;padding:20px 0 0;margin:20px 0 0;">
-      <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b6b6b;">${String(index + 1).padStart(2, '0')}</p>
-      <p style="margin:6px 0 0;font-size:17px;font-weight:600;color:#1c1c1c;">${escape(step.title)}</p>
-      <p style="margin:8px 0 0;font-size:15px;line-height:1.7;color:#3a3a3a;">${escape(step.text)}</p>
+    <div style="border-top:1px solid #dcd4c8;padding:20px 0 0;margin:20px 0 0;">
+      <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6e6a60;">${String(index + 1).padStart(2, '0')}</p>
+      <p style="margin:6px 0 0;font-size:17px;font-weight:600;color:#222321;">${escape(step.title)}</p>
+      <p style="margin:8px 0 0;font-size:15px;line-height:1.7;color:#3a3832;">${escape(step.text)}</p>
       <p style="margin:14px 0 0;">
-        <a href="${step.href}" style="font-size:13px;font-weight:600;color:#1c1c1c;text-decoration:underline;">${escape(step.cta)}</a>
+        <a href="${step.href}" style="font-size:13px;font-weight:600;color:#222321;text-decoration:underline;">${escape(step.cta)}</a>
       </p>
     </div>`).join('')
 
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:580px;margin:32px auto;border:1px solid #dddddd;">
-      <div style="background:#262626;padding:26px 32px;">
+    <div style="max-width:580px;margin:32px auto;border:1px solid #dcd4c8;">
+      <div style="background:#28322b;padding:26px 32px;">
         <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.75;">Talent House Collective</p>
         <p style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">Welcome in, ${name}</p>
       </div>
       <div style="padding:28px 32px;">
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#3a3832;">
           ${context.justSignedUp === false
             ? 'You have an account with us, so here is the short version of what is worth doing first.'
             : 'You signed up an hour or so ago, so here is the short version of what is worth doing first.'}
@@ -190,10 +190,10 @@ export function onboardingEmailHtml(context: OnboardingContext): string {
         ${strengthBlock}
         ${stepsHtml}
         ${setupBlock}
-        <p style="margin:28px 0 0;font-size:14px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:28px 0 0;font-size:14px;line-height:1.7;color:#3a3832;">
           If anything does not make sense, reply to this email. It comes to us, and we answer.
         </p>
-        <p style="margin:26px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+        <p style="margin:26px 0 0;font-size:12px;color:#6e6a60;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     </div>
   </body></html>`

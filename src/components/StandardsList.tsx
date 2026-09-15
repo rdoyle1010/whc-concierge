@@ -98,12 +98,12 @@ export default function StandardsList({ available, unavailable, prices = {}, too
   }, [query, tools, files])
 
   return (
-    <section className="border-b border-[#dddddd]" id="every-document">
+    <section className="border-b border-[#dcd4c8]" id="every-document">
       <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">Every document</h2>
-            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+            <h2 className="text-[28px] font-semibold text-[#222321] md:text-[32px]">Every document</h2>
+            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">
               The full library, by name. Anything marked ready can be sent today on its own, from
               {' '}{formatPrice(from)}, or inside its pack. Each kind is priced for what it is: a procedure
               is not a pool emergency plan.
@@ -117,15 +117,15 @@ export default function StandardsList({ available, unavailable, prices = {}, too
         <div className="mt-7 flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setStage('all')}
             className={stage === 'all'
-              ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-medium text-white'
-              : 'border border-[#dddddd] px-3 py-1.5 text-[12px] text-[#555555]'}>
+              ? 'border border-[#28322b] bg-[#28322b] px-3 py-1.5 text-[12px] font-medium text-white'
+              : 'border border-[#dcd4c8] px-3 py-1.5 text-[12px] text-[#57544c]'}>
             The whole library
           </button>
           {JOURNEY_STAGES.map(option => (
             <button key={option.slug} type="button" onClick={() => setStage(option.slug)} title={option.blurb}
               className={stage === option.slug
-                ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-medium text-white'
-                : 'border border-[#dddddd] px-3 py-1.5 text-[12px] text-[#555555]'}>
+                ? 'border border-[#28322b] bg-[#28322b] px-3 py-1.5 text-[12px] font-medium text-white'
+                : 'border border-[#dcd4c8] px-3 py-1.5 text-[12px] text-[#57544c]'}>
               {option.label}
               <span className="ml-1.5 opacity-60">
                 {sellableCatalogue().filter(item => stageOf(item) === option.slug).length}
@@ -135,7 +135,7 @@ export default function StandardsList({ available, unavailable, prices = {}, too
         </div>
 
         {stage !== 'all' && (
-          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
+          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[#57544c]">
             {JOURNEY_STAGES.find(option => option.slug === stage)?.blurb}
           </p>
         )}
@@ -145,7 +145,7 @@ export default function StandardsList({ available, unavailable, prices = {}, too
             value={kind}
             onChange={event => setKind(event.target.value)}
             aria-label="Filter by kind of document"
-            className="border border-[#dddddd] px-3 py-2.5 text-[14px] text-[#555555]"
+            className="border border-[#dcd4c8] px-3 py-2.5 text-[14px] text-[#57544c]"
           >
             <option value="all">Every kind</option>
             {Array.from(new Set(sellableCatalogue().map(item => kindOf(item.reference)))).sort().map(code => (
@@ -153,26 +153,26 @@ export default function StandardsList({ available, unavailable, prices = {}, too
             ))}
           </select>
           <div className="relative min-w-[220px] flex-1">
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8a8a]" />
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7e7a70]" />
             <input
               type="search"
               value={query}
               onChange={event => setQuery(event.target.value)}
               placeholder="Search by title, reference or department"
               aria-label="Search the document library"
-              className="w-full border border-[#dddddd] py-2.5 pl-9 pr-3 text-[14px] text-[#1c1c1c] placeholder:text-[#8a8a8a]"
+              className="w-full border border-[#dcd4c8] py-2.5 pl-9 pr-3 text-[14px] text-[#222321] placeholder:text-[#7e7a70]"
             />
           </div>
           <select
             value={department}
             onChange={event => setDepartment(event.target.value)}
             aria-label="Filter by department"
-            className="border border-[#dddddd] px-3 py-2.5 text-[14px] text-[#555555]"
+            className="border border-[#dcd4c8] px-3 py-2.5 text-[14px] text-[#57544c]"
           >
             <option value="all">Every department</option>
             {departments.map(name => <option key={name} value={name}>{name}</option>)}
           </select>
-          <label className="flex items-center gap-2 text-[13px] text-[#555555]">
+          <label className="flex items-center gap-2 text-[13px] text-[#57544c]">
             <input
               type="checkbox"
               checked={readyOnly}
@@ -185,7 +185,7 @@ export default function StandardsList({ available, unavailable, prices = {}, too
 
         {/* The count of what is on screen, and how much of it can actually be
             sent. A list that does not say this reads as availability. */}
-        <p className="mt-4 text-[13px] text-[#6b6b6b]">
+        <p className="mt-4 text-[13px] text-[#6e6a60]">
           {rows.length === sellableCatalogue().length
             ? `${sellableCatalogue().length} documents`
             : `${rows.length} of ${sellableCatalogue().length} documents`}
@@ -195,47 +195,47 @@ export default function StandardsList({ available, unavailable, prices = {}, too
         {/* Said before the document list, because when the document list is
             empty this is the whole answer. */}
         {elsewhere.length > 0 && (
-          <div className="mt-6 border border-[#1c1c1c] p-5">
-            <p className="text-[11px] uppercase tracking-[.12em] text-[#6b6b6b]">
+          <div className="mt-6 border border-[#28322b] p-5">
+            <p className="text-[11px] uppercase tracking-[.12em] text-[#6e6a60]">
               Not a document, but we have {elsewhere.length === 1 ? 'this' : 'these'}
             </p>
             <ul className="mt-3 space-y-3">
               {elsewhere.map(match => (
                 <li key={match.key} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                   <span className="min-w-0 flex-1">
-                    <span className="text-[15px] font-semibold text-[#1c1c1c]">{match.name}</span>
+                    <span className="text-[15px] font-semibold text-[#222321]">{match.name}</span>
                     {match.note && (
-                      <span className="block text-[13px] leading-relaxed text-[#555555]">{match.note}</span>
+                      <span className="block text-[13px] leading-relaxed text-[#57544c]">{match.note}</span>
                     )}
                   </span>
-                  <span className="shrink-0 font-serif text-[18px] text-[#1c1c1c]">{formatPrice(match.price)}</span>
+                  <span className="shrink-0 font-serif text-[18px] text-[#222321]">{formatPrice(match.price)}</span>
                 </li>
               ))}
             </ul>
-            <a href="#tools" className="mt-3 inline-block text-[13px] font-medium text-[#1c1c1c] underline underline-offset-2">
+            <a href="#tools" className="mt-3 inline-block text-[13px] font-medium text-[#28322b] underline underline-offset-2">
               See it in Tools
             </a>
           </div>
         )}
 
         {rows.length === 0 ? (
-          <p className="mt-8 text-[14px] text-[#555555]">
+          <p className="mt-8 text-[14px] text-[#57544c]">
             {elsewhere.length > 0
               ? 'No document matches that, but the tools above do.'
               : 'Nothing matches that. Try a shorter search, or ask us: if it is not in the library we will write it.'}
           </p>
         ) : (
-          <div className="mt-5 max-h-[620px] overflow-y-auto border-t border-[#dddddd]">
+          <div className="mt-5 max-h-[620px] overflow-y-auto border-t border-[#dcd4c8]">
             {rows.map(item => {
               const isReady = ready.has(item.reference)
               return (
                 <div
                   key={item.reference}
-                  className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-[#eeeeee] py-3"
+                  className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-[#e7e1d6] py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[14px] font-medium text-[#1c1c1c]">{item.title}</p>
-                    <p className="mt-0.5 font-mono text-[11px] text-[#8a8a8a]">
+                    <p className="text-[14px] font-medium text-[#222321]">{item.title}</p>
+                    <p className="mt-0.5 font-mono text-[11px] text-[#7e7a70]">
                       {item.reference} · {item.department}
                     </p>
                   </div>
@@ -245,7 +245,7 @@ export default function StandardsList({ available, unavailable, prices = {}, too
                     // afternoon is the most common buyer there is.
                     <BuyButton reference={item.reference} label={`Buy ${formatPrice(singlePriceFor(item.reference, prices))}`} primary={false} />
                   ) : (
-                    <span className="shrink-0 text-[11px] text-[#8a8a8a]">In preparation</span>
+                    <span className="shrink-0 text-[11px] text-[#7e7a70]">In preparation</span>
                   )}
                 </div>
               )

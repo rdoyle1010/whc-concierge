@@ -190,7 +190,7 @@ export default async function IntelligencePage() {
   const salaries = salarySignals(salaryRows)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <Navbar />
 
       {/* Masthead. The copy has always occupied the left half; the right half

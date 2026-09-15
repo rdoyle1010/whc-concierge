@@ -56,12 +56,12 @@ export default function AiWrite({ field, value, onAccept, subject, context, clas
     <div className={className}>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => run('write')} disabled={busy}
-          className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-[#1c1c1c] disabled:opacity-40">
+          className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-[#222321] disabled:opacity-40">
           <Sparkles size={13} /> {busy ? 'Writing...' : hasText ? 'Write a fresh one' : 'Write it for me'}
         </button>
         {hasText && (
           <button type="button" onClick={() => run('improve')} disabled={busy}
-            className="inline-flex items-center gap-1.5 border border-[#dddddd] px-3 py-1.5 text-[12px] font-medium text-[#555555] disabled:opacity-40">
+            className="inline-flex items-center gap-1.5 border border-[#dcd4c8] px-3 py-1.5 text-[12px] font-medium text-[#57544c] disabled:opacity-40">
             <RefreshCw size={13} /> Make mine read better
           </button>
         )}
@@ -75,24 +75,24 @@ export default function AiWrite({ field, value, onAccept, subject, context, clas
       )}
 
       {draft && (
-        <div className="mt-3 border border-[#1c1c1c] bg-white p-4">
+        <div className="mt-3 border border-[#222321] bg-white p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#777777]">A draft, for you to read</p>
-          <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-[#1c1c1c]">{draft}</p>
+          <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-[#222321]">{draft}</p>
 
           <label className="mt-3 block">
             <span className="block text-[11px] text-[#777777]">Not quite? Say what to change and press again.</span>
             <input value={steer} onChange={e => setSteer(e.target.value)}
               placeholder="Shorter. Less about training, more about running the floor."
-              className="mt-1 w-full border border-[#dddddd] px-3 py-2 text-[13px]" />
+              className="mt-1 w-full border border-[#dcd4c8] px-3 py-2 text-[13px]" />
           </label>
 
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={() => { onAccept(draft); setDraft(''); setSteer('') }}
-              className="inline-flex items-center gap-1.5 bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white">
+              className="inline-flex items-center gap-1.5 bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white">
               <Check size={13} /> Use this
             </button>
             <button type="button" disabled={busy} onClick={() => run(hasText ? 'improve' : 'write')}
-              className="inline-flex items-center gap-1.5 border border-[#dddddd] px-3 py-1.5 text-[12px] font-medium text-[#555555] disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 border border-[#dcd4c8] px-3 py-1.5 text-[12px] font-medium text-[#57544c] disabled:opacity-40">
               <RefreshCw size={13} /> {busy ? 'Writing...' : 'Try again'}
             </button>
             <button type="button" onClick={() => { setDraft(''); setSteer(''); setError('') }}

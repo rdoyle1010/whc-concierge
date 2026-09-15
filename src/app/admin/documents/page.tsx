@@ -222,13 +222,13 @@ export default function AdminDocumentsPage() {
                 complete it in the free Adobe Reader. It is what gets sent to
                 a buyer; the print button is for checking the layout. */}
             <a href={`/api/admin/documents/${reading.row.id}/pdf`}
-              className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+              className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink">
               <Download size={13} /> Fillable PDF
             </a>
             {reading.row.status !== 'approved' ? (
               <button type="button" disabled={busy === reading.row.id}
                 onClick={async () => { if (await signOff(reading.row)) setReading(null) }}
-                className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                 <Check size={13} /> Sign this off
               </button>
             ) : (
@@ -395,7 +395,7 @@ export default function AdminDocumentsPage() {
             redrafting will fix one. Worth saying, or the two counts look
             like the same problem reported twice. */}
         {unfinishedPlans.length > 0 && (
-          <p className="mt-3 border border-[#dddddd] px-4 py-3 text-[13px] text-secondary">
+          <p className="mt-3 border border-[#dcd4c8] px-4 py-3 text-[13px] text-secondary">
             {unfinishedPlans.length === 1 ? 'One other document is' : `${unfinishedPlans.length} other documents are`}
             {' '}unfinished and not a drafted procedure, so writing them again would not help. Press Bring the
             library up to date, which rewrites them from the repository.
@@ -413,7 +413,7 @@ export default function AdminDocumentsPage() {
             <RefreshCw size={13} /> Refresh
           </button>
           <button type="button" disabled={busy === 'add_everything'} onClick={() => act('add_everything')}
-            className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+            className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
             <Layers size={13} /> {busy === 'add_everything' ? 'Bringing them in...' : 'Bring the library up to date'}
           </button>
 
@@ -435,7 +435,7 @@ export default function AdminDocumentsPage() {
               "nothing new" and teaches her to ignore it. */}
           {inFlight && (
             <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
-              className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
               <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
             </button>
           )}
@@ -562,12 +562,12 @@ export default function AdminDocumentsPage() {
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => setStage('all')}
-                className={`border px-3 py-1.5 text-[12px] ${stage === 'all' ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-border text-secondary'}`}>
+                className={`border px-3 py-1.5 text-[12px] ${stage === 'all' ? 'border-[#222321] bg-[#222321] text-white' : 'border-border text-secondary'}`}>
                 Everything<span className="ml-1.5 opacity-60">{rows.length}</span>
               </button>
               {JOURNEY_STAGES.map(option => (
                 <button key={option.slug} type="button" onClick={() => setStage(option.slug)} title={option.blurb}
-                  className={`border px-3 py-1.5 text-[12px] ${stage === option.slug ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-border text-secondary'}`}>
+                  className={`border px-3 py-1.5 text-[12px] ${stage === option.slug ? 'border-[#222321] bg-[#222321] text-white' : 'border-border text-secondary'}`}>
                   {option.label}
                   <span className="ml-1.5 opacity-60">{rows.filter(r => stageFor(r) === option.slug).length}</span>
                 </button>
@@ -605,7 +605,7 @@ export default function AdminDocumentsPage() {
             happening" is a page somebody presses the button on again, which
             in this case means paying to write the same documents twice. */}
         {runs.some(run => run.status === 'submitted' || run.status === 'collecting') && (
-          <div className="mt-6 border border-[#1c1c1c] px-4 py-3">
+          <div className="mt-6 border border-[#222321] px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-muted">Being written now</p>
             {runs.filter(run => run.status === 'submitted' || run.status === 'collecting').map(run => (
               <p key={run.provider_batch_id} className="mt-1.5 text-[13px] text-ink">
@@ -739,13 +739,13 @@ export default function AdminDocumentsPage() {
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   {!row.written && (
                     <button type="button" disabled={busy === row.id} onClick={() => act('draft', row.id)}
-                      className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                      className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                       <Sparkles size={13} /> {busy === row.id ? 'Drafting...' : 'Draft it'}
                     </button>
                   )}
 
                   <button type="button" disabled={!row.written || opening === row.id} onClick={() => open(row)}
-                    className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-30">
+                    className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-30">
                     <Eye size={13} /> {opening === row.id ? 'Opening...' : 'Read it'}
                   </button>
 
@@ -764,7 +764,7 @@ export default function AdminDocumentsPage() {
                   ) : (
                     <button type="button" disabled={busy === row.id || row.missing.length > 0}
                       onClick={() => signOff(row)}
-                      className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                      className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                       <Check size={13} /> Sign it off
                     </button>
                   )}

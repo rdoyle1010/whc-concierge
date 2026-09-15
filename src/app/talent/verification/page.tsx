@@ -147,7 +147,7 @@ export default function TalentVerificationPage() {
           <label className="eyebrow block mb-1.5">How we check your right to work *</label>
           <div className="grid gap-2 sm:grid-cols-3">
             {RTW_METHODS.map(method => (
-              <label key={method.value} className={`cursor-pointer border p-3 text-left transition-colors ${rtwMethod === method.value ? 'border-ink bg-[#f1f1f1]' : 'border-border hover:border-secondary'}`}>
+              <label key={method.value} className={`cursor-pointer border p-3 text-left transition-colors ${rtwMethod === method.value ? 'border-ink bg-[#ede8df]' : 'border-border hover:border-secondary'}`}>
                 <input type="radio" name="rtw-method" className="sr-only" checked={rtwMethod === method.value} onChange={() => setRtwMethod(method.value)} />
                 <span className="block text-[13px] font-medium text-ink">{method.label}</span>
                 <span className="mt-1 block text-[11px] leading-5 text-secondary">{method.hint}</span>
@@ -157,7 +157,7 @@ export default function TalentVerificationPage() {
         </div>
 
         {rtwMethod === 'share_code' ? (
-          <div className="border border-border bg-[#f1f1f1] p-4">
+          <div className="border border-border bg-[#ede8df] p-4">
             <p className="text-[12px] leading-6 text-secondary">
               Get a share code from{' '}
               <a href={SHARE_CODE_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink underline">gov.uk/prove-right-to-work</a>{' '}

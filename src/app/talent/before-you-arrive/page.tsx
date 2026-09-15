@@ -95,8 +95,8 @@ export default function BeforeYouArrivePage() {
       <p className="dashboard-intro max-w-3xl">Everything you need once an Agency shift or Residency placement is accepted - where to go, which door, who to ask for, what to bring. The pack is taken from the property's operational fact file at the moment your booking is accepted, so it is what they told us on the day you were booked.</p>
 
       {packs.length > 0 && <div className="mt-6 inline-flex border border-border bg-white p-1">
-        <button type="button" onClick={() => setShowPast(false)} className={`px-4 py-2 text-[12px] ${!showPast ? 'bg-[#1c1c1c] text-white' : 'text-secondary'}`}>Coming up{upcoming.length > 0 ? ` (${upcoming.length})` : ''}</button>
-        <button type="button" onClick={() => setShowPast(true)} className={`px-4 py-2 text-[12px] ${showPast ? 'bg-[#1c1c1c] text-white' : 'text-secondary'}`}>Archive{past.length > 0 ? ` (${past.length})` : ''}</button>
+        <button type="button" onClick={() => setShowPast(false)} className={`px-4 py-2 text-[12px] ${!showPast ? 'bg-[#222321] text-white' : 'text-secondary'}`}>Coming up{upcoming.length > 0 ? ` (${upcoming.length})` : ''}</button>
+        <button type="button" onClick={() => setShowPast(true)} className={`px-4 py-2 text-[12px] ${showPast ? 'bg-[#222321] text-white' : 'text-secondary'}`}>Archive{past.length > 0 ? ` (${past.length})` : ''}</button>
       </div>}
 
       {error && <div className="mt-5 bg-red-50 text-red-600 px-4 py-3 text-sm">{error}</div>}

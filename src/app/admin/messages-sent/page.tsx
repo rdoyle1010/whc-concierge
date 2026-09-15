@@ -59,7 +59,7 @@ export default function AdminMessagesSentPage() {
   const badge = (value: string) =>
     value === 'sent' ? 'bg-emerald-50 text-emerald-700'
       : value === 'failed' ? 'bg-red-50 text-red-700'
-      : 'bg-[#f1f1f1] text-secondary'
+      : 'bg-[#ede8df] text-secondary'
 
   return (
     <DashboardShell role="admin" userName="Admin">

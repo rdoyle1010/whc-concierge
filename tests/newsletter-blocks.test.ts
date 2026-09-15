@@ -25,7 +25,7 @@ test('a featured card survives a profile with almost nothing on it', () => {
   assert.match(html, /Hannah Francis/)
   assert.match(html, /Featured this week/)
   // No image means an initial, not a broken image in somebody's inbox.
-  assert.match(html, /border-radius:50%;background:#1c1c1c/)
+  assert.match(html, /border-radius:50%;background:#222321/)
   assert.equal(featuredBlock([]), '', 'nothing selected renders nothing')
   assert.match(employerCard({ id: 'e', company_name: 'The Grand' }).subtitle, /Preferred Employer/)
 })

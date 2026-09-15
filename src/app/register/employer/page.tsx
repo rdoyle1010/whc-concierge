@@ -124,7 +124,7 @@ export default function EmployerRegisterPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <div className="border-b border-border px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <Wordmark />
         <Link href="/login?role=employer" className="text-sm text-muted hover:text-ink">Already registered?</Link>

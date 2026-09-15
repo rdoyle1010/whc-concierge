@@ -66,8 +66,8 @@ export default function BuyButton({ packSlug, reference, label, primary = true }
     <span className="inline-flex flex-col items-end gap-1.5">
       <button type="button" onClick={buy} disabled={busy}
         className={primary
-          ? 'inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50'
-          : 'inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-[#1c1c1c] disabled:opacity-50'}>
+          ? 'inline-flex items-center gap-1.5 border border-[#28322b] bg-[#28322b] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50'
+          : 'inline-flex items-center gap-1.5 border border-[#28322b] px-3 py-1.5 text-[12px] font-semibold text-[#222321] disabled:opacity-50'}>
         {busy && <Loader2 size={13} className="animate-spin" />}
         {/* The product, not the friction.
             This said "Sign in to buy" to every signed-out visitor, which is
@@ -87,7 +87,7 @@ export default function BuyButton({ packSlug, reference, label, primary = true }
           login form is the thing this note exists to prevent. So it is said,
           quietly, next to the button, to the people it applies to. */}
       {signedIn === false && !busy && !error && (
-        <span className="text-right text-[11px] text-[#6b6b6b]">Takes a moment to create an account</span>
+        <span className="text-right text-[11px] text-[#6e6a60]">Takes a moment to create an account</span>
       )}
       {/* Said next to the button that failed, not at the top of a long page
           where somebody scrolls past it and presses again. */}

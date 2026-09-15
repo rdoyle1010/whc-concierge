@@ -62,7 +62,7 @@ export default function ConsultancyProfilePage() {
       <main className="bg-white">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-28 pb-12">
           {preview && (
-            <div className="mb-6 border border-ink bg-[#f1f1f1] px-4 py-3">
+            <div className="mb-6 border border-ink bg-[#ede8df] px-4 py-3">
               <p className="text-[13px] font-medium text-ink">Preview - nobody else can see this</p>
               <p className="mt-1 text-[12px] leading-6 text-secondary">
                 This is exactly how your listing will read once it is published. Changes you have not saved yet will not
@@ -74,7 +74,7 @@ export default function ConsultancyProfilePage() {
           <Link href="/consultancy" className="text-[13px] text-secondary hover:text-ink inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Consultancy</Link>
 
           {profile.cover_image_url && (
-            <div className="mt-6 aspect-[21/7] overflow-hidden border border-border bg-[#f1f1f1]">
+            <div className="mt-6 aspect-[21/7] overflow-hidden border border-border bg-[#ede8df]">
               <img src={profile.cover_image_url} alt="" className="h-full w-full object-cover" />
             </div>
           )}
@@ -152,7 +152,7 @@ export default function ConsultancyProfilePage() {
                       <p className="text-[11px] text-muted">{[project.client, project.location, project.year].filter(Boolean).join(' · ')}</p>
                     </div>
                     {project.image_url && (
-                      <div className="mt-4 aspect-[16/9] overflow-hidden border border-border bg-[#f1f1f1]">
+                      <div className="mt-4 aspect-[16/9] overflow-hidden border border-border bg-[#ede8df]">
                         <img src={project.image_url} alt={project.title} loading="lazy" className="h-full w-full object-cover" />
                       </div>
                     )}
@@ -170,7 +170,7 @@ export default function ConsultancyProfilePage() {
         </div>
 
         {open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f0f0f]/70 p-4" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#161814]/70 p-4" onClick={() => setOpen(false)}>
             <div {...dialog.panelProps} className="w-full max-w-lg bg-white p-6" onClick={event => event.stopPropagation()}>
               <h2 id="consultancy-enquiry-heading" className="text-[18px] font-semibold text-ink">Contact {profile.practice_name}</h2>
               <p className="mt-1.5 text-[12px] leading-6 text-secondary">

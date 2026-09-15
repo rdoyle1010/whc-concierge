@@ -136,14 +136,14 @@ export default function AdminProfileEditor({ requestId, fullName, onSaved }: Pro
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[13px] font-semibold text-ink">Fill in {fullName.split(' ')[0]}&rsquo;s profile</p>
         <button type="button" onClick={save} disabled={saving}
-          className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+          className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
           <Save size={13} /> {saving ? 'Saving...' : 'Save to their profile'}
         </button>
       </div>
 
       <div className="mt-3 flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#e7e7e7]">
-          <div className="h-full bg-[#1c1c1c]" style={{ width: `${completion}%` }} />
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#e3dcd1]">
+          <div className="h-full bg-[#222321]" style={{ width: `${completion}%` }} />
         </div>
         <span className="text-[12px] text-secondary">{completion}%</span>
       </div>
@@ -206,7 +206,7 @@ export default function AdminProfileEditor({ requestId, fullName, onSaved }: Pro
 
       <div className="mt-4 flex justify-end">
         <button type="button" onClick={save} disabled={saving}
-          className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-40">
+          className="inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-40">
           <Save size={13} /> {saving ? 'Saving...' : 'Save to their profile'}
         </button>
       </div>

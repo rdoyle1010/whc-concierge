@@ -18,15 +18,15 @@ export const metadata: Metadata = {
 
 export default function SetUpMyProfilePage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-parchment flex flex-col">
       <Navbar />
       <main id="main-content" className="flex-1 pt-[76px]">
         <div className="mx-auto max-w-3xl px-6 py-14">
-          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#6b6b6b]">Talent House Collective</p>
-          <h1 className="mt-2 text-[38px] md:text-[46px] font-semibold leading-[1.08] text-[#1c1c1c]">
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#6e6a60]">Talent House Collective</p>
+          <h1 className="mt-2 text-[38px] md:text-[46px] font-semibold leading-[1.08] text-[#222321]">
             Send us your CV. We will do the rest.
           </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3a3a]">
+          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3832]">
             A proper profile takes about half an hour: qualifications, product houses, systems,
             treatments, the brands you have worked with. You have better things to do on a Sunday.
             So send us your CV, answer the eight things a CV cannot tell us, and we will build the
@@ -34,8 +34,8 @@ export default function SetUpMyProfilePage() {
             of it.
           </p>
 
-          <div className="mt-8 border border-[#dddddd] p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">What happens</p>
+          <div className="mt-8 border border-[#dcd4c8] p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6e6a60]">What happens</p>
             <ol className="mt-4 space-y-4">
               {[
                 ['You send a CV and answer eight things', 'The eight are the ones a CV never says: what you are now, when you could start, how far you would go, how visible you want to be. Two minutes.'],
@@ -44,18 +44,18 @@ export default function SetUpMyProfilePage() {
                 ['You set a password', 'That is the first thing we ever ask you to do, and by then it is already finished.'],
               ].map(([title, detail], index) => (
                 <li key={title} className="flex gap-4">
-                  <span className="shrink-0 text-[11px] font-semibold text-[#6b6b6b]">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="shrink-0 text-[11px] font-semibold text-[#6e6a60]">{String(index + 1).padStart(2, '0')}</span>
                   <span>
-                    <span className="block text-[15px] font-semibold text-[#1c1c1c]">{title}</span>
-                    <span className="mt-1 block text-[14px] leading-relaxed text-[#555555]">{detail}</span>
+                    <span className="block text-[15px] font-semibold text-[#222321]">{title}</span>
+                    <span className="mt-1 block text-[14px] leading-relaxed text-[#57544c]">{detail}</span>
                   </span>
                 </li>
               ))}
             </ol>
           </div>
 
-          <div className="mt-8 border border-[#1c1c1c] p-6">
-            <p className="text-[14px] leading-relaxed text-[#1c1c1c]">
+          <div className="mt-8 border border-[#222321] p-6">
+            <p className="text-[14px] leading-relaxed text-[#222321]">
               <strong>Being on Talent House says nothing about whether you are looking for work.</strong>{' '}
               Most of our register is not. It is where your qualifications and brand training are kept
               somewhere they count, where the Academy is, and where you hear about launches and
@@ -66,14 +66,14 @@ export default function SetUpMyProfilePage() {
           {/* The way out, said before the form rather than after it. Plenty of
               people would rather not hand their CV to a stranger, and the
               self-serve door has always been the main one. */}
-          <p className="mt-8 text-[14px] leading-relaxed text-[#555555]">
+          <p className="mt-8 text-[14px] leading-relaxed text-[#57544c]">
             Would rather do it yourself? Perfectly reasonable, and it is the same profile either way.{' '}
-            <Link href="/register/talent" className="font-semibold text-[#1c1c1c] underline">Set it up yourself here</Link>,
+            <Link href="/register/talent" className="font-semibold text-[#222321] underline">Set it up yourself here</Link>,
             and come back to this page later if you change your mind.
           </p>
 
           <div className="mt-10">
-            <h2 className="text-[24px] font-semibold text-[#1c1c1c]">Send it over</h2>
+            <h2 className="text-[24px] font-semibold text-[#222321]">Send it over</h2>
             <div className="mt-5"><ProfileBuildForm /></div>
           </div>
         </div>

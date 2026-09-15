@@ -155,9 +155,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
 
-        <section className="border-b border-[#dddddd]">
+        <section className="border-b border-[#dcd4c8]">
           <div className="mx-auto max-w-3xl px-6 py-14 lg:px-8">
-            <p className="text-[12px] text-[#6b6b6b]">
+            <p className="text-[12px] text-[#6e6a60]">
               <Link href="/standards" className="underline underline-offset-2">Standards</Link>
               {cheapest && (
                 <>
@@ -168,22 +168,22 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
                 </>
               )}
             </p>
-            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[.16em] text-[#6e6a60]">
               Spa {kind}
             </p>
-            <h1 className="mt-2 text-[32px] font-semibold leading-[1.1] text-[#1c1c1c] md:text-[42px]">
+            <h1 className="mt-2 text-[32px] font-semibold leading-[1.1] text-[#222321] md:text-[42px]">
               {entry.title}
             </h1>
-            <p className="mt-4 text-[13px] text-[#6b6b6b]">
+            <p className="mt-4 text-[13px] text-[#6e6a60]">
               {entry.reference} · {entry.department}{stage ? ` · ${stage}` : ''}
             </p>
-            <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3a3a]">
+            <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3832]">
               {entry.why}
             </p>
-            <p className="mt-6 font-serif text-[32px] leading-none text-[#1c1c1c]">
+            <p className="mt-6 font-serif text-[32px] leading-none text-[#222321]">
               {formatPrice(singlePriceFor(reference))}
             </p>
-            <p className="mt-1.5 text-[13px] text-[#6b6b6b]">On its own. {VAT_NOTE}</p>
+            <p className="mt-1.5 text-[13px] text-[#6e6a60]">On its own. {VAT_NOTE}</p>
             <div className="mt-6">
               <BuyButton reference={entry.reference} label={`Buy this ${kind.toLowerCase()}`} primary />
             </div>
@@ -191,10 +191,10 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
         </section>
 
         {packs.length > 0 && (
-          <section className="border-b border-[#dddddd] bg-[#f1f1f1]">
+          <section className="border-b border-[#dcd4c8] bg-[#ede8df]">
             <div className="mx-auto max-w-3xl px-6 py-12 lg:px-8">
-              <h2 className="text-[20px] font-semibold text-[#1c1c1c]">It also comes in these</h2>
-              <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+              <h2 className="text-[20px] font-semibold text-[#222321]">It also comes in these</h2>
+              <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#57544c]">
                 Almost nobody needs one document on its own. Each of these carries this one and everything
                 that goes with it.
               </p>
@@ -202,11 +202,11 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
                 {packs.slice(0, 5).map(pack => (
                   <li key={pack.slug} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                     <Link href={`/standards/packs/${pack.slug}`}
-                      className="text-[15px] font-medium text-[#1c1c1c] underline underline-offset-2">
+                      className="text-[15px] font-medium text-[#28322b] underline underline-offset-2">
                       {pack.name}
                     </Link>
-                    <span className="text-[13px] text-[#6b6b6b]">
-                      {pack.count} documents · <span className="text-[#1c1c1c]">{formatPrice(pack.price)}</span>
+                    <span className="text-[13px] text-[#6e6a60]">
+                      {pack.count} documents · <span className="text-[#222321]">{formatPrice(pack.price)}</span>
                     </span>
                   </li>
                 ))}
@@ -215,22 +215,22 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
           </section>
         )}
 
-        <section className="border-b border-[#dddddd]">
+        <section className="border-b border-[#dcd4c8]">
           <div className="mx-auto max-w-3xl px-6 py-12 lg:px-8">
-            <h2 className="text-[20px] font-semibold text-[#1c1c1c]">What this is, and what it is not</h2>
-            <p className="mt-3 max-w-2xl text-[14.5px] leading-relaxed text-[#555555]">{DOCUMENT_DISCLAIMER}</p>
+            <h2 className="text-[20px] font-semibold text-[#222321]">What this is, and what it is not</h2>
+            <p className="mt-3 max-w-2xl text-[14.5px] leading-relaxed text-[#57544c]">{DOCUMENT_DISCLAIMER}</p>
           </div>
         </section>
 
         {alike.length > 0 && (
-          <section className="bg-[#f1f1f1]">
+          <section className="bg-[#ede8df]">
             <div className="mx-auto max-w-3xl px-6 py-12 lg:px-8">
-              <h2 className="text-[20px] font-semibold text-[#1c1c1c]">
+              <h2 className="text-[20px] font-semibold text-[#222321]">
                 Other {kind.toLowerCase()}s for {entry.department.toLowerCase()}
               </h2>
               <ul className="mt-4 grid gap-x-10 gap-y-2 sm:grid-cols-2">
                 {alike.map(other => (
-                  <li key={other.reference} className="text-[14px] text-[#1c1c1c]">
+                  <li key={other.reference} className="text-[14px] text-[#222321]">
                     <Link href={`/standards/${other.reference}`} className="hover:underline">{other.title}</Link>
                   </li>
                 ))}

@@ -74,8 +74,8 @@ export default function VisibilityControl() {
           return (
             <button key={option} type="button" onClick={() => choose(option)}
               disabled={saving !== null}
-              className={`flex w-full items-start gap-3 border p-4 text-left transition-colors disabled:opacity-60 ${on ? 'border-[#166534] bg-[#f3fbf5] ring-1 ring-[#166534]' : 'border-border hover:border-[#6b6b6b]'}`}>
-              <span aria-hidden className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border ${on ? 'border-[#166534] bg-[#166534]' : 'border-[#c9c9c9]'}`} />
+              className={`flex w-full items-start gap-3 border p-4 text-left transition-colors disabled:opacity-60 ${on ? 'border-[#166534] bg-[#f3fbf5] ring-1 ring-[#166534]' : 'border-border hover:border-[#6e6a60]'}`}>
+              <span aria-hidden className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border ${on ? 'border-[#166534] bg-[#166534]' : 'border-[#c7bdae]'}`} />
               <span>
                 <span className="block text-[14px] font-semibold text-ink">
                   {VISIBILITY_COPY[option].label}

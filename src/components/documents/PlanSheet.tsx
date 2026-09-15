@@ -8,7 +8,7 @@ import { DOCUMENT_FOOTER, DOCUMENT_STATUS, disclaimersFor } from '@/lib/document
 // Operating Procedure is a form, and a preview that quietly renders empty
 // fields as nothing would show her a document that looks finished and is not.
 
-const cell = 'border border-[#c9c9c9] px-3 py-2 align-top text-[10.5pt] leading-[1.45]'
+const cell = 'border border-[#c7bdae] px-3 py-2 align-top text-[10.5pt] leading-[1.45]'
 const head = `${cell} bg-[#f2f2f2] font-semibold uppercase tracking-[.06em] text-[9pt]`
 
 function Blank({ tall = false }: { tall?: boolean }) {
@@ -18,14 +18,14 @@ function Blank({ tall = false }: { tall?: boolean }) {
 function Section({ section }: { section: PlanSection }) {
   return (
     <section className={`mt-7 ${section.ownPage ? 'break-before-page' : 'break-inside-avoid'}`}>
-      <h2 className="border-b-2 border-[#1c1c1c] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
+      <h2 className="border-b-2 border-[#222321] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
         {section.heading}
       </h2>
 
       {section.intro && <p className="mt-3 text-[10pt] text-[#5a5a5a]">{section.intro}</p>}
 
       {section.mustBeChecked && (
-        <p className="mt-3 border-l-[3px] border-[#1c1c1c] py-1.5 pl-3 text-[9.5pt] leading-relaxed">
+        <p className="mt-3 border-l-[3px] border-[#222321] py-1.5 pl-3 text-[9.5pt] leading-relaxed">
           This section must be completed by a person who knows these premises, checked against the building, and
           signed off before this document is issued to anybody. Nothing here may be answered from memory or copied
           from another property.
@@ -49,9 +49,9 @@ function Section({ section }: { section: PlanSection }) {
           {section.facts.map(fact => (
             <div key={fact.label}>
               <p className="text-[8.5pt] font-semibold uppercase tracking-[.06em]">{fact.label}</p>
-              {fact.hint && <p className="mt-0.5 text-[8pt] text-[#8a8a8a]">{fact.hint}</p>}
+              {fact.hint && <p className="mt-0.5 text-[8pt] text-[#7e7a70]">{fact.hint}</p>}
               {fact.value
-                ? <p className="mt-1 border border-[#c9c9c9] px-2 py-1 text-[10.5pt]">{fact.value}</p>
+                ? <p className="mt-1 border border-[#c7bdae] px-2 py-1 text-[10.5pt]">{fact.value}</p>
                 : <Blank tall={fact.long} />}
             </div>
           ))}
@@ -84,22 +84,22 @@ function Section({ section }: { section: PlanSection }) {
       {section.hazards?.length ? (
         <div className="mt-3 space-y-3">
           {section.hazards.map((hazard, index) => (
-            <div key={hazard.hazard} className="break-inside-avoid border border-[#1c1c1c]">
-              <div className="border-b border-[#c9c9c9] bg-[#f2f2f2] px-3 py-2">
-                <p className="text-[7.5pt] uppercase tracking-[.1em] text-[#6b6b6b]">Hazard {index + 1}</p>
+            <div key={hazard.hazard} className="break-inside-avoid border border-[#222321]">
+              <div className="border-b border-[#c7bdae] bg-[#f2f2f2] px-3 py-2">
+                <p className="text-[7.5pt] uppercase tracking-[.1em] text-[#6e6a60]">Hazard {index + 1}</p>
                 <p className="text-[10.5pt] font-bold">{hazard.hazard}</p>
               </div>
               <div className="px-3 py-2.5">
-                <p className="text-[7.5pt] font-semibold uppercase tracking-[.07em] text-[#6b6b6b]">Who is at risk</p>
+                <p className="text-[7.5pt] font-semibold uppercase tracking-[.07em] text-[#6e6a60]">Who is at risk</p>
                 <p className="mb-2.5 text-[9.5pt]">{hazard.whoIsAtRisk}</p>
 
-                <p className="text-[7.5pt] font-semibold uppercase tracking-[.07em] text-[#6b6b6b]">
+                <p className="text-[7.5pt] font-semibold uppercase tracking-[.07em] text-[#6e6a60]">
                   Controls: tick each one you have seen in place
                 </p>
                 <ul className="mt-1 space-y-1">
                   {hazard.controlsToVerify.map(control => (
                     <li key={control} className="flex gap-2 text-[9.5pt] leading-snug">
-                      <span className="mt-[3px] inline-block h-2 w-2 shrink-0 border border-[#1c1c1c]" />
+                      <span className="mt-[3px] inline-block h-2 w-2 shrink-0 border border-[#222321]" />
                       <span>{control}</span>
                     </li>
                   ))}
@@ -112,19 +112,19 @@ function Section({ section }: { section: PlanSection }) {
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   {['Likelihood 1-5', 'Severity 1-5', 'Score L x S', 'Risk level'].map(label => (
                     <div key={label}>
-                      <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6b6b6b]">{label}</p>
+                      <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6e6a60]">{label}</p>
                       <Blank />
                     </div>
                   ))}
                 </div>
                 <div className="mt-2">
-                  <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6b6b6b]">Further controls required</p>
+                  <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6e6a60]">Further controls required</p>
                   <Blank tall />
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {['Responsible person', 'Target date', 'Residual level'].map(label => (
                     <div key={label}>
-                      <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6b6b6b]">{label}</p>
+                      <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6e6a60]">{label}</p>
                       <Blank />
                     </div>
                   ))}
@@ -159,29 +159,29 @@ function Section({ section }: { section: PlanSection }) {
 
 export default function PlanSheet({ document }: { document: PlanDocument }) {
   return (
-    <article className="mx-auto w-full max-w-[210mm] bg-white px-[14mm] py-[12mm] text-[#1c1c1c] print:max-w-none print:px-0 print:py-0">
-      <header className="border-b-4 border-[#1c1c1c] pb-4">
+    <article className="mx-auto w-full max-w-[210mm] bg-white px-[14mm] py-[12mm] text-[#222321] print:max-w-none print:px-0 print:py-0">
+      <header className="border-b-4 border-[#222321] pb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[9pt] font-semibold uppercase tracking-[.18em] text-[#6b6b6b]">
+            <p className="text-[9pt] font-semibold uppercase tracking-[.18em] text-[#6e6a60]">
               {PLAN_KIND_LABEL[document.kind]}
             </p>
             <h1 className="mt-1 font-serif text-[24pt] leading-[1.15]">{document.title}</h1>
-            <p className="mt-1.5 text-[11pt] text-[#3a3a3a]">{document.property}</p>
+            <p className="mt-1.5 text-[11pt] text-[#3a3832]">{document.property}</p>
           </div>
-          <div className="shrink-0 border-2 border-[#1c1c1c] px-4 py-2 text-right">
-            <p className="text-[8.5pt] uppercase tracking-[.1em] text-[#6b6b6b]">Reference</p>
+          <div className="shrink-0 border-2 border-[#222321] px-4 py-2 text-right">
+            <p className="text-[8.5pt] uppercase tracking-[.1em] text-[#6e6a60]">Reference</p>
             <p className="font-mono text-[12pt] font-bold">{document.reference}</p>
-            <p className="mt-1 text-[9pt] text-[#3a3a3a]">Version {document.version}</p>
+            <p className="mt-1 text-[9pt] text-[#3a3832]">Version {document.version}</p>
           </div>
         </div>
-        <p className="mt-3 inline-block border border-[#1c1c1c] px-2 py-1 text-[8.5pt] font-semibold uppercase tracking-[.08em]">
+        <p className="mt-3 inline-block border border-[#222321] px-2 py-1 text-[8.5pt] font-semibold uppercase tracking-[.08em]">
           {DOCUMENT_STATUS}
         </p>
       </header>
 
       <section className="mt-7">
-        <h2 className="border-b-2 border-[#1c1c1c] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
+        <h2 className="border-b-2 border-[#222321] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
           What this document is
         </h2>
         <p className="mt-3 text-[10.5pt] leading-[1.55]">{document.summary}</p>
@@ -189,7 +189,7 @@ export default function PlanSheet({ document }: { document: PlanDocument }) {
       </section>
 
       <section className="mt-7">
-        <h2 className="border-b-2 border-[#1c1c1c] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
+        <h2 className="border-b-2 border-[#222321] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
           Document control
         </h2>
         <table className="mt-3 w-full border-collapse">
@@ -204,7 +204,7 @@ export default function PlanSheet({ document }: { document: PlanDocument }) {
             ].map(([label, value]) => (
               <tr key={label}>
                 <th scope="row" className={`${head} w-[34%] text-left`}>{label}</th>
-                <td className={cell}>{value || <span className="text-[#8a8a8a]">To be completed</span>}</td>
+                <td className={cell}>{value || <span className="text-[#7e7a70]">To be completed</span>}</td>
               </tr>
             ))}
           </tbody>
@@ -214,15 +214,15 @@ export default function PlanSheet({ document }: { document: PlanDocument }) {
       {document.sections.map(section => <Section key={section.heading} section={section} />)}
 
       <section className="mt-7 break-inside-avoid">
-        <h2 className="border-b-2 border-[#1c1c1c] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
+        <h2 className="border-b-2 border-[#222321] pb-1 text-[11pt] font-bold uppercase tracking-[.1em]">
           Status of this document
         </h2>
         {disclaimersFor(document.kind).map(text => (
-          <p key={text.slice(0, 40)} className="mt-3 text-[9.5pt] leading-[1.6] text-[#3a3a3a]">{text}</p>
+          <p key={text.slice(0, 40)} className="mt-3 text-[9.5pt] leading-[1.6] text-[#3a3832]">{text}</p>
         ))}
       </section>
 
-      <footer className="mt-8 border-t border-[#c9c9c9] pt-3 text-[8.5pt] text-[#6b6b6b]">
+      <footer className="mt-8 border-t border-[#c7bdae] pt-3 text-[8.5pt] text-[#6e6a60]">
         <p>{document.reference} &middot; Version {document.version} &middot; Issued {document.issued} &middot; Review by {document.reviewBy}</p>
         <p className="mt-0.5">{DOCUMENT_FOOTER}</p>
       </footer>

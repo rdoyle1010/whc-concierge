@@ -118,11 +118,11 @@ function Form() {
 
   return (
     <div className="max-w-md">
-      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#6b6b6b]">Standards</p>
-      <h1 className="mt-3 text-[32px] font-semibold leading-tight text-[#1c1c1c] md:text-[38px]">
+      <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#6e6a60]">Standards</p>
+      <h1 className="mt-3 text-[32px] font-semibold leading-tight text-[#222321] md:text-[38px]">
         Create your account
       </h1>
-      <p className="mt-4 text-[15px] leading-relaxed text-[#555555]">
+      <p className="mt-4 text-[15px] leading-relaxed text-[#57544c]">
         Four fields. Everything you buy is kept in your account, so it is still there next year when a new manager
         asks where the procedure is.
       </p>
@@ -139,7 +139,7 @@ function Form() {
           { key: 'password', label: 'Password', type: 'password', autoComplete: 'new-password' },
         ].map(field => (
           <div key={field.key}>
-            <label htmlFor={`buyer-${field.key}`} className="block text-[12px] font-medium text-[#1c1c1c]">
+            <label htmlFor={`buyer-${field.key}`} className="block text-[12px] font-medium text-[#222321]">
               {field.label}
             </label>
             <input
@@ -148,15 +148,15 @@ function Form() {
               autoComplete={field.autoComplete}
               value={(form as any)[field.key]}
               onChange={event => update(field.key, event.target.value)}
-              className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px] text-[#1c1c1c]"
+              className="mt-1.5 w-full border border-[#dcd4c8] px-3 py-2.5 text-[14px] text-[#222321]"
             />
             {field.key === 'password' && (
-              <p className="mt-1 text-[11px] text-[#8a8a8a]">At least eight characters.</p>
+              <p className="mt-1 text-[11px] text-[#7e7a70]">At least eight characters.</p>
             )}
           </div>
         ))}
 
-        <label className="flex items-start gap-2.5 pt-1 text-[13px] leading-relaxed text-[#555555]">
+        <label className="flex items-start gap-2.5 pt-1 text-[13px] leading-relaxed text-[#57544c]">
           <input type="checkbox" checked={agreed} onChange={event => setAgreed(event.target.checked)}
             className="mt-1 h-3.5 w-3.5 shrink-0" />
           <span>
@@ -166,17 +166,17 @@ function Form() {
         </label>
 
         <button type="button" onClick={submit} disabled={busy}
-          className="inline-flex w-full items-center justify-center gap-2 border border-[#1c1c1c] bg-[#1c1c1c] px-5 py-3 text-[14px] font-semibold text-white disabled:opacity-50">
+          className="inline-flex w-full items-center justify-center gap-2 border border-[#222321] bg-[#222321] px-5 py-3 text-[14px] font-semibold text-white disabled:opacity-50">
           {busy && <Loader2 size={15} className="animate-spin" />}
           {busy ? 'Creating your account...' : 'Create account and continue'}
         </button>
       </div>
 
-      <p className="mt-6 text-[13px] text-[#6b6b6b]">
+      <p className="mt-6 text-[13px] text-[#6e6a60]">
         Already have an account?{' '}
         <Link href={`/login?redirect=${encodeURIComponent(back)}`} className="underline">Sign in</Link>.
       </p>
-      <p className="mt-4 text-[13px] leading-relaxed text-[#6b6b6b]">
+      <p className="mt-4 text-[13px] leading-relaxed text-[#6e6a60]">
         Hiring as well as buying documents? This is the same account. Fill in the rest of your property profile
         whenever you want to post a role, not now.
       </p>
@@ -186,10 +186,10 @@ function Form() {
 
 export default function BuyerRegisterPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <Navbar />
       <main id="main-content" className="mx-auto max-w-5xl px-6 pb-24 pt-[120px] lg:px-8">
-        <Suspense fallback={<p className="text-[14px] text-[#555555]">Loading...</p>}>
+        <Suspense fallback={<p className="text-[14px] text-[#57544c]">Loading...</p>}>
           <Form />
         </Suspense>
       </main>

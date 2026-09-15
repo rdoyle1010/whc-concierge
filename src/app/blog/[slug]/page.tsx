@@ -93,7 +93,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar />
       <main id="main-content">
-      <section className="bg-[#f1f1f1] pt-32 pb-16">
+      <section className="bg-[#ede8df] pt-32 pb-16">
         <div className="max-w-3xl mx-auto px-4">
           <Link href="/blog" className="text-secondary text-sm flex items-center mb-6 hover:text-ink">
             <ArrowLeft size={16} className="mr-1" /> Back to Journal
@@ -135,14 +135,14 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
         </div>
 
         {post.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-12 pt-8 border-t border-[#dddddd]">
+          <div className="flex flex-wrap gap-2 mt-12 pt-8 border-t border-[#dcd4c8]">
             {post.tags.map((tag: string) => (
               <span key={tag} className="text-xs bg-gray-100 text-secondary px-3 py-1 rounded-full">{tag}</span>
             ))}
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-[#dddddd]">
+        <div className="mt-8 pt-6 border-t border-[#dcd4c8]">
           <p className="text-xs text-muted uppercase tracking-wider mb-3">Share this article</p>
           <ShareButtons url={`https://talenthousecollective.co.uk/blog/${post.slug}`} title={post.title} />
         </div>

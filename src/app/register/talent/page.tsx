@@ -156,20 +156,20 @@ export default function TalentRegisterPage() {
   ].filter(Boolean) as Array<{ value: string | null; label: string }>
 
   return (
-    <main id="main-content" className="min-h-screen bg-[#f1f1f1] flex items-stretch">
+    <main id="main-content" className="min-h-screen bg-[#ede8df] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
-          <div className="mt-10 bg-white border border-[#dddddd] p-7 lg:p-8">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b] font-semibold">Talent House Collective</p>
-            <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#1c1c1c]">Create your Talent account</h1>
-            <p className="mt-2 mb-7 text-[13px] leading-6 text-[#555555]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
+          <div className="mt-10 bg-white border border-[#dcd4c8] p-7 lg:p-8">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6e6a60] font-semibold">Talent House Collective</p>
+            <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#222321]">Create your Talent account</h1>
+            <p className="mt-2 mb-7 text-[13px] leading-6 text-[#57544c]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
 
             {launchOfferOpen() && (
-              <div className="mb-5 border border-[#dddddd] bg-[#f1f1f1] px-3.5 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">Opening month</p>
-                <p className="mt-1.5 text-[12.5px] leading-5 text-[#333333]">{LAUNCH_OFFER_TALENT}</p>
-                <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
+              <div className="mb-5 border border-[#dcd4c8] bg-[#ede8df] px-3.5 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#222321]">Opening month</p>
+                <p className="mt-1.5 text-[12.5px] leading-5 text-[#3a4239]">{LAUNCH_OFFER_TALENT}</p>
+                <p className="mt-1.5 text-[11px] text-[#6e6a60]">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
               </div>
             )}
 
@@ -177,20 +177,20 @@ export default function TalentRegisterPage() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="reg-full-name" className="block text-[10px] font-semibold text-[#555555] uppercase tracking-[0.14em] mb-1.5">Full name</label>
+                <label htmlFor="reg-full-name" className="block text-[10px] font-semibold text-[#57544c] uppercase tracking-[0.14em] mb-1.5">Full name</label>
                 <input id="reg-full-name" type="text" value={fullName} onChange={(e) => { setError(''); setFullName(e.target.value) }} className="input-field" autoComplete="name" />
               </div>
               <div>
-                <label htmlFor="reg-email" className="block text-[10px] font-semibold text-[#555555] uppercase tracking-[0.14em] mb-1.5">Email</label>
+                <label htmlFor="reg-email" className="block text-[10px] font-semibold text-[#57544c] uppercase tracking-[0.14em] mb-1.5">Email</label>
                 <input id="reg-email" type="email" value={email} onChange={(e) => { setError(''); setEmail(e.target.value) }} className="input-field" autoComplete="email" />
               </div>
               <div>
-                <label htmlFor="reg-password" className="block text-[10px] font-semibold text-[#555555] uppercase tracking-[0.14em] mb-1.5">Password</label>
+                <label htmlFor="reg-password" className="block text-[10px] font-semibold text-[#57544c] uppercase tracking-[0.14em] mb-1.5">Password</label>
                 <div className="relative">
                   <input id="reg-password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => { setError(''); setPassword(e.target.value) }} className="input-field pr-10" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#1c1c1c]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#222321]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
-                <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
+                <p className="mt-1.5 text-[11px] text-[#6e6a60]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>
 
               {/* Asked on the form, not buried in settings.
@@ -199,15 +199,15 @@ export default function TalentRegisterPage() {
                   before the account exists rather than after. Private is
                   preselected because the wrong default here is not a small
                   inconvenience: it is her job. */}
-              <fieldset className="border border-[#dddddd] p-4">
-                <legend className="px-1.5 text-[11px] font-semibold uppercase tracking-[.14em] text-[#6b6b6b]">Who can see you</legend>
-                <p className="text-[12px] leading-relaxed text-[#555555]">
+              <fieldset className="border border-[#dcd4c8] p-4">
+                <legend className="px-1.5 text-[11px] font-semibold uppercase tracking-[.14em] text-[#6e6a60]">Who can see you</legend>
+                <p className="text-[12px] leading-relaxed text-[#57544c]">
                   You are private until you choose otherwise, and you can change this at any time.
                 </p>
                 <div className="mt-3 space-y-2">
                   {(['private', 'discreet', 'open'] as TalentVisibility[]).map(option => (
                     <label key={option}
-                      className={`flex cursor-pointer items-start gap-3 border p-3 transition-colors ${visibility === option ? 'border-[#1c1c1c] bg-[#f6f6f6]' : 'border-[#dddddd]'}`}>
+                      className={`flex cursor-pointer items-start gap-3 border p-3 transition-colors ${visibility === option ? 'border-[#222321] bg-[#f6f6f6]' : 'border-[#dcd4c8]'}`}>
                       <input
                         type="radio"
                         name="visibility"
@@ -217,8 +217,8 @@ export default function TalentRegisterPage() {
                         className="mt-0.5 h-4 w-4 shrink-0"
                       />
                       <span>
-                        <span className="block text-[13px] font-semibold text-[#1c1c1c]">{VISIBILITY_COPY[option].label}</span>
-                        <span className="mt-0.5 block text-[11.5px] leading-5 text-[#555555]">{VISIBILITY_COPY[option].detail}</span>
+                        <span className="block text-[13px] font-semibold text-[#222321]">{VISIBILITY_COPY[option].label}</span>
+                        <span className="mt-0.5 block text-[11.5px] leading-5 text-[#57544c]">{VISIBILITY_COPY[option].detail}</span>
                       </span>
                     </label>
                   ))}
@@ -236,8 +236,8 @@ export default function TalentRegisterPage() {
                   onChange={event => { setError(''); setAgreedTerms(event.target.checked) }}
                   className="mt-0.5 h-4 w-4 shrink-0"
                 />
-                <span className="text-[11.5px] leading-5 text-[#555555]">
-                  I have read and agree to the <Link href="/terms" className="underline text-[#1c1c1c]">Terms &amp; Conditions</Link> and <Link href="/privacy" className="underline text-[#1c1c1c]">Privacy Policy</Link>.
+                <span className="text-[11.5px] leading-5 text-[#57544c]">
+                  I have read and agree to the <Link href="/terms" className="underline text-[#222321]">Terms &amp; Conditions</Link> and <Link href="/privacy" className="underline text-[#222321]">Privacy Policy</Link>.
                 </span>
               </label>
 
@@ -251,24 +251,24 @@ export default function TalentRegisterPage() {
                   onChange={event => setMarketingOptIn(event.target.checked)}
                   className="mt-0.5 h-4 w-4 shrink-0"
                 />
-                <span className="text-[11.5px] leading-5 text-[#555555]">
+                <span className="text-[11.5px] leading-5 text-[#57544c]">
                   {MARKETING_CONSENT_WORDING}
                   {' '}Optional, and separate from the emails needed to run your account.
                 </span>
               </label>
 
-              <button type="button" onClick={createAccount} disabled={loading || !agreedTerms} className="w-full bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
+              <button type="button" onClick={createAccount} disabled={loading || !agreedTerms} className="w-full bg-[#222321] hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
                 {loading ? 'Creating account...' : 'Create account and build profile'}
               </button>
             </div>
 
-            {refCode && <p className="mt-4 text-[11px] text-[#6b6b6b]">Referral code <span className="font-semibold text-[#1c1c1c]">{refCode}</span> will be applied to your account.</p>}
+            {refCode && <p className="mt-4 text-[11px] text-[#6e6a60]">Referral code <span className="font-semibold text-[#222321]">{refCode}</span> will be applied to your account.</p>}
 
-            <p className="text-[12.5px] text-[#555555] mt-5 border-t border-[#dddddd] pt-5">
+            <p className="text-[12.5px] text-[#57544c] mt-5 border-t border-[#dcd4c8] pt-5">
               Would rather not do this yourself?{' '}
-              <Link href="/set-up-my-profile" className="font-semibold text-[#1c1c1c] underline">Send us your CV and we will build it for you</Link>, free.
+              <Link href="/set-up-my-profile" className="font-semibold text-[#222321] underline">Send us your CV and we will build it for you</Link>, free.
             </p>
-            <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#1c1c1c] font-semibold hover:underline">Sign in →</Link></p>
+            <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#222321] font-semibold hover:underline">Sign in →</Link></p>
           </div>
         </div>
       </div>

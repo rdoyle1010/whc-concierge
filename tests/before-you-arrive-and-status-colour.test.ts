@@ -110,7 +110,7 @@ test('a colour means one thing everywhere', () => {
   assert.match(toneClasses('done').card, /emerald/)
   assert.match(toneClasses('waiting').card, /amber/)
   assert.match(toneClasses('action').card, /red/)
-  assert.match(toneClasses('quiet').card, /#dddddd/)
+  assert.match(toneClasses('quiet').card, /#dcd4c8/)
 })
 
 // The portal repaints every text-amber-* to grey and every bg-amber-50 to

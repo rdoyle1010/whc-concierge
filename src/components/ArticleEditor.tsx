@@ -20,7 +20,7 @@ import { ARTICLE_COLOURS } from '@/lib/article-html'
 
 type Props = { value: string; onChange: (html: string) => void }
 
-const BUTTON = 'inline-flex h-8 w-8 items-center justify-center border border-border bg-white text-ink transition-colors hover:bg-[#f1f1f1] disabled:opacity-40'
+const BUTTON = 'inline-flex h-8 w-8 items-center justify-center border border-border bg-white text-ink transition-colors hover:bg-[#ede8df] disabled:opacity-40'
 
 export default function ArticleEditor({ value, onChange }: Props) {
   const ref = useRef<HTMLDivElement | null>(null)
@@ -51,7 +51,7 @@ export default function ArticleEditor({ value, onChange }: Props) {
 
   return (
     <div className="border border-border bg-white">
-      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-[#f1f1f1] p-2">
+      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-[#ede8df] p-2">
         <button type="button" className={BUTTON} onClick={() => run('bold')} aria-label="Bold" title="Bold"><Bold size={14} /></button>
         <button type="button" className={BUTTON} onClick={() => run('italic')} aria-label="Italic" title="Italic"><Italic size={14} /></button>
         <button type="button" className={BUTTON} onClick={() => run('underline')} aria-label="Underline" title="Underline"><Underline size={14} /></button>
@@ -76,10 +76,10 @@ export default function ArticleEditor({ value, onChange }: Props) {
               {ARTICLE_COLOURS.map(colour => (
                 <button
                   key={colour.label} type="button"
-                  className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-[12px] hover:bg-[#f1f1f1]"
-                  onClick={() => { run('foreColor', colour.value || '#1c1c1c'); setColourOpen(false) }}
+                  className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-[12px] hover:bg-[#ede8df]"
+                  onClick={() => { run('foreColor', colour.value || '#222321'); setColourOpen(false) }}
                 >
-                  <span className="h-3 w-3 border border-border" style={{ background: colour.value || '#1c1c1c' }} />
+                  <span className="h-3 w-3 border border-border" style={{ background: colour.value || '#222321' }} />
                   {colour.label}
                 </button>
               ))}

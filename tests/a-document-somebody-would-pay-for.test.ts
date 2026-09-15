@@ -48,7 +48,7 @@ test('no signature is ever printed for somebody', () => {
   assert.match(sheet, /Learner signature/)
   assert.match(sheet, /Trainer signature/)
   // The blank is a rule to write on, never a value.
-  assert.match(sheet, /<div className="mt-5 border-b border-\[#1c1c1c\]" \/>/)
+  assert.match(sheet, /<div className="mt-5 border-b border-\[#222321\]" \/>/)
   assert.doesNotMatch(sheet, /signature=\{|signedBy/)
 })
 

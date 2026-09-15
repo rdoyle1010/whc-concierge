@@ -55,7 +55,7 @@ export default function AdminVisitorsPage() {
         <div className="flex flex-wrap items-center gap-2 mt-6">
           {RANGES.map(range => (
             <button key={range} type="button" onClick={() => setDays(range)}
-              className={`px-3.5 py-1.5 text-[12px] font-medium border ${days === range ? 'bg-[#1c1c1c] text-white border-[#1c1c1c]' : 'border-border text-secondary'}`}>
+              className={`px-3.5 py-1.5 text-[12px] font-medium border ${days === range ? 'bg-[#222321] text-white border-[#222321]' : 'border-border text-secondary'}`}>
               Last {range} days
             </button>
           ))}
@@ -104,7 +104,7 @@ export default function AdminVisitorsPage() {
               <div className="mt-4 flex items-end gap-[3px] h-32">
                 {stats.daily.map(entry => (
                   <div key={entry.day} className="flex-1 group relative" title={`${entry.day}: ${entry.visitors}`}>
-                    <div className="w-full bg-[#1c1c1c]" style={{ height: `${Math.max(2, (entry.visitors / peak) * 128)}px` }} />
+                    <div className="w-full bg-[#222321]" style={{ height: `${Math.max(2, (entry.visitors / peak) * 128)}px` }} />
                   </div>
                 ))}
               </div>
