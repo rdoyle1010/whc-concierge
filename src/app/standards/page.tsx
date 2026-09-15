@@ -4,12 +4,13 @@ import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import {
-  formatPrice, SINGLE_DOCUMENT_PRICE, COMPLETE_LIBRARY_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
+  formatPrice, cheapestSingle, kindPrices, COMPLETE_LIBRARY_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
   CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
   categoryPacks, everythingPacks,
 } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
+import { FREE_SAMPLES } from '@/lib/documents/samples'
 import StandardsCatalogue from '@/components/StandardsCatalogue'
 import StandardsStickyBuy from '@/components/StandardsStickyBuy'
 
@@ -104,13 +105,23 @@ export default function StandardsPage() {
   // 504: fifty-seven documents promised at the exact moment somebody decides,
   // and not delivered. The catalogue is the shelf, the pack is the offer, and
   // only one of them is a price.
+  // The cheapest document in the library, so "from" is a fact rather than a
+  // flat price applied to everything from a cleaning checklist to a pool
+  // emergency plan.
+  const from = cheapestSingle()
+  // Named by what they are rather than by their reference, because nobody
+  // clicks REC-ARRIVE-SOP-018.
+  const freeReads = FREE_SAMPLES.map(reference => ({
+    reference,
+    label: catalogue.find(entry => entry.reference === reference)?.title || reference,
+  }))
   const completeLibraryCount =
     everythingPacks().find(pack => pack.slug === 'the-complete-library')?.count ?? catalogue.length
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <StandardsStickyBuy from={formatPrice(SINGLE_DOCUMENT_PRICE)} />
+      <StandardsStickyBuy from={formatPrice(from)} />
       <main id="main-content" className="pt-[76px]">
 
         {/* The hero shows a page. Everything else on this site can be
@@ -142,8 +153,8 @@ export default function StandardsPage() {
                   tell in ten seconds whether this costs forty pounds or four
                   thousand leaves, and nothing below the fold gets a vote. */}
               <p className="mt-5 text-[15px] leading-relaxed text-[#1c1c1c]">
-                From <strong className="font-semibold">{formatPrice(SINGLE_DOCUMENT_PRICE)}</strong> for one
-                document, <strong className="font-semibold">{formatPrice(COMPLETE_LIBRARY_PRICE)}</strong> for
+                From <strong className="font-semibold">{formatPrice(from)}</strong> for one
+                procedure, <strong className="font-semibold">{formatPrice(COMPLETE_LIBRARY_PRICE)}</strong> for
                 the complete library of {completeLibraryCount}. {VAT_NOTE}
               </p>
 
@@ -158,20 +169,31 @@ export default function StandardsPage() {
                 </Link>
               </div>
 
-              <dl className="mt-9 grid max-w-lg grid-cols-3 gap-px border border-[#dddddd] bg-[#dddddd]">
-                {[
-                  [`${catalogue.length}`, 'documents'],
-                  // "pages of safety procedure" wrapped to four lines inside
-                  // a 114 pixel column, which is a statistic nobody reads.
-                  ['144', 'pages of safety'],
-                  ['61', 'hazards assessed'],
-                ].map(([value, label]) => (
-                  <div key={label} className="bg-white px-4 py-3.5">
-                    <dt className="font-serif text-[24px] leading-none text-[#1c1c1c]">{value}</dt>
-                    <dd className="mt-1.5 text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">{label}</dd>
-                  </div>
-                ))}
-              </dl>
+              {/* Open one, free, here, instead of three numbers in a hairline
+                  grid.
+                  The numbers were 561, 144 and 61, which are facts about the
+                  seller. The question a stranger has is whether the documents
+                  are any good, and no number answers it. Three complete ones,
+                  one of each shape, no email address asked for. This is the
+                  only thing on the page that cannot be faked, and it was the
+                  one thing the page did not do. */}
+              <div className="mt-9 max-w-lg border-t border-[#1c1c1c] pt-4">
+                <p className="text-[13px] font-semibold text-[#1c1c1c]">Read three of them first. Free, now, no sign-up.</p>
+                <ul className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+                  {freeReads.map(sample => (
+                    <li key={sample.reference}>
+                      <a href={`/api/standards/sample?reference=${sample.reference}`}
+                        target="_blank" rel="noopener"
+                        className="text-[13px] text-[#1c1c1c] underline decoration-[#b39a6b] decoration-2 underline-offset-4">
+                        {sample.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[12px] text-[#6b6b6b]">
+                  Complete, exactly as a buyer receives them. {catalogue.length} more where those came from.
+                </p>
+              </div>
             </div>
 
             <div className="relative">
@@ -389,8 +411,8 @@ export default function StandardsPage() {
               {[
                 {
                   name: 'A single document',
-                  price: formatPrice(SINGLE_DOCUMENT_PRICE),
-                  detail: 'The one procedure you need, today. Search the library below and buy it from the list.',
+                  price: `From ${formatPrice(from)}`,
+                  detail: 'The one you need, today. Search the library below and buy it from the list. Priced by what it is: a procedure is ten pounds, a risk assessment is seventy-five.',
                   href: '#every-document',
                   cta: 'Find it',
                 },

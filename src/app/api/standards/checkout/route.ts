@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { CURRENCY, VAT_NOTE, singlePrice } from '@/lib/documents/pricing'
+import { CURRENCY, VAT_NOTE, singlePriceFor } from '@/lib/documents/pricing'
 import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
 import { priceSingle, pricePack } from '@/lib/documents/stock'
 import { DOCUMENT_STATUS, FILE_STATUS } from '@/lib/documents/status'
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
   } else {
     purchase = packSlug
       ? pricePack(packSlug, approved, prices)
-      : priceSingle(reference, approved, singlePrice(prices))
+      : priceSingle(reference, approved, singlePriceFor(reference, prices))
   }
   if (!purchase.ok) return NextResponse.json({ error: purchase.reason }, { status: 400 })
 

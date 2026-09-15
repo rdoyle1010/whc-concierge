@@ -23,13 +23,16 @@ const editorial = Cormorant_Garamond({
   variable: '--font-editorial',
   display: 'swap',
   weight: ['500', '600', '700'],
-  // Three of the five font files the browser preloads are this face, and it
-  // competes for bandwidth with the hero image - the element Lighthouse is
-  // timing for Largest Contentful Paint. Manrope and Poppins set the headline
-  // and the body copy above the fold; this one is the serif accent, and almost
-  // every use of it is further down the page. It loads when it is first needed,
-  // and display: swap means the text was never waiting on it anyway.
-  preload: false,
+  // The heading face, and the only one on the site with a voice. It was
+  // loaded on every page and spent entirely on the prices while every heading
+  // rendered in the same grotesk as the body copy, which is a luxury brand
+  // with nothing to say for itself typographically. Three weights, because
+  // headings sit at 600 and a serif without its real weight is synthesised
+  // into something that looks like a rendering fault.
+  // Preloaded now that it sets every heading on the site. It was false while
+  // this was an accent used on prices, and a heading face that arrives late
+  // reflows the first thing anybody reads.
+  preload: true,
 })
 
 const poppins = Poppins({

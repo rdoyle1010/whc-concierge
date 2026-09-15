@@ -249,7 +249,7 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-239 API routes, 174 pages, 134 migrations, 168 test files. 1,210 tests and
+240 API routes, 174 pages, 134 migrations, 169 test files. 1,218 tests and
 41 production-readiness checks, all green.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
@@ -259,6 +259,15 @@ stored as `candidate`). Admin is a third role on the same column.
 
 - **British English** everywhere, including code comments and user-facing copy.
 - **No em dashes.** A readiness check enforces this across `src/`.
+- **One price per kind of document, not one price for everything.** A
+  procedure is 10 pounds, a checklist 35, a job description 29, a policy 39, a
+  risk assessment 75, a management report 75, the pool NOP and EAP 250 each.
+  All eleven are hers to change from Prices and Bundles with no deploy. No pack
+  may cost more than its own documents bought one at a time: that rule lives in
+  `capped()` and is applied inside every pack producer, so changing a document
+  price moves every pack containing it.
+- **Three complete documents are free**, listed in
+  `src/lib/documents/samples.ts`, with no email address asked for.
 - **Nothing paid reaches a browser.** The shop lists every title, and it reads
   them from `src/lib/documents/catalogue-index.ts`, which is generated listing
   data with no route back to the writing. Importing the plan modules into a

@@ -13,7 +13,10 @@ import { formatPrice } from '@/lib/documents/pricing'
 // the old number in, because a number typed back in stops being the default
 // the day the default changes.
 
-type Price = { key: string; label: string; why: string; fallback: number; current: number; overridden: boolean }
+type Price = {
+  key: string; label: string; why: string; fallback: number; current: number; overridden: boolean
+  group?: 'document' | 'pack'
+}
 type Bundle = {
   id: string; slug: string; name: string; blurb: string | null; pricePence: number
   packSlugs: string[]; documentReferences: string[]; isLive: boolean; sortOrder: number
@@ -85,8 +88,21 @@ export default function StandardsPricingPage() {
 
         {loading ? <p className="mt-8 text-[13px] text-secondary">Loading...</p> : (
           <>
-            <div className="mt-8 border-t border-border">
-              {prices.map(price => (
+            {/* Two lists, because there are now twenty-four rows and they
+                answer different questions. What one document costs decides
+                the way into the shop; what a pack costs decides the size of
+                the order. Changing a document price moves every pack that
+                contains it, because a pack is capped at what its own
+                documents cost bought one at a time, so it is not possible to
+                set a number here that makes a pack look like a swindle. */}
+            {(['document', 'pack'] as const).map(group => (
+            <div key={group} className="mt-8 border-t border-border">
+              <p className="pt-4 text-[11px] font-semibold uppercase tracking-[.14em] text-muted">
+                {group === 'document'
+                  ? 'One document, by what kind of document it is'
+                  : 'The packs'}
+              </p>
+              {prices.filter(price => (price.group || 'pack') === group).map(price => (
                 <div key={price.key} className="border-b border-border py-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -127,6 +143,7 @@ export default function StandardsPricingPage() {
                 </div>
               ))}
             </div>
+            ))}
 
             <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
               <div>

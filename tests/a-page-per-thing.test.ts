@@ -53,7 +53,7 @@ test('each page carries the structured data a price needs to appear in a result'
   }
   // The price in the schema is the price the shop charges, taken from the
   // same source rather than typed into the markup.
-  assert.match(doc, /SINGLE_DOCUMENT_PRICE \/ 100/)
+  assert.match(doc, /singlePriceFor\(reference\) \/ 100/)
   assert.match(pack, /pack\.price \/ 100/)
 })
 

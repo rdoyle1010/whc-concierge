@@ -31,6 +31,14 @@ export function websiteCssVariables(content: WebsiteContent): CSSProperties {
     editorial: 'var(--font-editorial), Georgia, serif',
     classic: 'Georgia, "Times New Roman", serif',
   }
+  // A serif does not want the tracking a grotesk wants. Minus two hundredths
+  // of an em tightens Manrope and crushes Cormorant, whose whole argument is
+  // the space around its letterforms.
+  const tracking = {
+    modern: '-0.02em',
+    editorial: '0',
+    classic: '0',
+  }
   const bodies = {
     system: 'var(--font-poppins), "Segoe UI", sans-serif',
     clean: 'var(--font-manrope), "Segoe UI", sans-serif',
@@ -44,6 +52,7 @@ export function websiteCssVariables(content: WebsiteContent): CSSProperties {
     '--site-background': content.brand.background,
     '--site-surface': content.brand.surface,
     '--site-heading-font': headings[content.brand.headingFont],
+    '--site-heading-tracking': tracking[content.brand.headingFont],
     '--site-body-font': bodies[content.brand.bodyFont],
     '--site-button-radius': radii[content.brand.buttonStyle],
     '--site-space': spaces[content.brand.spacing],
@@ -73,7 +82,19 @@ export const DEFAULT_PANELS = {
 export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   version: 1,
   brand: {
-    headingFont: 'modern', bodyFont: 'system', accent: '#1C1C1C', ink: '#1C1C1C',
+    // Editorial, not modern.
+    //
+    // Cormorant Garamond was being loaded on every page and used on nothing
+    // but the prices, while every heading on the site rendered in Manrope,
+    // which is the same grotesk as the body text. A luxury spa brand whose
+    // headings are indistinguishable from its paragraphs is a brand with no
+    // voice, and the face to give it one was already in the bundle.
+    //
+    // She can put this back from Website and Brand in a second, and that is
+    // the point of it being a setting. If the site still shows a sans serif
+    // heading, it is because a saved brand is overriding this default: change
+    // it there rather than here.
+    headingFont: 'editorial', bodyFont: 'system', accent: '#1C1C1C', ink: '#1C1C1C',
     background: '#F7F7F7', surface: '#F1F1F1', buttonStyle: 'square', spacing: 'airy',
     logo: { ...DEFAULT_LOGO },
   },

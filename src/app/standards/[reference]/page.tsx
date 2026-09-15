@@ -7,7 +7,7 @@ import BuyButton from '@/components/BuyButton'
 import { sellableCatalogue, catalogueEntry } from '@/lib/documents/catalogue'
 import { kindLabel, stageOf, STAGE_LABEL } from '@/lib/documents/journey'
 import {
-  formatPrice, SINGLE_DOCUMENT_PRICE, categoryPacks, everythingPacks, VAT_NOTE,
+  formatPrice, singlePriceFor, categoryPacks, everythingPacks, VAT_NOTE,
 } from '@/lib/documents/pricing'
 import { DOCUMENT_STATUS, DOCUMENT_DISCLAIMER } from '@/lib/documents/status'
 
@@ -87,7 +87,7 @@ export async function generateMetadata(
   const kind = kindLabel(reference)
   const description =
     `${entry.title}. A professional spa ${kind.toLowerCase()} template for ${entry.department.toLowerCase()}, `
-    + `to review, amend and sign off. ${formatPrice(SINGLE_DOCUMENT_PRICE)}.`
+    + `to review, amend and sign off. ${formatPrice(singlePriceFor(reference))}.`
   return {
     title: { absolute: pageTitle(entry.title, kind) },
     description: description.slice(0, 158),
@@ -129,7 +129,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
     brand: { '@type': 'Brand', name: 'Talent House Collective' },
     offers: {
       '@type': 'Offer',
-      price: (SINGLE_DOCUMENT_PRICE / 100).toFixed(2),
+      price: (singlePriceFor(reference) / 100).toFixed(2),
       priceCurrency: 'GBP',
       availability: 'https://schema.org/InStock',
       url: `${BASE}/standards/${reference}`,
@@ -181,7 +181,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ refer
               {entry.why}
             </p>
             <p className="mt-6 font-serif text-[32px] leading-none text-[#1c1c1c]">
-              {formatPrice(SINGLE_DOCUMENT_PRICE)}
+              {formatPrice(singlePriceFor(reference))}
             </p>
             <p className="mt-1.5 text-[13px] text-[#6b6b6b]">On its own. {VAT_NOTE}</p>
             <div className="mt-6">

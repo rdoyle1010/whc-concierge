@@ -4,9 +4,10 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, DAY_ONE_PACK_PRICE, COMPLETE_LIBRARY_PRICE,
-  VAT_REGISTERED, VAT_NOTE, departmentPrice, departmentPacks, tierPacks, packBySlug, formatPrice,
+  VAT_REGISTERED, VAT_NOTE, departmentPrice, departmentPacks, tierPacks, packBySlug, formatPrice, sumSingles,
 } from '../src/lib/documents/pricing'
 import { LIBRARY_PLAN } from '../src/lib/documents/library-plan'
+import { sellableCatalogue } from '../src/lib/documents/catalogue'
 
 const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8')
 const body = (file: string) =>
@@ -33,15 +34,19 @@ test('the shop is public and reachable', () => {
 
 // A pack that costs more than its parts is a pack nobody buys twice, and the
 // person who works it out tells everybody.
+//
+// Against the real price of the real documents now, not a count times a flat
+// number. A department of five procedures and a department of five risk
+// assessments are not the same pack, and they were being priced as though
+// they were. tests/a-price-ladder-that-holds.test.ts holds the general rule;
+// this holds it for the departments, which is where it started.
 test('a pack never costs more than buying it a document at a time', () => {
+  const references = sellableCatalogue().map(entry => entry.reference)
   for (const pack of departmentPacks()) {
-    assert.ok(pack.price <= pack.count * SINGLE_DOCUMENT_PRICE,
+    assert.ok(pack.price <= sumSingles(references.filter(pack.includes)),
       `${pack.name} costs more as a pack than one at a time`)
     assert.ok(pack.price > 0)
   }
-  // The smallest department is five documents, so it prices itself below the
-  // flat pack rather than at it.
-  assert.equal(departmentPrice(5), 5 * SINGLE_DOCUMENT_PRICE)
   assert.equal(departmentPrice(100), DEPARTMENT_PACK_PRICE)
 })
 

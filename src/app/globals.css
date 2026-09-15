@@ -16,7 +16,7 @@
     color: var(--site-ink, #1c1c1c);
     font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--site-heading-tracking, -0.02em);
     line-height: 1.12;
   }
   button, input, select, textarea { font: inherit; }

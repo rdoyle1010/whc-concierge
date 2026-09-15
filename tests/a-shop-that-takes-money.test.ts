@@ -2,7 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { packReadiness, referencesForOrder, ownedReferences, priceSingle, pricePack } from '../src/lib/documents/stock'
-import { packBySlug, SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, departmentPrice } from '../src/lib/documents/pricing'
+import {
+  packBySlug, DEPARTMENT_PACK_PRICE, departmentPacks, sumSingles, singlePriceFor,
+} from '../src/lib/documents/pricing'
 import { LIBRARY_PLAN } from '../src/lib/documents/library-plan'
 import { sellableCatalogue } from '../src/lib/documents/catalogue'
 
@@ -68,13 +70,11 @@ test('two purchases add up rather than replacing each other', () => {
 })
 
 test('a pack never costs more than buying its documents one at a time', () => {
-  for (const pack of LIBRARY_PLAN.reduce((seen, entry) => {
-    seen.set(entry.department, (seen.get(entry.department) || 0) + 1)
-    return seen
-  }, new Map<string, number>()).values()) {
-    assert.ok(departmentPrice(pack) <= pack * SINGLE_DOCUMENT_PRICE,
+  const references = sellableCatalogue().map(entry => entry.reference)
+  for (const pack of departmentPacks()) {
+    assert.ok(pack.price <= sumSingles(references.filter(pack.includes)),
       'a pack dearer than its parts is a pack nobody buys twice')
-    assert.ok(departmentPrice(pack) <= DEPARTMENT_PACK_PRICE)
+    assert.ok(pack.price <= DEPARTMENT_PACK_PRICE)
   }
 })
 
@@ -82,16 +82,17 @@ test('nothing unfinished can be paid for', () => {
   // REC-OPENING-CHK-501, not REC-OPEN-CHK-001: the second was planned before
   // the checklist suite existed, the suite then wrote the same shift properly,
   // and two references for one sheet is worse than either alone.
-  const refused = priceSingle('REC-OPENING-CHK-501', new Set(), SINGLE_DOCUMENT_PRICE)
+  const refused = priceSingle('REC-OPENING-CHK-501', new Set(), singlePriceFor('REC-OPENING-CHK-501'))
   assert.equal(refused.ok, false)
   assert.match((refused as any).reason, /still in preparation/)
 
-  const unknown = priceSingle('NOT-A-REAL-REF-SOP-999', everything, SINGLE_DOCUMENT_PRICE)
+  const unknown = priceSingle('NOT-A-REAL-REF-SOP-999', everything, singlePriceFor('NOT-A-REAL-REF-SOP-999'))
   assert.equal(unknown.ok, false)
 
-  const sold = priceSingle('REC-OPENING-CHK-501', everything, SINGLE_DOCUMENT_PRICE)
+  const sold = priceSingle('REC-OPENING-CHK-501', everything, singlePriceFor('REC-OPENING-CHK-501'))
   assert.equal(sold.ok, true)
-  assert.equal((sold as any).amountPence, SINGLE_DOCUMENT_PRICE)
+  // A checklist, priced as a checklist rather than as one flat number.
+  assert.equal((sold as any).amountPence, singlePriceFor('REC-OPENING-CHK-501'))
 
   // And the refusal says how far along it is, because a number gets a reply
   // and "not available" gets a closed tab.

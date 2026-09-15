@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type JourneyStage } from '@/lib/documents/journey'
-import { formatPrice, singlePrice, type Prices } from '@/lib/documents/pricing'
+import { formatPrice, singlePriceFor, cheapestSingle, type Prices } from '@/lib/documents/pricing'
 import BuyButton from '@/components/BuyButton'
 import type { Tool } from '@/components/StandardsTools'
 import type { PackFile } from '@/components/PackContents'
@@ -41,7 +41,11 @@ type Props = {
 }
 
 export default function StandardsList({ available, unavailable, prices = {}, tools = [], files = [] }: Props) {
-  const single = singlePrice(prices)
+  // The cheapest kind, for the line that says what this list starts at.
+  // Every row prices itself: a procedure and a pool emergency plan are not
+  // the same purchase and a list that says they are is a list nobody trusts
+  // once they have opened one of each.
+  const from = cheapestSingle(prices)
   const [query, setQuery] = useState('')
   const [department, setDepartment] = useState('all')
   // Where in a visit it is used, and what kind of thing it is. A buyer
@@ -100,8 +104,9 @@ export default function StandardsList({ available, unavailable, prices = {}, too
           <div>
             <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">Every document</h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
-              The full library, by name. Anything marked ready can be sent today at {formatPrice(single)}
-              {' '}on its own, or inside its department pack. Tell us which you need and we will confirm before you pay.
+              The full library, by name. Anything marked ready can be sent today on its own, from
+              {' '}{formatPrice(from)}, or inside its pack. Each kind is priced for what it is: a procedure
+              is not a pool emergency plan.
             </p>
           </div>
         </div>
@@ -238,7 +243,7 @@ export default function StandardsList({ available, unavailable, prices = {}, too
                     // Bought on its own, from the list, without a basket or an
                     // account. A spa manager needing one procedure this
                     // afternoon is the most common buyer there is.
-                    <BuyButton reference={item.reference} label={`Buy ${formatPrice(single)}`} primary={false} />
+                    <BuyButton reference={item.reference} label={`Buy ${formatPrice(singlePriceFor(item.reference, prices))}`} primary={false} />
                   ) : (
                     <span className="shrink-0 text-[11px] text-[#8a8a8a]">In preparation</span>
                   )}

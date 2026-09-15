@@ -21,7 +21,10 @@ const page = body('src/app/standards/page.tsx')
 test('a price is in the first screen, not six screens down', () => {
   const hero = page.slice(0, page.indexOf('id="ways-to-buy"'))
   const heroTop = hero.slice(0, hero.indexOf('See what it costs'))
-  assert.match(heroTop, /formatPrice\(SINGLE_DOCUMENT_PRICE\)/,
+  // The cheapest document in the library, worked out from the per-kind
+  // prices rather than a flat number that applied to a cleaning checklist and
+  // a pool emergency plan alike.
+  assert.match(heroTop, /formatPrice\(from\)/,
     'the cheapest way in is said before the first button')
   assert.match(heroTop, /formatPrice\(COMPLETE_LIBRARY_PRICE\)/,
     'and the ceiling, so nobody has to guess whether this is a four figure decision')
@@ -51,7 +54,7 @@ test('the price is reachable from anywhere on a fifteen screen page', () => {
   assert.match(bar, /document\.body\.scrollHeight - 400/)
   assert.match(bar, /aria-hidden=\{!show\}/, 'hidden means hidden to a screen reader too')
   assert.match(bar, /pointer-events-none/, 'and untappable while off screen')
-  assert.ok(page.includes('<StandardsStickyBuy from={formatPrice(SINGLE_DOCUMENT_PRICE)} />'))
+  assert.ok(page.includes('<StandardsStickyBuy from={formatPrice(from)} />'))
 })
 
 test('the second hero paragraph waits until there is room for it', () => {
@@ -61,13 +64,16 @@ test('the second hero paragraph waits until there is room for it', () => {
   assert.match(hero, /hidden max-w-xl text-\[15px\] leading-relaxed text-\[#555555\] sm:block/)
 })
 
-test('no statistic wraps to four lines in a hundred pixel column', () => {
-  // Three columns at 390 pixels is 114 each, and "pages of safety procedure"
-  // at eleven pixels with wide tracking wrapped to four lines, which is a
-  // statistic nobody reads.
-  const labels = [...page.matchAll(/\['\d+', '([^']+)'\]/g)].map(match => match[1])
-  assert.ok(labels.length >= 2, 'the stat row should have been found')
-  for (const label of labels) {
-    assert.ok(label.length <= 17, `"${label}" is too long for a third of a phone`)
-  }
+test('the first screen offers a document to open, not a statistic to read', () => {
+  // Three numbers in a hairline grid used to sit here: 561 documents, 144
+  // pages, 61 hazards. All facts about the seller, and none of them the
+  // question a stranger has, which is whether the documents are any good. It
+  // is also where "pages of safety procedure" wrapped to four lines inside a
+  // 114 pixel column, which is a statistic nobody reads on a phone.
+  const hero = page.slice(0, page.indexOf('id="ways-to-buy"'))
+  assert.doesNotMatch(hero, /grid-cols-3 gap-px/, 'the hairline stat grid is gone')
+  assert.match(hero, /api\/standards\/sample\?reference=/,
+    'a complete document can be opened from the first screen')
+  assert.match(hero, /Free, now, no sign-up/,
+    'and nothing is asked for in exchange, because a form halves the number who see it')
 })
