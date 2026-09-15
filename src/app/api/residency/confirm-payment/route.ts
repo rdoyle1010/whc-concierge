@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       ])
       const propertyName = employer?.property_name || employer?.company_name || booking.property_name
       if (candidate?.user_id) {
-        await createNotification(candidate.user_id, 'general', 'Residency confirmed - payment received', `${propertyName} has confirmed and paid for your residency. Your agreed terms are now locked in on Spa Platform.`, '/talent/residency')
+        await createNotification(candidate.user_id, 'general', 'Residency confirmed - payment received', `${propertyName} has confirmed and paid for your residency. Your agreed terms are now locked in on Talent House Collective.`, '/talent/residency')
       }
       if (employer?.user_id) {
         await createNotification(employer.user_id, 'general', 'Residency booking confirmed', `${candidate?.full_name || 'The specialist'} is confirmed for ${booking.start_date} to ${booking.end_date}.`, '/employer/residency')

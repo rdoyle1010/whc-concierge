@@ -67,9 +67,9 @@ export async function POST(req: NextRequest) {
       ? `Draft a warm, concise note telling ${firstName} they have been shortlisted and that the property would like to take their application forward. Say that interview details will follow. Do not promise the job.`
       : type === 'offer'
         ? `Draft a warm, celebratory message telling ${firstName} that ${property} would like to offer them the role of ${job.job_title}. Make clear that the formal offer letter or contract containing salary, start date and full employment terms will be sent separately by the employer. Do not invent salary, start date, benefits or contractual terms.`
-        : `Draft a warm, respectful note thanking ${firstName} for applying and explaining that the property will not be taking this application forward. Keep it gracious, never give invented reasons, and encourage them to keep their Spa Platform profile active for future opportunities.`
+        : `Draft a warm, respectful note thanking ${firstName} for applying and explaining that the property will not be taking this application forward. Keep it gracious, never give invented reasons, and encourage them to keep their Talent House Collective profile active for future opportunities.`
 
-    const prompt = `You write recruitment communications for Spa Platform, a premium UK spa, wellness and hospitality talent platform.
+    const prompt = `You write recruitment communications for Talent House Collective, a premium UK spa, wellness and hospitality talent platform.
 
 ${task}
 

@@ -18,8 +18,8 @@ const AREAS = [
 ] as const
 
 const REWARDS = [
-  { value: 'academy_courses', label: 'Two Academy courses', audience: 'talent' },
-  { value: 'academy_bundle', label: 'Named Academy courses', audience: 'talent' },
+  { value: 'academy_courses', label: 'The two opening-season courses', audience: 'talent' },
+  { value: 'academy_bundle', label: 'Courses I pick', audience: 'talent' },
   { value: 'free_listing', label: 'Free Standard listing', audience: 'employer' },
 ] as const
 
@@ -38,14 +38,20 @@ export default function AdminAmbassadorsPage() {
   const [codes, setCodes] = useState<any[]>([])
   const [redemptions, setRedemptions] = useState<any[]>([])
   const [defaultSlugs, setDefaultSlugs] = useState<string[]>([])
+  const [courses, setCourses] = useState<{ slug: string; title: string; category: string; minutes: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState('')
 
+
   const [newAmbassador, setNewAmbassador] = useState({ area: 'therapist', name: '', organisation: '', email: '', arrangement: '' })
   const [newCode, setNewCode] = useState({ ambassador_id: '', code: '', reward: 'academy_courses', reward_slugs: '', max_redemptions: '50', expires_at: '', note: '' })
+  // Derived, never a second piece of state: a list of ticks kept alongside
+  // the string that is actually sent is two places for one fact, and they
+  // drift the first time somebody changes the reward and back again.
+  const selectedSlugs = newCode.reward_slugs.split('\n').map(slug => slug.trim()).filter(Boolean)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -57,6 +63,7 @@ export default function AdminAmbassadorsPage() {
       setCodes(body.codes || [])
       setRedemptions(body.redemptions || [])
       setDefaultSlugs(body.defaults?.courseSlugs || [])
+      setCourses(body.courses || [])
       setError('')
     } catch {
       setError('Could not load the ambassador scheme.')
@@ -177,9 +184,52 @@ export default function AdminAmbassadorsPage() {
                 {REWARDS.map(reward => <option key={reward.value} value={reward.value}>{reward.label}</option>)}
               </select>
             </Field>
+            {/* Tick the courses, rather than typing their slugs.
+                This was a textarea asking for one slug per line. A slug typed
+                by hand gets a letter wrong eventually, and a wrong slug is the
+                worst kind of wrong: the redemption succeeds, the count goes up,
+                the member is told their code worked, and their Academy stays
+                empty. Nothing anywhere would have said so. */}
             {newCode.reward === 'academy_bundle' ? (
-              <Field label="Course slugs" hint={`One per line. Leave empty for the opening-month pair: ${defaultSlugs.join(', ')}`}>
-                <textarea rows={3} value={newCode.reward_slugs} onChange={e => setNewCode({ ...newCode, reward_slugs: e.target.value })} className="input-field mt-1.5 font-mono text-[12px]" />
+              <Field
+                label="Which courses"
+                hint={selectedSlugs.length
+                  ? `${selectedSlugs.length} chosen`
+                  : `Tick none and the code gives the opening-season pair: ${defaultSlugs.join(', ')}`}
+              >
+                <div className="mt-1.5 max-h-56 overflow-y-auto rounded-lg border border-border bg-white">
+                  {courses.length === 0 ? (
+                    <p className="px-3 py-3 text-[12px] text-muted">
+                      No courses loaded. The code will give the opening-season pair.
+                    </p>
+                  ) : courses.map(course => {
+                    const ticked = selectedSlugs.includes(course.slug)
+                    return (
+                      <label
+                        key={course.slug}
+                        className="flex cursor-pointer items-start gap-2.5 border-b border-border px-3 py-2.5 last:border-b-0 hover:bg-[#f6f3ed]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={ticked}
+                          onChange={() => {
+                            const next = ticked
+                              ? selectedSlugs.filter(slug => slug !== course.slug)
+                              : [...selectedSlugs, course.slug]
+                            setNewCode({ ...newCode, reward_slugs: next.join('\n') })
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-[13px] leading-5 text-ink">{course.title}</span>
+                          <span className="block text-[11px] text-muted">
+                            {course.category}{course.minutes ? ` \u00b7 ${course.minutes} min` : ''}
+                          </span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
               </Field>
             ) : null}
             <div className="grid grid-cols-2 gap-3">

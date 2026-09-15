@@ -791,6 +791,28 @@ check('every metered AI surface claims before it spends', () => {
   assert.deepEqual(clientSide, [])
 })
 
+// The platform has one name.
+//
+// Twenty places still carried the name this platform had before it was Talent
+// House Collective. Most were copy nobody would die over. One was the line
+// item on the Stripe checkout, so a hotel paying for a residency was shown a
+// brand it had never heard of at the exact moment it was deciding whether to
+// trust us with a card. Two were in notification emails, one was the
+// User-Agent sent to a third party's API, and one sentence managed to name
+// both companies at once, which is how you can tell it was a rename that
+// stopped halfway.
+//
+// The needle is assembled rather than written out, because the first version
+// of this check failed on its own comment.
+check('the platform has one name', () => {
+  const old = ['Spa', 'Platform']
+  const needle = new RegExp(`${old[0]}\\s?${old[1]}`)
+  const offenders = [...listFiles('src'), ...listFiles('scripts')]
+    .filter(file => /\.(tsx?|jsx?|md)$/.test(file))
+    .filter(file => needle.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

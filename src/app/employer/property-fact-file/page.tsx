@@ -14,7 +14,7 @@ const fields = {
   arrival: [
     ['directions','Directions / how to find us'], ['nearest_transport','Nearest train / tube'],
     ['parking_details','Where exactly to park'], ['staff_entrance','Staff entrance'], ['arrival_contact_name','Who to ask for on arrival'], ['arrival_contact_role','Contact role'],
-    ['arrival_phone','Emergency / on-the-day number'], ['recommended_arrival_buffer_minutes','Recommended arrival buffer (minutes)'], ['uniform_required','Uniform required'], ['worker_should_bring','What the Spa Platform worker should bring'],
+    ['arrival_phone','Emergency / on-the-day number'], ['recommended_arrival_buffer_minutes','Recommended arrival buffer (minutes)'], ['uniform_required','Uniform required'], ['worker_should_bring','What the Talent House Collective worker should bring'],
     ['changing_facilities','Changing facilities'], ['locker_information','Locker information'],
   ],
   welfare: [

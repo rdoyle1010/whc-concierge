@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       line_items: [{ price_data: {
         currency: 'gbp',
-        product_data: { name: 'Spa Platform - Residency Membership', description: 'Monthly specialist listing, hotel residency offers and booking management.' },
+        product_data: { name: 'Talent House Collective - Residency Membership', description: 'Monthly specialist listing, hotel residency offers and booking management.' },
         unit_amount: RESIDENCY_MEMBERSHIP_PENCE,
         recurring: { interval: 'month' },
       }, quantity: 1 }],
