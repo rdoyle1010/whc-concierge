@@ -10,9 +10,19 @@ const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8')
 // every visitor on every page saw four stock images swap to Rebecca's a moment
 // later, which reads as a site that has not finished loading.
 test('no page paints a picture it has not been given', () => {
-  const values = read('src/lib/public-page-content-values.ts')
+  // Comments stripped first, the way the test below this one already does it.
+  // The page defaults were later emptied for the same reason as the band, and
+  // the comment recording why says the word Unsplash - so a check looking for
+  // the bare word failed on the explanation for its own rule.
+  const values = read('src/lib/public-page-content-values.ts').replace(/^\s*\/\/.*$/gm, '')
   const band = values.slice(values.indexOf('export const defaultEditorialBand'), values.indexOf('export const DEFAULT_PUBLIC_PAGES_CONTENT'))
   assert.doesNotMatch(band, /unsplash/i, 'the fallback band must not ship somebody else photography')
+
+  // And the rule now covers every page, not only the band. Twenty stock
+  // photographs sat in the page defaults for months after the band was fixed,
+  // painting on every load of Residency, Properties and Agency before hers
+  // arrived.
+  assert.doesNotMatch(values, /unsplash/i, 'no page default may ship somebody else photography either')
   assert.equal((band.match(/url: ''/g) || []).length, 4, 'all four tiles start empty')
   // The labels and crops are the design and stay.
   assert.match(band, /label: 'Spa & wellness'/)
