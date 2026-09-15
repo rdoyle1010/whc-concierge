@@ -1,21 +1,50 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// The opening month.
+// The opening season.
 //
-// Two offers, no codes, no small print: a property that registers inside the
-// window gets one free Standard listing, a professional gets two free Academy
-// courses. Both are the cheapest possible way to get somebody to do the thing
-// the platform is for - post a role, finish a course - and both are worth more
-// as habits than as revenue.
+// Two offers: a property that registers inside the window gets one free
+// Standard listing, a professional gets two free Academy courses. Both are the
+// cheapest possible way to get somebody to do the thing the platform is for,
+// post a role or finish a course, and both are worth more as habits than as
+// revenue.
 //
 // The window is a constant rather than a database setting on purpose. An offer
 // with an end date printed on the sign-up page has to end on that date, and a
 // value somebody can quietly extend in an admin screen is not a deadline.
-// London midnight, not UTC midnight. The page says the offer runs to the end
-// of September and it has to actually end then for the person reading it,
-// which in British Summer Time is an hour before the UTC date changes.
+//
+// September and October. The close is midnight London on the last day of
+// October, which is midnight UTC too, because British Summer Time ends on the
+// twenty-fifth. The open is midnight London on the first of September, which
+// in BST is an hour before the UTC date changes. Getting these an hour wrong
+// is how an offer that says "to the end of October" closes on the thirtieth
+// for everybody reading it in this country.
 export const LAUNCH_OFFER_OPENS = '2026-08-31T23:00:00Z'
-export const LAUNCH_OFFER_CLOSES = '2026-09-30T23:00:00Z'
+export const LAUNCH_OFFER_CLOSES = '2026-11-01T00:00:00Z'
+
+/**
+ * The code for a campaign to carry.
+ *
+ * The offer is granted automatically inside the window as well, and that is
+ * deliberate rather than an oversight: somebody who arrives without the code
+ * should still get the courses, because the point of them is the habit rather
+ * than the coupon. What the code buys is a number. Every campaign that carries
+ * it can be counted afterwards, which is the only way to find out which of
+ * them is worth repeating.
+ *
+ * Typed by a person off a poster or an Instagram caption, so it is matched
+ * loosely: case, spaces, hyphens and underscores are all thrown away before
+ * comparing. SPA-WELL26, spa well 26 and spawell26 are the same code.
+ */
+export const SIGNUP_CODE = 'SPA-WELL26'
+
+export function normaliseSignupCode(input: unknown): string {
+  return String(input ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+}
+
+/** Whether what somebody typed is the code, and whether the offer is still on. */
+export function signupCodeValid(input: unknown, at: Date = new Date()): boolean {
+  return normaliseSignupCode(input) === normaliseSignupCode(SIGNUP_CODE) && launchOfferOpen(at)
+}
 
 // The two courses a new professional is given. Carol Joy London because it is
 // the first brand masterclass and the one a therapist can use on the floor
@@ -23,8 +52,8 @@ export const LAUNCH_OFFER_CLOSES = '2026-09-30T23:00:00Z'
 // on the platform assumes.
 export const LAUNCH_COURSE_SLUGS = ['carol-joy-london-masterclass', 'consultation-excellence'] as const
 
-export const LAUNCH_OFFER_TALENT = 'Register this month and two Academy courses are yours: the Carol Joy London Masterclass and Consultation Excellence.'
-export const LAUNCH_OFFER_EMPLOYER = 'Register this month and your first Standard job listing is free.'
+export const LAUNCH_OFFER_TALENT = `Register with ${SIGNUP_CODE} and two Academy courses are yours: the Carol Joy London Masterclass and Consultation Excellence.`
+export const LAUNCH_OFFER_EMPLOYER = 'Register before the end of October and your first Standard job listing is free.'
 
 export function launchOfferOpen(at: Date = new Date()) {
   const now = at.getTime()

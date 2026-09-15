@@ -13,18 +13,23 @@ const body = (file: string) =>
     .replace(/^\s*\/\/.*$/gm, '')
 
 // An offer you have to remember to redeem is an offer most people never get.
-test('the opening month gives what it says it gives', () => {
+test('the opening season gives what it says it gives', () => {
+  // September and October now, not September alone. The hour matters at both
+  // ends: British Summer Time ends on 25 October 2026, so the close is
+  // midnight UTC on the first of November while the open is an hour before
+  // the UTC date changes on the first of September.
   assert.deepEqual([...LAUNCH_COURSE_SLUGS], ['carol-joy-london-masterclass', 'consultation-excellence'])
   assert.equal(launchOfferOpen(new Date('2026-09-15T12:00:00Z')), true)
   assert.equal(launchOfferOpen(new Date('2026-08-31T22:59:59Z')), false)
-  assert.equal(launchOfferOpen(new Date('2026-09-30T23:00:00Z')), false)
-  assert.match(launchOfferClosesLabel(), /30 September 2026/)
+  assert.equal(launchOfferOpen(new Date('2026-10-15T12:00:00Z')), true)
+  assert.equal(launchOfferOpen(new Date('2026-11-01T00:00:00Z')), false)
+  assert.match(launchOfferClosesLabel(), /31 October 2026/)
 })
 
-test('a professional registering this month finds the courses already there', () => {
+test('a professional registering inside the window finds the courses already there', () => {
   const init = body('src/app/api/register/init/route.ts')
   assert.match(init, /launchOfferOpen\(\)/)
-  assert.match(init, /grantCourses\(admin, newCandidate\.id, LAUNCH_COURSE_SLUGS/)
+  assert.match(init, /grantCourses\(\s*\n?\s*admin, newCandidate\.id, LAUNCH_COURSE_SLUGS/)
   // Nought, not null: a null amount_paid reads as "not paid for" everywhere
   // the Academy checks, and the point of a gift is that it is already paid.
   assert.match(read('src/lib/launch-offers.ts'), /amount_paid: 0/)
