@@ -1,9 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import {
-  signupCodeValid, launchOfferOpen, launchOfferClosesLabel, SIGNUP_CODE,
-} from '../src/lib/launch-offers'
+import { launchOfferOpen, launchOfferClosesLabel } from '../src/lib/launch-offers'
 import { join } from 'node:path'
 import {
   audienceFor,
@@ -265,21 +263,15 @@ test('the writing prompts protect what somebody has earned', () => {
   assert.match(prompts, /It is not prose to preserve, it is a source of facts/)
 })
 
-// A code a campaign can carry.
+// A code a campaign can carry, issued from the screen that already issues
+// codes.
 //
-// The offer runs across September and October and is granted to everybody
-// inside the window, so the code is not a gate. What it buys is a number:
-// every campaign that carries it can be counted afterwards.
-test('the sign-up code is matched the way a person types it', () => {
-  const at = new Date('2026-09-15T12:00:00Z')
-  for (const typed of ['SPA-WELL26', 'spa-well26', 'spa well 26', 'spawell26', ' SPA_WELL26 ']) {
-    assert.ok(signupCodeValid(typed, at), `${typed} should be the code`)
-  }
-  for (const wrong of ['SPAWELL27', 'SPA-WELL', '', null, undefined, 'WELL26SPA']) {
-    assert.ok(!signupCodeValid(wrong as any, at), `${String(wrong)} should not be the code`)
-  }
-})
-
+// This was a hardcoded constant for one campaign until somebody pointed at
+// Ambassadors, which already issued codes with places, an expiry, an audience
+// and attribution. The admin screen and the redeem route both existed and
+// worked; nothing in the product ever asked anybody for a code, so the whole
+// scheme was a form nobody could reach. That was the fault, not the missing
+// constant.
 test('the offer covers September and October and then stops', () => {
   // The hour matters. British Summer Time ends on 25 October 2026, so the
   // close is midnight UTC on the first of November and the open is an hour
@@ -291,18 +283,33 @@ test('the offer covers September and October and then stops', () => {
   assert.ok(launchOfferOpen(new Date('2026-10-31T23:00:00Z')), 'still open on 31 October')
   assert.ok(!launchOfferOpen(new Date('2026-11-01T00:30:00Z')), 'closed on 1 November')
   assert.equal(launchOfferClosesLabel(), '31 October 2026')
-  // And the code cannot outlive the offer it belongs to.
-  assert.ok(!signupCodeValid(SIGNUP_CODE, new Date('2026-11-02T12:00:00Z')))
 })
 
-test('the code is recorded even though it is not required', () => {
+test('a code typed at registration is claimed against the issued codes', () => {
   const route = readFileSync('src/app/api/register/init/route.ts', 'utf8')
-  assert.match(route, /signup_code: normaliseSignupCode/)
-  // Granted to everybody in the window, code or not. A gate here would mean
+  assert.match(route, /claimCode\(admin, data\.user\.id, typedCode/)
+  // The constant is gone; the only mention left is the comment saying why.
+  assert.doesNotMatch(route, /import.*SIGNUP_CODE/, 'no second place for a code to live')
+  // The courses land whether or not a code was typed. A gate would mean
   // somebody who found the site on their own gets less than somebody who saw
   // an advert, which is the wrong way round.
   assert.match(route, /if \(launchOfferOpen\(\)\) \{/)
+  // And a code that will not claim never costs somebody their account.
+  assert.match(route, /not claimed/)
+})
+
+test('both places that honour a code use the same one', () => {
+  const shared = readFileSync('src/lib/ambassador-codes.ts', 'utf8')
+  assert.match(shared, /claim_ambassador_code/, 'one atomic claim, so two people cannot take the last place')
+  assert.match(shared, /redemptions_used: used - 1/, 'a wrong-audience claim gives the place back')
+  for (const caller of ['src/app/api/ambassador/redeem/route.ts', 'src/app/api/register/init/route.ts']) {
+    assert.match(readFileSync(caller, 'utf8'), /from '@\/lib\/ambassador-codes'/, caller)
+  }
+})
+
+test('the sign-up form asks for a code and does not demand one', () => {
   const page = readFileSync('src/app/register/talent/page.tsx', 'utf8')
   assert.match(page, /params\.get\('code'\)/, 'a campaign link fills the box in')
+  assert.match(page, /signupCode: signupCode \|\| undefined/, 'and it is sent')
   assert.match(page, /Both courses are yours either way/)
 })

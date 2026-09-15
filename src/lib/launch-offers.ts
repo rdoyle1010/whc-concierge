@@ -21,30 +21,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 export const LAUNCH_OFFER_OPENS = '2026-08-31T23:00:00Z'
 export const LAUNCH_OFFER_CLOSES = '2026-11-01T00:00:00Z'
 
-/**
- * The code for a campaign to carry.
- *
- * The offer is granted automatically inside the window as well, and that is
- * deliberate rather than an oversight: somebody who arrives without the code
- * should still get the courses, because the point of them is the habit rather
- * than the coupon. What the code buys is a number. Every campaign that carries
- * it can be counted afterwards, which is the only way to find out which of
- * them is worth repeating.
- *
- * Typed by a person off a poster or an Instagram caption, so it is matched
- * loosely: case, spaces, hyphens and underscores are all thrown away before
- * comparing. SPA-WELL26, spa well 26 and spawell26 are the same code.
- */
-export const SIGNUP_CODE = 'SPA-WELL26'
-
-export function normaliseSignupCode(input: unknown): string {
-  return String(input ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
-}
-
-/** Whether what somebody typed is the code, and whether the offer is still on. */
-export function signupCodeValid(input: unknown, at: Date = new Date()): boolean {
-  return normaliseSignupCode(input) === normaliseSignupCode(SIGNUP_CODE) && launchOfferOpen(at)
-}
 
 // The two courses a new professional is given. Carol Joy London because it is
 // the first brand masterclass and the one a therapist can use on the floor
@@ -52,7 +28,7 @@ export function signupCodeValid(input: unknown, at: Date = new Date()): boolean 
 // on the platform assumes.
 export const LAUNCH_COURSE_SLUGS = ['carol-joy-london-masterclass', 'consultation-excellence'] as const
 
-export const LAUNCH_OFFER_TALENT = `Register with ${SIGNUP_CODE} and two Academy courses are yours: the Carol Joy London Masterclass and Consultation Excellence.`
+export const LAUNCH_OFFER_TALENT = 'Register before the end of October and two Academy courses are yours: the Carol Joy London Masterclass and Consultation Excellence.'
 export const LAUNCH_OFFER_EMPLOYER = 'Register before the end of October and your first Standard job listing is free.'
 
 export function launchOfferOpen(at: Date = new Date()) {
