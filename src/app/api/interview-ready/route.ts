@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { HOUSE_RULES } from '@/lib/house-style'
+import { askForJson } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const INTERVIEW_MODEL = process.env.OPENAI_INTERVIEW_MODEL || process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 const MAX_CV_SIZE = 10 * 1024 * 1024
 
 const clean = (value: unknown) => String(value || '').trim()
@@ -33,32 +31,15 @@ function parseJson(text: string) {
 }
 
 async function generateJson(prompt: string, maxOutputTokens = 1800) {
-  if (!OPENAI_API_KEY) return null
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 5500)
-  try {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: INTERVIEW_MODEL,
-        reasoning: { effort: 'low' },
-        input: `${HOUSE_RULES}\n\n${prompt}`,
-        max_output_tokens: maxOutputTokens,
-      }),
-    })
-    if (!response.ok) {
-      console.error('Interview Ready OpenAI error', response.status, (await response.text().catch(() => '')).slice(0, 400))
-      return null
-    }
-    return parseJson(extractResponseText(await response.json()))
-  } catch (error) {
-    console.error('Interview Ready OpenAI fallback', error instanceof Error ? error.message : error)
+  // Null on any failure, because Interview Ready has a written fallback and a
+  // candidate preparing for an interview tonight is better served by the
+  // fallback than by an error. The reason is logged, not shown.
+  const result = await askForJson<any>({ prompt, maxTokens: maxOutputTokens })
+  if (!result.ok) {
+    console.error('[Interview Ready]', result.error)
     return null
-  } finally {
-    clearTimeout(timeout)
   }
+  return result.data
 }
 
 async function extractCvText(supabase: any, cvUrl: string | null, userId: string) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { HOUSE_RULES } from '@/lib/house-style'
+import { askForText, aiConfigured, AI_MODEL } from '@/lib/ai'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -12,19 +13,10 @@ import { HOUSE_RULES } from '@/lib/house-style'
 // screen that is a writing assistant that "just does not work sometimes",
 // which is the hardest kind of broken to report and the easiest to live with.
 export const maxDuration = 26
-const AI_TIMEOUT_MS = 18000
 
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const OPENAI_APPLICATION_MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 
 type Intent = 'shortlist' | 'interview' | 'decline' | 'offer'
-
-function extractResponseText(payload: any): string {
-  if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) for (const content of item?.content || []) if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-  return ''
-}
 
 function stageError(intent: Intent, status: string, completedInterviews: number) {
   if (intent === 'shortlist' && !['pending', 'reviewed', 'shortlisted'].includes(status)) return 'A shortlist message is only available while reviewing an application.'
@@ -69,8 +61,11 @@ export async function POST(req: NextRequest) {
     const stageProblem = stageError(intent, String(application.status || ''), completedInterviewCount || 0)
     if (stageProblem) return NextResponse.json({ error: stageProblem }, { status: 409 })
 
+    // A written fallback, always. This route is the one place on the platform
+    // where the AI failing must not stop the work: an employer shortlisting a
+    // candidate gets a usable message either way.
     const fallback = fallbackMessage(intent, candidate, job, employer)
-    if (!OPENAI_API_KEY) return NextResponse.json({ message: fallback, intent, model: 'fallback' })
+    if (!aiConfigured()) return NextResponse.json({ message: fallback, intent, model: 'fallback' })
 
     const actionInstruction = intent === 'shortlist'
       ? 'Write a warm message telling the candidate they have been shortlisted and that the property would like to progress them to the interview stage.'
@@ -82,19 +77,13 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are the Talent House Collective employer messaging assistant for luxury spa, wellness and hospitality recruitment in the UK.\n\n${actionInstruction}\n\nUse only the supplied facts. Never invent interview feedback, salary, benefits, start dates, qualifications, personal details or reasons for a decision. Do not mention AI or a match percentage. Keep the tone polished, warm, human and concise. UK English. Around 60-110 words. Address the candidate by first name if supplied. Sign off from the property/team, not from an invented named person.\n\nProperty: ${JSON.stringify({ name: employer.property_name || employer.company_name || 'the property' })}\nCandidate: ${JSON.stringify(candidate || {})}\nRole: ${JSON.stringify(job || {})}\nApplication stage: ${JSON.stringify(application.status || '')}\nCompleted interviews: ${completedInterviewCount || 0}\nAction: ${intent}\n\nReturn only the message text, with no heading, quotation marks or markdown.`
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/responses', {
-        signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-        method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: `${HOUSE_RULES}\n\n${prompt}`, max_output_tokens: 350 }),
-      })
-      if (!response.ok) return NextResponse.json({ message: fallback, intent, model: 'fallback' })
-      const payload = await response.json()
-      const message = extractResponseText(payload).trim().slice(0, 1600)
-      return NextResponse.json({ message: message || fallback, intent, model: message ? OPENAI_APPLICATION_MODEL : 'fallback' })
-    } catch {
-      return NextResponse.json({ message: fallback, intent, model: 'fallback' })
-    }
+    const drafted = await askForText({ system: HOUSE_RULES, prompt, maxTokens: 350 })
+    const message = drafted.ok ? drafted.text.slice(0, 1600) : ''
+    return NextResponse.json({
+      message: message || fallback,
+      intent,
+      model: message ? AI_MODEL : 'fallback',
+    })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Could not draft the candidate message.' }, { status: 500 })
   }

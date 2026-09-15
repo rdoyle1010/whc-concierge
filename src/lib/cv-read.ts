@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { PRODUCT_HOUSES, QUALIFICATIONS, ROLE_LEVELS, SYSTEMS } from '@/lib/constants'
+import { AI_MODEL } from './ai'
 
 // Reading a CV into a profile.
 //
@@ -54,7 +55,7 @@ export type CvReading = {
 // button, waited, and was told to paste the text in instead. A model that
 // answers in seven seconds is a better model here than a cleverer one that
 // answers after the function has been killed.
-export const CV_MODEL = 'claude-sonnet-5'
+export const CV_MODEL = AI_MODEL
 
 // The whole request has to finish inside the host's twenty-six second ceiling,
 // so the work is cut to fit. Fifteen thousand characters is a long CV several
@@ -181,17 +182,18 @@ export async function readCv(source: Source): Promise<
       model: CV_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
       system: SYSTEM,
-      // Thinking off, deliberately.
+      // Thinking is left on at low effort rather than disabled.
       //
-      // On this model omitting the parameter does not mean no thinking: it
-      // runs adaptive, which is the default and was never chosen. Every call
-      // on this platform was paying for a reasoning phase before it produced
-      // a token, which is most of why they kept dying at the twenty-six
-      // second ceiling and reporting it as "that took too long".
+      // Disabled was the right call on the previous model and is a documented
+      // trap on this one: with thinking off it occasionally writes a tool call
+      // into its visible text, where nothing runs it and the turn still
+      // succeeds, and it can leak internal tags into the answer. Low effort
+      // costs less than disabled thinking did and does neither.
       //
-      // This is extraction against a fixed schema rather than a problem to
-      // work out. There is nothing here to think about.
-      thinking: { type: 'disabled' },
+      // The job has not changed. This is extraction and rewriting against a
+      // fixed shape, not a problem to work out, and it runs inside a
+      // twenty-six second ceiling where a better answer that arrives after the
+      // function is killed is not a better answer.
       // A CV is a short document read against a fixed vocabulary. It does not
       // need the model's full deliberation, and the difference is somebody's
       // money on a platform earning none yet.

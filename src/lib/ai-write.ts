@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { HOUSE_RULES } from './house-style'
+import { AI_MODEL } from './ai'
 
 // The blank box, answered.
 //
@@ -42,7 +43,7 @@ export function isWriteField(value: unknown): value is WriteField {
 // Sonnet, for the same reason the CV reader is. A synchronous function here
 // is killed at twenty-six seconds and a better paragraph that arrives after
 // that is not a better paragraph.
-export const WRITE_MODEL = 'claude-sonnet-5'
+export const WRITE_MODEL = AI_MODEL
 const CALL_TIMEOUT_MS = 18000
 
 type Shape = {
@@ -221,17 +222,19 @@ ${draft}`
       model: WRITE_MODEL,
       max_tokens: shape.maxTokens,
       system: HOUSE_STYLE,
-      // Thinking off, deliberately.
+      // Thinking is left on at low effort rather than disabled.
       //
-      // On this model omitting the parameter does not mean no thinking: it
-      // runs adaptive, which is the default and was never chosen. Every call
-      // on this platform was paying for a reasoning phase before it produced
-      // a token, which is most of why they kept dying at the twenty-six
-      // second ceiling and reporting it as "that took too long".
+      // Disabled was the right call on the previous model and is a documented
+      // trap on this one: with thinking off it occasionally writes a tool call
+      // into its visible text, where nothing runs it and the turn still
+      // succeeds, and it can leak internal tags into the answer. Low effort
+      // costs less than disabled thinking did and does neither.
       //
-      // This is extraction against a fixed schema rather than a problem to
-      // work out. There is nothing here to think about.
-      thinking: { type: 'disabled' },
+      // The job has not changed. This is extraction and rewriting against a
+      // fixed shape, not a problem to work out, and it runs inside a
+      // twenty-six second ceiling where a better answer that arrives after the
+      // function is killed is not a better answer.
+      output_config: { effort: 'low' },
       messages: [{
         role: 'user',
         content: `${task}

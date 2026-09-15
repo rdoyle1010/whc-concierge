@@ -171,17 +171,13 @@ export async function draftDocument(input: {
       model: DRAFT_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
       system: DRAFT_SYSTEM,
-      // Thinking off, deliberately.
+      // Thinking is left on at low effort rather than disabled.
       //
-      // On this model omitting the parameter does not mean no thinking: it
-      // runs adaptive, which is the default and was never chosen. Every call
-      // on this platform was paying for a reasoning phase before it produced
-      // a token, which is most of why they kept dying at the twenty-six
-      // second ceiling and reporting it as "that took too long".
-      //
-      // This is extraction against a fixed schema rather than a problem to
-      // work out. There is nothing here to think about.
-      thinking: { type: 'disabled' },
+      // Disabled was the right call on Sonnet and is a documented trap on
+      // Opus: with thinking off the model occasionally writes a tool call
+      // into its visible text where nothing runs it, and can leak internal
+      // tags into the answer. The effort setting below already says low, and
+      // that does the same job without either failure.
       output_config: {
         effort: 'low',
         format: { type: 'json_schema', schema: DRAFT_SCHEMA as any },

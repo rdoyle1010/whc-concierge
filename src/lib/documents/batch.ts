@@ -45,8 +45,14 @@ export async function submitDraftBatch(items: BatchItem[]): Promise<
           model: DRAFT_MODEL,
           max_tokens: 2800,
           system: DRAFT_SYSTEM,
-          thinking: { type: 'disabled' as const },
-          output_config: { format: { type: 'json_schema' as const, schema: DRAFT_SCHEMA as any } },
+          // Low effort rather than thinking disabled: disabled is a
+          // documented trap on Opus, where the model can write a tool call
+          // into its visible text or leak internal tags. This is a batch, so
+          // it is also the cheapest place on the platform to be careful.
+          output_config: {
+            effort: 'low' as const,
+            format: { type: 'json_schema' as const, schema: DRAFT_SCHEMA as any },
+          },
           messages: [{ role: 'user' as const, content: draftPrompt(item) }],
         },
       })),

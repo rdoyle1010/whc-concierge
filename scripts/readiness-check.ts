@@ -670,6 +670,45 @@ check('every AI writing route uses the one house style', () => {
 })
 
 
+// One provider, one key, one bill.
+//
+// This platform called two. The profile writer and the CV reader went to
+// Anthropic through the official SDK; the job advert, the three application
+// routes, the certificate helper and both interview-ready routes went to
+// OpenAI through six separate hand-written fetch calls, each with its own
+// timeout, its own response unwrapping and its own idea of what an error
+// looks like. Two invoices, and a platform where half the AI could be dead
+// while the other half worked, depending on which environment variable was
+// missing. Nobody chose that: it accreted, one route at a time.
+//
+// A second provider is a decision, not an accident, so it has to be made
+// deliberately enough to delete this check.
+check('there is one AI provider', () => {
+  const offenders = listFiles('src')
+    .filter(file => /\.tsx?$/.test(file))
+    .filter(file => /api\.openai\.com|OPENAI_API_KEY|from 'openai'|generativelanguage\.googleapis/.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
+// And it is reached through one client.
+//
+// Six copies of the same twenty lines of fetch, retry and unwrap is six places
+// to fix a timeout and six different sentences shown to somebody whose button
+// did not work.
+check('every AI call goes through the one client', () => {
+  const offenders = listFiles('src')
+    .filter(file => /\.tsx?$/.test(file))
+    .filter(file => /@anthropic-ai\/sdk/.test(read(file)))
+    // The client itself, and the three libraries that need the raw SDK: batch
+    // submission, structured output schemas, and PDF input.
+    .filter(file => ![
+      'src/lib/ai.ts', 'src/lib/ai-write.ts', 'src/lib/cv-read.ts',
+      'src/lib/documents/draft.ts', 'src/lib/documents/batch.ts',
+    ].includes(file))
+  assert.deepEqual(offenders, [])
+})
+
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }
