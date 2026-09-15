@@ -23,9 +23,18 @@ const TONE: Record<string, string> = {
   PowerPoint: 'border-[#8a3a14]/40 text-[#8a3a14]',
 }
 
-export default function StandardsTools({ files }: { files: PackFile[] }) {
+export type Tool = {
+  slug: string
+  name: string
+  blurb: string
+  detail: string
+  price: number
+  sheets: number
+}
+
+export default function StandardsTools({ files, tools }: { files: PackFile[]; tools: Tool[] }) {
   const sold = files.filter(file => file.slug && (file.price || 0) > 0)
-  if (!sold.length) return null
+  if (!sold.length && !tools.length) return null
 
   return (
     <section className="border-b border-[#dddddd]" id="tools">
@@ -37,6 +46,25 @@ export default function StandardsTools({ files }: { files: PackFile[] }) {
         </p>
 
         <div className="mt-8 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2">
+          {tools.map(tool => (
+            <div key={tool.slug} className="flex flex-col bg-white p-6">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-[19px] font-semibold leading-tight text-[#1c1c1c]">{tool.name}</h3>
+                <span className="mt-1 shrink-0 border border-[#1a6b3c]/40 px-1.5 py-px text-[10px] uppercase tracking-[.08em] text-[#1a6b3c]">
+                  Excel
+                </span>
+              </div>
+              <p className="mt-2 font-serif text-[26px] leading-none text-[#1c1c1c]">{formatPrice(tool.price)}</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-[#1c1c1c]">{tool.blurb}</p>
+              <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{tool.detail}</p>
+              <p className="mt-4 text-[12px] text-[#6b6b6b]">
+                {tool.sheets} sheets · every figure a formula, nothing pre-filled
+              </p>
+              <div className="mt-4">
+                <BuyButton packSlug={tool.slug} label={`Buy ${tool.name.toLowerCase()}`} />
+              </div>
+            </div>
+          ))}
           {sold.map(file => (
             <div key={file.slug} className="flex flex-col bg-white p-6">
               <div className="flex items-start justify-between gap-4">

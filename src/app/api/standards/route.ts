@@ -4,6 +4,7 @@ import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
 import { loadAttachments } from '@/lib/documents/attachments-server'
 import { formatOf } from '@/lib/documents/formats'
+import { TOOLS } from '@/lib/documents/tools/registry'
 
 // What is actually on the shelf.
 //
@@ -62,6 +63,16 @@ export async function GET() {
       blurb: bundle.blurb,
       price: bundle.pricePence,
       references: referencesInBundle(bundle, prices),
+    })),
+    // The tools built in code, listed beside the files she uploads. A buyer
+    // does not care which of the two a working spreadsheet came from.
+    tools: TOOLS.map(tool => ({
+      slug: tool.slug,
+      name: tool.name,
+      blurb: tool.blurb,
+      detail: tool.detail,
+      price: tool.pricePence,
+      sheets: tool.sheets,
     })),
     files: attachments.map(attachment => ({
       name: attachment.name,
