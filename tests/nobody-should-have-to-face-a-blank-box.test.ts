@@ -2,7 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { WRITE_FIELDS, WRITE_MODEL, isWriteField, writeFieldLabel } from '../src/lib/ai-write'
+import {
+  WRITE_FIELDS, WRITE_MODEL, isWriteField, writeFieldLabel, buildWriteRequest,
+} from '../src/lib/ai-write'
 
 const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8')
 const body = (file: string) =>
@@ -146,4 +148,50 @@ test('every writing route fits inside the ceiling the host enforces', () => {
 // second person of the day from writing their own profile.
 test('the limit is per account', () => {
   assert.match(route, /key: user\.id/)
+})
+
+// The prompt is built where it can be read, not only where it is sent.
+//
+// It used to be assembled inline inside the function that calls Anthropic, so
+// the only way to know what this platform actually asks for was to call it.
+// Pulled out, it can be asserted here, and it can be handed to a second
+// provider by scripts/compare-writers.ts: a comparison where each side gets a
+// slightly different prompt measures the prompts rather than the providers.
+test('the prompt carries the house style, the shape and the facts', () => {
+  const built = buildWriteRequest({
+    field: 'practice_headline',
+    mode: 'write',
+    draft: 'Award-winning spa consultancy',
+    facts: { Practice: 'Wellness House Collective', 'Based in': 'Yorkshire' },
+  })
+  assert.ok(built.ok)
+  if (!built.ok) return
+  assert.match(built.system, /What must survive, always:/, 'the rules travel with it')
+  assert.match(built.prompt, /Wellness House Collective/, 'and the facts it was given')
+  assert.match(built.prompt, /Based in: Yorkshire/)
+  // Writing a fresh one still mines the existing text for what was earned.
+  assert.match(built.prompt, /It is not prose to preserve, it is a source of facts/)
+  assert.match(built.prompt, /Award-winning spa consultancy/)
+  assert.ok(built.maxTokens > 0)
+})
+
+test('an empty box with no facts is refused before anything is spent', () => {
+  const built = buildWriteRequest({ field: 'talent_bio', mode: 'write', facts: {} })
+  assert.ok(!built.ok)
+  if (built.ok) return
+  assert.match(built.error, /Fill in a few of the fields above first/)
+})
+
+// The consolidation onto one provider was argued on the code: one SDK, one
+// key, one bill. It was not argued on quality, and the assistant recommending
+// it is made by one of the two vendors. This is how that gets settled.
+test('the comparison harness is blind and does not spend without being told to', () => {
+  const harness = readFileSync('scripts/compare-writers.ts', 'utf8')
+  assert.match(harness, /buildWriteRequest/, 'both sides get the prompt the platform really sends')
+  assert.match(harness, /Math\.random\(\) < 0\.5/, 'which writer is A is a coin toss per item')
+  assert.match(harness, /--confirm/, 'it prices the run and waits')
+  assert.match(harness, /key\.md/, 'and the answer key is a separate file')
+  // It reintroduces the other provider on purpose, in a script, never in a
+  // route. Readiness checks 45 and 46 scan src and would fail otherwise.
+  assert.ok(!harness.includes('src/app/'), 'nothing here is wired into the site')
 })
