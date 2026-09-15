@@ -1,6 +1,7 @@
 'use client'
 
 import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
+import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -20,6 +21,18 @@ const MODERN_COURSE_IMAGES: Record<string, string> = {
 }
 
 export default function PublicAcademyPage() {
+  // Header wording, hers to change without a deploy. Loaded in the browser
+  // so the page itself stays static for everybody, with the code default
+  // showing until it arrives - which is the same words, so nothing flickers.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['academy'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=academy${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   // Stripe has just sent this person back. Confirm the purchase from the
   // browser as well, so a missed webhook is a delay rather than a loss.
   const [deliveredTo, setDeliveredTo] = useState<string | null>(null)
@@ -121,9 +134,9 @@ export default function PublicAcademyPage() {
       <section className="pt-[76px] bg-[#ede8df] text-ink overflow-hidden">
         <div className="mx-auto max-w-[1440px] px-6 py-16 lg:px-10 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
           <div>
-            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">Talent House Academy</p>
-            <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-ink md:text-[64px]">Learn what luxury spas actually expect from you.</h1>
-            <p className="mt-6 max-w-3xl text-[16px] leading-8 text-secondary md:text-[18px]">Professional courses with assessments, verified certificates and CPD hours - built for spa careers, from the treatment room to director level.</p>
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">{cms.hero.eyebrow}</p>
+            <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-ink md:text-[64px]">{cms.hero.heading}</h1>
+            <p className="mt-6 max-w-3xl text-[16px] leading-8 text-secondary md:text-[18px]">{cms.hero.text}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink text-white px-6 py-3.5 text-[13px] font-semibold hover:bg-[#3a4239] transition-colors">Explore courses <ArrowRight size={14} /></a>
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dcd4c8] px-6 py-3.5 text-[13px] font-semibold text-ink hover:bg-[#e3dcd1] transition-colors">Build my career profile <ArrowRight size={14} /></Link>

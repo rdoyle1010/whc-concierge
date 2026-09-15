@@ -4,6 +4,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Award, Shield, Users, Heart } from 'lucide-react'
 import FounderImage from '@/components/FounderImage'
+import { getPublicPageContent } from '@/lib/public-page-content-server'
 
 export const metadata: Metadata = {
   title: { absolute: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers' },
@@ -12,7 +13,12 @@ export const metadata: Metadata = {
   openGraph: { title: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' },
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  // The header wording, hers to change without a deploy. The rest of this
+  // page is the founder's story and the principles, which are prose rather
+  // than fields and are better edited here than through three boxes.
+  const cms = await getPublicPageContent('about')
+
   const values = [
     [Award, 'Quality over quantity', 'We vet every profile and verify every property. No spam, no time-wasters, no padding the numbers.'],
     [Users, 'Industry expertise', 'Built by someone who has lived inside luxury wellness - not by generalists guessing at the sector.'],
@@ -26,9 +32,9 @@ export default function AboutPage() {
       <main id="main-content" className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="public-eyebrow mb-4">About</p>
-            <h1 className="public-title mb-5">Built for an industry that deserves better.</h1>
-            <p className="public-intro max-w-2xl mx-auto">Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.</p>
+            <p className="public-eyebrow mb-4">{cms.hero.eyebrow}</p>
+            <h1 className="public-title mb-5">{cms.hero.heading}</h1>
+            <p className="public-intro max-w-2xl mx-auto">{cms.hero.text}</p>
           </div>
         </section>
 
