@@ -211,25 +211,39 @@ export async function POST(req: NextRequest) {
       // Best effort, always. A code that will not claim is never the reason an
       // account is not created: the offer below still lands, and somebody who
       // mistyped can use the code afterwards from their account.
+      // The offer and the code are two different things, and they were one.
+      //
+      // The claim used to sit inside this window, so on the first of November
+      // every code anybody had printed would stop working, silently, with the
+      // account still created and nothing in the logs a person would look at.
+      // A code carries its own expiry, its own number of places and its own
+      // audience: that is the entire point of issuing one from a screen rather
+      // than hardcoding it. Whether the opening season happens to be running
+      // is none of its business.
       const typedCode = normaliseCode(body.signupCode)
-      if (launchOfferOpen()) {
-        try {
-          const { data: newCandidate } = await admin.from('candidate_profiles')
-            .select('id').eq('user_id', data.user.id).maybeSingle()
-          if (newCandidate?.id) {
+      try {
+        const { data: newCandidate } = await admin.from('candidate_profiles')
+          .select('id').eq('user_id', data.user.id).maybeSingle()
+
+        if (newCandidate?.id) {
+          // The blanket gift, for everybody inside the window, code or not.
+          if (launchOfferOpen()) {
             launchOfferGranted = (await grantCourses(
               admin, newCandidate.id, LAUNCH_COURSE_SLUGS, 'opening season',
             )).granted
-            if (typedCode) {
-              const claimed = await claimCode(admin, data.user.id, typedCode, { candidateId: newCandidate.id })
-              if (!claimed.ok) console.error(`[register] code ${typedCode} not claimed: ${claimed.error}`)
-            }
           }
-        } catch (offerError: any) {
-          // Best effort, always. Nobody is refused an account because a gift
-          // failed to land.
-          console.error('Opening-season course grant failed:', offerError?.message)
+
+          // The code, on its own schedule, whatever month it is.
+          if (typedCode) {
+            const claimed = await claimCode(admin, data.user.id, typedCode, { candidateId: newCandidate.id })
+            if (!claimed.ok) console.error(`[register] code ${typedCode} not claimed: ${claimed.error}`)
+            else if (claimed.granted.length) launchOfferGranted = claimed.granted
+          }
         }
+      } catch (offerError: any) {
+        // Best effort, always. Nobody is refused an account because a gift
+        // failed to land.
+        console.error('Opening-season course grant failed:', offerError?.message)
       }
     } else {
       // Employers need the shared profiles row too: if the second registration
