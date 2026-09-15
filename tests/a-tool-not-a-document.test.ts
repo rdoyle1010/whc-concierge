@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { inflateRawSync } from 'node:zlib'
-import { TOOLS, toolBySlug } from '../src/lib/documents/tools/registry'
+import { TOOLS, toolBySlug, TOOL_BUNDLE } from '../src/lib/documents/tools/registry'
 import { departmentPacks, journeyPacks, tierPacks } from '../src/lib/documents/pricing'
 
 const body = (file: string) =>
@@ -71,7 +71,12 @@ test('every formula points at a sheet that exists and computes something', () =>
         assert.ok(!formula.includes('#REF'), `${tool.slug}: ${formula}`)
       }
     }
-    assert.ok(formulas > 100, `${tool.slug} has only ${formulas} formulas, so it is a form rather than a tool`)
+    // Fifty, not a hundred. The threshold exists to catch a workbook that
+    // collects numbers rather than working anything out, and a tool with
+    // seven rows can do that in fewer formulas than one with twenty-four.
+    // Pinning it at the largest tool's count would fail every smaller one
+    // for being smaller.
+    assert.ok(formulas > 50, `${tool.slug} has only ${formulas} formulas, so it is a form rather than a tool`)
   }
 })
 
@@ -102,8 +107,9 @@ test('a tool slug cannot take a pack checkout', () => {
 
 test('a tool is delivered only to the person who bought it', () => {
   const route = body('src/app/api/standards/tool/route.ts')
-  assert.match(route, /slugsInOrders\(orders \|\| \[\]\)\.includes\(tool\.slug\)/,
+  assert.match(route, /const theirs = slugsInOrders\(orders \|\| \[\]\)/,
     'entitlement comes from their own orders')
+  assert.match(route, /theirs\.includes\(tool\.slug\)/)
   assert.match(route, /status: 403/)
   // The slug in the URL says which tool. It must never say whether they may
   // have it.
@@ -118,4 +124,46 @@ test('a tool is delivered only to the person who bought it', () => {
     assert.ok(body(page).includes('/api/standards/tool?slug='), `${page} offers it`)
   }
   assert.ok(body('src/components/StandardsTools.tsx').includes('BuyButton packSlug={tool.slug}'))
+})
+
+test('the toolkit is every tool, and costs less than most of them', () => {
+  // A buyer who is adding up will do it. Four tools singly is more than the
+  // bundle by a margin that has to be visible rather than argued for.
+  const singly = TOOLS.reduce((total, tool) => total + tool.pricePence, 0)
+  assert.ok(TOOL_BUNDLE.pricePence < singly, 'the bundle costs more than its parts')
+  assert.ok(TOOL_BUNDLE.pricePence < singly * 0.85, 'the saving is too small to change a decision')
+  assert.match(TOOL_BUNDLE.slug, /^tool-/, 'it must not collide with a pack slug')
+  assert.ok(TOOLS.length >= 4, `only ${TOOLS.length} tools, so a bundle is not yet a bundle`)
+})
+
+test('buying the toolkit delivers a tool added afterwards', () => {
+  // Resolved at download rather than by writing one row per tool at
+  // checkout, so a tool added next month reaches everybody who already
+  // bought the bundle rather than only people who buy it after that.
+  const download = body('src/app/api/standards/tool/route.ts')
+  assert.match(download, /theirs\.includes\(TOOL_BUNDLE_SLUG\)/)
+  const mine = body('src/app/api/standards/mine/route.ts')
+  assert.match(mine, /theirSlugs\.has\(TOOL_BUNDLE_SLUG\)\s*\n?\s*\? TOOLS/)
+
+  const checkout = body('src/app/api/standards/checkout/route.ts')
+  assert.match(checkout, /amountPence: toolkit\.pricePence/, 'priced from the registry, never from the page')
+})
+
+test('the saving on the card is worked out, not typed', () => {
+  const route = body('src/app/api/standards/route.ts')
+  assert.match(route, /singly: TOOLS\.reduce/)
+  const shop = body('src/components/StandardsTools.tsx')
+  assert.match(shop, /formatPrice\(toolkit\.singly\)/)
+  assert.doesNotMatch(shop, /save £|Save £/, 'a typed saving drifts from the prices beside it')
+})
+
+test('every tool says what it is for in a way somebody would pay for', () => {
+  for (const tool of TOOLS) {
+    assert.ok(tool.blurb.length >= 30 && tool.blurb.length <= 110, `${tool.slug} blurb is the wrong length`)
+    assert.ok(tool.detail.length > 200, `${tool.slug} is not argued for`)
+    assert.ok(tool.sheets >= 3, `${tool.slug} has only ${tool.sheets} sheets`)
+    assert.doesNotMatch(`${tool.blurb} ${tool.detail}`, /[—–]/, `${tool.slug} contains a forbidden dash`)
+    assert.doesNotMatch(`${tool.blurb} ${tool.detail}`,
+      /\b(seamless|vibrant|world-class|passionate|dynamic|elevate)\b/i, `${tool.slug} uses banned language`)
+  }
 })
