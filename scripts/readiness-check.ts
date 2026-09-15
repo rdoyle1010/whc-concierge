@@ -738,6 +738,21 @@ check('every AI call is labelled, so spend can be attributed', () => {
   }
 })
 
+// Nothing half-merged reaches a deploy.
+//
+// All forty-seven of these passed while two route files still carried merge
+// conflict markers, because every check was looking for something specific and
+// none of them was looking at whether the file was a file. A readiness check
+// that reports ready on source that cannot compile is worse than no check, and
+// TypeScript caught it only because it was run separately.
+check('no half-finished merge reaches a deploy', () => {
+  const marker = /^(?:<{7}|={7}|>{7})(?: |$)/m
+  const conflicted = [...listFiles('src'), ...listFiles('scripts'), ...listFiles('tests')]
+    .filter(file => /\.(tsx?|jsx?|css|md|json)$/.test(file))
+    .filter(file => marker.test(read(file)))
+  assert.deepEqual(conflicted, [])
+})
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }
