@@ -253,8 +253,11 @@ ${facts || '(nothing beyond the draft above)'}`,
  * The caller is somebody staring at an empty box, and a stack trace is not an
  * answer to "why is this button not working".
  */
+/** What a call cost, passed back so the caller can put it against a person. */
+export type WriteSpend = { input: number; output: number }
+
 export async function writeText(request: WriteRequest): Promise<
-  { ok: true; text: string } | { ok: false; error: string }
+  { ok: true; text: string; spend: WriteSpend } | { ok: false; error: string }
 > {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return { ok: false, error: 'Talent House AI is not switched on for this deployment.' }
@@ -318,7 +321,13 @@ export async function writeText(request: WriteRequest): Promise<
       .replace(/^["'“‘]|["'”’]$/g, '')
       .trim()
 
-    return { ok: true, text: cleaned }
+    return {
+      ok: true, text: cleaned,
+      spend: {
+        input: Number(response.usage?.input_tokens || 0),
+        output: Number(response.usage?.output_tokens || 0),
+      },
+    }
   } catch (error: any) {
     if (error instanceof Anthropic.AuthenticationError) {
       return { ok: false, error: 'The Anthropic API key on this deployment was refused. Check it in Netlify.' }
