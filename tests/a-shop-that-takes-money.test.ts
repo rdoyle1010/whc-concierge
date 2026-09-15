@@ -114,10 +114,19 @@ test('nothing is sold to somebody who cannot get it back', () => {
   assert.match(checkout, /customer_email: user\.email/)
   assert.match(checkout, /buyer_user_id: user\.id/)
 
-  // And the button says so rather than promising a checkout and delivering a
-  // login form.
+  // And a signed-out visitor is told, rather than being promised a checkout
+  // and handed a login form.
+  //
+  // This used to require the words "Sign in to buy" on the button itself,
+  // which replaced the name of the product with the name of a hurdle across
+  // every buy button on the site, to almost every visitor, before anybody had
+  // decided they wanted anything. The requirement is real and it still has to
+  // be visible; it is said beside the button now, to the people it applies
+  // to, rather than instead of the thing being sold.
   const button = body('src/components/BuyButton.tsx')
-  assert.match(button, /Sign in to buy/)
+  assert.match(button, /signedIn === false && !busy && !error/)
+  assert.match(button, /create an account/)
+  assert.doesNotMatch(button, /: 'Sign in to buy' :/, 'the label is the product, not the hurdle')
   assert.match(button, /res\.status === 401 \|\| body\?\.needsAccount/)
   assert.match(button, /\/register\/buyer\?redirect=/)
 

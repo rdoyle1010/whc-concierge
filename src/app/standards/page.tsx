@@ -31,9 +31,30 @@ export const metadata: Metadata = {
   description:
     'Professional standard operating procedures, risk assessments, checklists and job descriptions for luxury '
     + 'spa and wellness operations. Buy a single document, a department, or the full pre-opening suite.',
+  // A canonical, and an image that is of this page.
+  //
+  // The openGraph block replaced the parent object rather than merging with
+  // it, so the shop had no og:image at all and its twitter card still carried
+  // the careers title and the careers image. Every share of this page on
+  // LinkedIn or WhatsApp was imageless and described as something else.
+  alternates: { canonical: 'https://talenthousecollective.co.uk/standards' },
   openGraph: {
+    type: 'website',
+    url: 'https://talenthousecollective.co.uk/standards',
     title: 'Spa Standards, SOPs and Risk Assessments',
     description: 'Procedures with an auditable standard against every step, written by people who have run spa departments.',
+    images: [{
+      url: 'https://talenthousecollective.co.uk/images/standards/risk-matrix.jpg',
+      width: 620,
+      height: 877,
+      alt: 'A five by five risk matrix printed in green, amber and red, from the spa risk assessment suite',
+    }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Spa Standards, SOPs and Risk Assessments',
+    description: 'Procedures with an auditable standard against every step, written by people who have run spa departments.',
+    images: ['https://talenthousecollective.co.uk/images/standards/risk-matrix.jpg'],
   },
 }
 

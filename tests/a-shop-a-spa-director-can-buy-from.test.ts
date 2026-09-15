@@ -114,15 +114,15 @@ test('a pack knows its own department', () => {
   assert.match(catalogue, /readyIn\(pack\)/)
   assert.match(catalogue, /pack\.includes\(reference\)/)
   assert.equal(packBySlug('before-the-first-guest')?.count, LIBRARY_PLAN.filter(e => e.tier === 'day-1').length)
-  // Eight suites priced on their own rather than as departments or as
-  // stages: the pre-opening suite, the complete library, the pool safety
-  // procedure, the risk assessment suite, the daily checklists, the financial
-  // reporting pack, the job descriptions and the policy suite. Each is priced against what it replaces
+  // Nine suites priced on their own rather than as departments or as stages:
+  // the pre-opening suite, the complete library, the pool safety procedure,
+  // the risk assessment suite, the daily checklists, the financial reporting
+  // pack, the job descriptions, the policy suite and the recruitment pack. Each is priced against what it replaces
   // rather than against a document count, because the "never more than its
   // parts" rule would offer a two-document department at seventy-eight
   // pounds, which is the right rule applied to the wrong thing.
-  assert.equal(tierPacks().length, 8)
-  for (const slug of ['job-descriptions', 'policies']) {
+  assert.equal(tierPacks().length, 9)
+  for (const slug of ['job-descriptions', 'policies', 'recruitment']) {
     assert.ok(tierPacks().some(pack => pack.slug === slug), `${slug} is not a suite`)
   }
   for (const slug of ['daily-checklists', 'financial-reporting']) {

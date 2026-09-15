@@ -7,6 +7,7 @@ import { CHECKLIST_ENTRIES } from './checklist-plans'
 import { FINANCE_ENTRIES } from './finance-plans'
 import { JOB_DESCRIPTION_ENTRIES } from './job-description-plans'
 import { POLICY_ENTRIES } from './policy-plans'
+import { HIRING_ENTRIES } from './hiring-plans'
 
 // What a document costs, and why.
 //
@@ -117,6 +118,16 @@ export const JOB_DESCRIPTION_PACK_PRICE = 39500
 // least likely to have a budget line for them.
 export const POLICY_PACK_PRICE = 49500
 
+// Twelve hiring instruments, at three hundred and ninety-five pounds.
+//
+// Priced against one bad hire. A therapist who leaves inside ninety days
+// costs a spa several thousand pounds in recruitment, training, lost
+// utilisation and the cover somebody else worked, and most properties make
+// that mistake twice a year because they hire on a conversation. Anything
+// under five hundred is cheap against that arithmetic, and a spa director can
+// approve it alone.
+export const HIRING_PACK_PRICE = 39500
+
 // The twenty report templates, at one thousand two hundred and fifty pounds.
 //
 // The most expensive thing in this library except the library itself, and the
@@ -155,7 +166,7 @@ export const VAT_NOTE = VAT_REGISTERED
 export type Prices = Partial<Record<
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
   | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey'
-  | 'job-descriptions' | 'policies',
+  | 'job-descriptions' | 'policies' | 'recruitment',
   number
 >>
 
@@ -393,6 +404,7 @@ export function tierPacks(prices: Prices = {}): Pack[] {
   const financeReferences = FINANCE_ENTRIES.map(entry => entry.reference)
   const roleReferences = JOB_DESCRIPTION_ENTRIES.map(entry => entry.reference)
   const policyReferences = POLICY_ENTRIES.map(entry => entry.reference)
+  const hiringReferences = HIRING_ENTRIES.map(entry => entry.reference)
   return [
     {
       slug: 'risk-assessments',
@@ -479,6 +491,23 @@ export function tierPacks(prices: Prices = {}): Pack[] {
       count: policyReferences.length,
     },
     {
+      slug: 'recruitment',
+      name: 'Spa Recruitment Pack',
+      blurb:
+        'Twelve instruments for hiring well: the advert, the screening call, the interview question bank and '
+        + 'scorecard, three trade tests, pre-boarding, day one, the ninety days, the fairness guide and the '
+        + 'exit interview.',
+      detail:
+        'Not the process. Requisition, scheduling, right to work and the offer are procedures and they are '
+        + 'already in the library. These are the instruments: what is actually asked in the room, how the '
+        + 'answer is scored, and what a candidate is watched doing before anybody makes an offer. A therapist '
+        + 'who leaves inside ninety days costs several thousand pounds, and most spas make that mistake twice '
+        + 'a year because they hire on a conversation.',
+      price: prices.recruitment ?? HIRING_PACK_PRICE,
+      includes: (reference: string) => hiringReferences.includes(reference),
+      count: hiringReferences.length,
+    },
+    {
       slug: 'before-the-first-guest',
       name: TIER_LABEL['day-1'],
       blurb:
@@ -531,6 +560,7 @@ export function categoryPacks(prices: Prices = {}): Pack[] {
     guestJourneyPack(prices),
     bySlug('daily-checklists'),
     bySlug('journey-running-the-day'),
+    bySlug('recruitment'),
     bySlug('journey-people'),
     bySlug('journey-training'),
     bySlug('journey-systems'),

@@ -36,6 +36,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
     { url: `${BASE}/jobs`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    // The only page on this site that takes money directly, and it was the
+    // one URL missing from the sitemap. Twenty-four pages were listed and the
+    // shop was not one of them.
+    { url: `${BASE}/standards`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/roles`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/agency`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/residency`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
