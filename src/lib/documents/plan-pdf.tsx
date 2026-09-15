@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { Document, Page, Text, View, StyleSheet, TextInput, Font, renderToBuffer } from '@react-pdf/renderer'
 import type { PlanDocument, PlanSection, Fact, Hazard } from './plan-types'
 import { PLAN_KIND_LABEL, partsOf } from './plan-types'
@@ -209,8 +209,13 @@ function Prose({ text, style }: { text: string; style?: any }) {
   return (
     <View>
       <Text style={style}>{segments.map(segment => segment.kind === 'text' ? segment.text : `[${segment.label}]`).join('')}</Text>
+      {/* The label and the box it labels are one thing. Without this they
+          were two, and the page break went between them: a job description
+          printed "the booking system the property uses" as the last line of
+          page six and left the box to fill in alone on page seven, with
+          nothing else on it. */}
       {segments.filter(segment => segment.kind === 'field').map(segment => (
-        <View key={(segment as any).name} style={{ marginTop: 3 }}>
+        <View key={(segment as any).name} style={{ marginTop: 3 }} wrap={false}>
           <Text style={styles.factLabel}>{(segment as any).label}</Text>
           <TextInput name={(segment as any).name} style={styles.input} fontSize={9} />
         </View>
@@ -462,7 +467,12 @@ function SectionBody({ section, keyBase }: { section: PlanSection; keyBase: stri
               the bottom printed its column headings across the footer with
               its rows overleaf. A repeated header on a long table is worth
               having; a page that looks corrupt is not. */}
-          <View style={styles.tr} wrap={false}>
+          {/* Column headings do not sit alone at the foot of a page. A
+              header with its rows overleaf reads as the end of the document,
+              and one was printing with two hundred points of empty page under
+              it. Sixty points is about three rows: enough that the table
+              starts where it is understood. */}
+          <View style={styles.tr} wrap={false} minPresenceAhead={60}>
             {section.table.columns.map((column, index) => (
               <Text key={column || `c${index}`}
                 style={[styles.th, index === 0 ? { flex: 1.4 } : { flex: 1 }, index ? styles.cellDivider : {}]}>
@@ -646,51 +656,52 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
           const startsPart = Boolean(section.part) && section.part !== groups[0].sections[index - 1]?.part
           const breaks = (startsPart && index > 0) || (hasContents && index === 0)
           return (
-            // The break belongs to the section, not to the rule at the top of
-            // it. Asked for on the divider instead, react-pdf moved the
-            // divider to a new page and then laid the rest of the section out
-            // against the space left on the old one: every line after it was
-            // given roughly half the leading it needed, so a part heading was
-            // struck through by its own section title and a note lay across
-            // the risk scoring row. It looked like a corrupt file. It was one
-            // attribute on the wrong element, and it was in every risk
-            // assessment, every operating procedure and every emergency plan
-            // this library sells.
-            // The first section starts its own page when there is a contents
-            // page, rather than running on underneath the contents list. It
-            // reads as a contents page instead of a contents list somebody
-            // forgot to finish, and it was producing a blank page three in
-            // the question bank.
+            // The divider carries the break, and that is safe now only
+            // because it is a sibling. It was once a child of a section
+            // container with the break on it, and react-pdf moved the child to
+            // a new page while laying the rest of the container out against
+            // the space left on the old one: every line after it got about
+            // half the leading it needed, so a part heading was struck through
+            // by its own section title and a note lay across the risk scoring
+            // row. It looked like a corrupt file, it was one attribute on one
+            // element, and it was in every risk assessment, every operating
+            // procedure and every emergency plan this library sells. A break
+            // on a child of a container is still that bug. There is no
+            // container here, which is the next paragraph.
             //
-            // A section that breaks carries no top margin, and neither does
-            // the part divider on it. This is the whole of the blank page
-            // problem and it is worth stating plainly, because it looks like
-            // a cosmetic line and is not. A breaking section had forty points
-            // of leading margin. When the previous page had less than forty
-            // points left, that margin did not fit, so it took a page of its
-            // own: an entirely empty sheet with nothing on it but the footer.
-            // Then the break moved the actual content to the page after. Nine
-            // of those were printing across the library, two of them inside
-            // the pool operating procedure, which is the most expensive and
-            // most scrutinised document here. On a fresh page the margin buys
-            // nothing anyway: the page padding is already there.
+            // Sections are not wrapped in a container, and that is the whole
+            // of the blank page problem.
             //
-            // Seven remain, in five documents, and they come from a trailing
-            // margin on the last element of the section before rather than a
-            // leading one here. scripts/blank-page-sweep.tsx renders the whole
-            // library and finds them: run it before calling any change to this
-            // file finished, because nothing in the source shows a blank page.
-            <View key={`s${index}`}
-              style={[styles.section, breaks ? { marginTop: 0 } : {}]} break={breaks}>
+            // A part used to be a View holding its divider, its heading and
+            // its body, with the page break on the View. When that container
+            // was taller than a page, react-pdf moved it to the next page with
+            // a negative top, then split it, found nothing that would fit above
+            // the fold, and printed the page with nothing on it at all. Nine
+            // entirely empty sheets were coming out of the library, two of them
+            // inside the pool operating procedure, which is the most expensive
+            // and most scrutinised document here.
+            //
+            // So there is no container. The divider, the heading and the body
+            // are siblings in the page's own flow, each small enough to place,
+            // and the break sits on whichever of them comes first. The heading
+            // keeps a hundred and twenty points of presence ahead of it so it
+            // cannot be left alone at the foot of a page, which is what the
+            // container was really for.
+            //
+            // Nothing above can be verified by reading the source. Run
+            // scripts/blank-page-sweep.tsx, which renders all 108 plans, before
+            // calling any change to this file finished.
+            <Fragment key={`s${index}`}>
               {startsPart ? (
-                <View style={[styles.partDivider, breaks ? { marginTop: 0 } : {}]}>
+                <View style={[styles.partDivider, breaks ? { marginTop: 0 } : {}]} break={breaks}>
                   <Text style={styles.partLabel}>Part</Text>
                   <Text style={styles.partName}>{section.part}</Text>
                 </View>
               ) : null}
-              <Text style={styles.sectionHead} minPresenceAhead={SECTION_ROOM}>{section.heading}</Text>
+              <Text style={[styles.sectionHead, breaks || startsPart ? { marginTop: 0 } : { marginTop: 18 }]}
+                break={breaks && !startsPart} minPresenceAhead={SECTION_ROOM}>{section.heading}</Text>
               <SectionBody section={section} keyBase={`s${index}`} />
-            </View>
+            </Fragment>
           )
         })}
 

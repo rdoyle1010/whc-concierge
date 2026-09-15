@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
 import { POOL_PLAN_ENTRIES } from '../src/lib/documents/pool-plans'
 import { RISK_ASSESSMENT_ENTRIES } from '../src/lib/documents/risk-assessment-plans'
@@ -57,4 +58,58 @@ test('the index carries listing fields and nothing else', () => {
   for (const entry of REGISTER_INDEX) {
     assert.deepEqual(Object.keys(entry).sort(), [...allowed].sort())
   }
+})
+
+// The title tag that went to Google with half a word on the end.
+//
+// This lives here rather than in its own file because it is the same class of
+// fault as the one above: something true of a hundred and seven pages at once,
+// produced by one line, and invisible unless you generate all of them.
+import { pageTitle } from '../src/app/standards/[reference]/page'
+import { kindLabel } from '../src/lib/documents/journey'
+
+const WORTH_A_PAGE = new Set([
+  'Job description', 'Policy', 'Risk assessment', 'Checklist', 'Guide', 'Training',
+  'Operating procedure', 'Emergency plan', 'Management report', 'Safe system of work',
+])
+
+const pageable = () =>
+  sellableCatalogue().filter(entry => WORTH_A_PAGE.has(kindLabel(entry.reference)))
+
+test('no document page title is cut in the middle of a word', () => {
+  for (const entry of pageable()) {
+    const title = pageTitle(entry.title, kindLabel(entry.reference))
+    assert.ok(!/[a-z]$/.test(title) || !title.includes('...'), `cut mid word: ${title}`)
+    assert.ok(title.length <= 78, `${title.length} characters: ${title}`)
+  }
+})
+
+test('every document page title leads with what somebody searched for', () => {
+  // "spa risk assessment template", not the name of a document they have
+  // never heard of. The phrase is the first thing in the tag or it may as well
+  // not be in it.
+  for (const entry of pageable()) {
+    const kind = kindLabel(entry.reference).toLowerCase()
+    const title = pageTitle(entry.title, kindLabel(entry.reference))
+    assert.ok(title.startsWith(`Spa ${kind} template: `), title)
+  }
+})
+
+test('the kind is not said twice in a title', () => {
+  const doubled = pageable()
+    .map(entry => pageTitle(entry.title, kindLabel(entry.reference)))
+    .filter(title => {
+      const [lead, rest] = [title.slice(0, title.indexOf(': ')), title.slice(title.indexOf(': ') + 2)]
+      const kind = lead.replace(/^Spa /, '').replace(/ template$/, '')
+      return rest.toLowerCase().startsWith(`${kind.toLowerCase()}:`)
+    })
+  assert.deepEqual(doubled, [])
+})
+
+test('the shop quotes the size of the pack it is pricing', () => {
+  // The hero said 2,450 pounds for all 561 beside a pack holding 504.
+  const shop = readFileSync('src/app/standards/page.tsx', 'utf8')
+  assert.ok(!/COMPLETE_LIBRARY_PRICE\)\}<\/strong> for\s*\n\s*all \{catalogue\.length\}/.test(shop),
+    'the complete library price must not be quoted against the whole catalogue')
+  assert.match(shop, /completeLibraryCount/)
 })

@@ -17,21 +17,26 @@ import { readFileSync } from 'node:fs'
 
 const source = readFileSync('src/lib/documents/plan-pdf.tsx', 'utf8')
 
-test('a page break is asked for on the section, never on the rule at the top of it', () => {
-  // react-pdf moved the divider to a new page and then laid the rest of the
-  // section out against the space left on the old one, so everything after it
-  // got about half the leading it needed.
-  assert.ok(/style=\{\[styles\.section[^\]]*\]\} break=\{breaks\}/.test(source),
-    'the section carries the break')
-  // And a section that breaks carries no top margin, on itself or on its
-  // divider. Forty points of leading margin that will not fit on the page
-  // being left behind takes a page of its own, and that page is blank.
-  assert.ok(/styles\.section, breaks \? \{ marginTop: 0 \}/.test(source),
-    'a breaking section drops its top margin')
-  assert.ok(/styles\.partDivider, breaks \? \{ marginTop: 0 \}/.test(source),
-    'and so does its part divider')
-  assert.ok(!/styles\.partDivider\} break=/.test(source),
-    'the divider must not carry it')
+test('a section is not wrapped in a container that can outgrow a page', () => {
+  // Two faults, one structure.
+  //
+  // The overlapping text: a part divider inside a section container, with the
+  // break on the divider. react-pdf moved the divider to a new page and laid
+  // the rest of the container out against the space left on the old one.
+  //
+  // The blank pages: the same container, with the break on the container. When
+  // it was taller than a page, react-pdf moved it with a negative top, split
+  // it, found nothing that fitted, and printed an empty sheet. Nine of them.
+  //
+  // Both go away when the divider, the heading and the body are siblings in
+  // the page's own flow. So: no container, and the break on whichever sibling
+  // comes first.
+  assert.ok(!/style=\{\[styles\.section[,\]]/.test(source),
+    'the section container is gone, and must not come back')
+  assert.ok(/styles\.partDivider, breaks \? \{ marginTop: 0 \} : \{\}\]\} break=\{breaks\}/.test(source),
+    'the divider carries the break, and no top margin when it does')
+  assert.ok(/break=\{breaks && !startsPart\} minPresenceAhead=\{SECTION_ROOM\}/.test(source),
+    'the heading carries it when there is no divider, and keeps room ahead of it')
 })
 
 test('every text larger than the page carries its own leading', () => {

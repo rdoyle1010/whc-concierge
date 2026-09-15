@@ -240,9 +240,12 @@ test('the account a buyer is sent to make is four fields, not a property profile
   assert.match(page, /api\/register\/employer/)
   assert.match(page, /agreed_terms: true/)
 
-  // And it returns to what they were buying. An account created to finish a
-  // purchase that then drops somebody on a dashboard has not finished it.
-  assert.match(page, /router\.push\(init\.requiresEmailConfirmation \? '\/login\?registered=1&confirm=1' : back\)/)
+  // And it returns to what they were buying, down both paths. An account
+  // created to finish a purchase that then drops somebody on a dashboard has
+  // not finished it, and the confirmation path was doing exactly that: inbox,
+  // confirm, sign in, land on a dashboard with no memory of the pack.
+  assert.match(page, /confirm=1&redirect=\$\{encodeURIComponent\(back\)\}/,
+    'the redirect must survive an email confirmation')
   assert.match(page, /requested\.startsWith\('\/'\) && !requested\.startsWith\('\/\/'\)/,
     'an open redirect would send a buyer anywhere')
 

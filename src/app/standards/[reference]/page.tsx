@@ -34,6 +34,37 @@ const WORTH_A_PAGE = new Set([
   'Operating procedure', 'Emergency plan', 'Management report', 'Safe system of work',
 ])
 
+// The title tag, with the words somebody actually searched for at the front.
+//
+// It used to be `${title}: spa ${kind} template | Talent House Collective`
+// with .slice(0, 70) on the end, which put the brand where the knife falls.
+// Eighty-nine of the hundred and seven were over the limit and sixty-eight of
+// those ended mid-word: one of the most valuable pages on the site went to
+// Google as "Spa and Wellness: Normal Operating Procedure: spa operating
+// procedure".
+//
+// Now the searchable phrase leads, because that is the half worth protecting.
+// Somebody types "spa risk assessment template", not the name of a document
+// they have never seen. A leading restatement of the kind is dropped, so
+// "Risk Assessment: Fire Safety" becomes "Spa risk assessment template: Fire
+// Safety" rather than saying it twice. The brand is not in the tag at all:
+// there is no room for it and Google appends the site name anyway.
+//
+// Nothing reaches seventy-eight characters, so the cut below never fires on
+// today's catalogue. It is here so that the day a longer title is written, the
+// tag loses a word rather than half of one. A test holds both facts.
+const TITLE_LIMIT = 78
+
+export function pageTitle(title: string, kind: string): string {
+  const lower = kind.toLowerCase()
+  const name = title.replace(new RegExp(`^${lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[:-]\\s*`, 'i'), '')
+  const phrase = `Spa ${lower} template: ${name}`
+  if (phrase.length <= TITLE_LIMIT) return phrase
+  const cut = phrase.slice(0, TITLE_LIMIT)
+  const space = cut.lastIndexOf(' ')
+  return (space > 40 ? cut.slice(0, space) : cut).replace(/[:,;-]$/, '')
+}
+
 export const dynamicParams = false
 
 const pageable = () =>
@@ -54,12 +85,11 @@ export async function generateMetadata(
   if (!entry) return { title: 'Not found' }
 
   const kind = kindLabel(reference)
-  const title = `${entry.title}: spa ${kind.toLowerCase()} template | Talent House Collective`
   const description =
     `${entry.title}. A professional spa ${kind.toLowerCase()} template for ${entry.department.toLowerCase()}, `
     + `to review, amend and sign off. ${formatPrice(SINGLE_DOCUMENT_PRICE)}.`
   return {
-    title: { absolute: title.slice(0, 70) },
+    title: { absolute: pageTitle(entry.title, kind) },
     description: description.slice(0, 158),
     alternates: { canonical: `${BASE}/standards/${reference}` },
     openGraph: {

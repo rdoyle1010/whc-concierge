@@ -6,7 +6,7 @@ import Footer from '@/components/Footer'
 import {
   formatPrice, SINGLE_DOCUMENT_PRICE, COMPLETE_LIBRARY_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
   CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
-  categoryPacks,
+  categoryPacks, everythingPacks,
 } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
@@ -99,6 +99,13 @@ const SAMPLES = [
 
 export default function StandardsPage() {
   const catalogue = sellableCatalogue()
+  // What the complete library actually contains, not what the catalogue
+  // contains. The hero said "2,450 pounds for all 561" beside a pack holding
+  // 504: fifty-seven documents promised at the exact moment somebody decides,
+  // and not delivered. The catalogue is the shelf, the pack is the offer, and
+  // only one of them is a price.
+  const completeLibraryCount =
+    everythingPacks().find(pack => pack.slug === 'the-complete-library')?.count ?? catalogue.length
 
   return (
     <div className="min-h-screen bg-white">
@@ -137,7 +144,7 @@ export default function StandardsPage() {
               <p className="mt-5 text-[15px] leading-relaxed text-[#1c1c1c]">
                 From <strong className="font-semibold">{formatPrice(SINGLE_DOCUMENT_PRICE)}</strong> for one
                 document, <strong className="font-semibold">{formatPrice(COMPLETE_LIBRARY_PRICE)}</strong> for
-                all {catalogue.length}. {VAT_NOTE}
+                the complete library of {completeLibraryCount}. {VAT_NOTE}
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">

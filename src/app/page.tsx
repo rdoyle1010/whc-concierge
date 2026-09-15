@@ -15,9 +15,17 @@ import { readConfigString } from '@/lib/platform-access'
 
 export const revalidate = 60
 
+// Both businesses, in the tab.
+//
+// This said careers and only careers, while the revenue is a library of spa
+// operating documents. A spa director who searched for a risk assessment
+// template landed on a careers platform and left, which is most of the answer
+// to why nobody could tell what this was.
 export const metadata: Metadata = {
-  title: { absolute: 'Talent House Collective | Spa and Wellness Careers' },
-  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
+  title: { absolute: 'Talent House Collective | Spa Documents and Wellness Careers' },
+  description: 'Spa operating documents written for luxury properties: SOPs, risk assessments, '
+    + 'policies, job descriptions and checklists, from 39 pounds. And the recruitment platform '
+    + 'that matches spa professionals to exceptional properties on real skills.',
   alternates: { canonical: 'https://talenthousecollective.co.uk' },
 }
 
@@ -217,14 +225,27 @@ function RoutesSection() {
       href: '/academy',
       cta: 'Explore the Academy',
     },
+    // The door that was not here.
+    //
+    // The library is the part of this business that takes money, and the only
+    // way to it from the home page was the sixth of eight items in the nav.
+    // Somebody who arrived needing a risk assessment read three cards about
+    // jobs and left. The words in this one are the words they searched for.
+    {
+      title: 'I need the documents my spa is expected to have',
+      copy: 'Standard operating procedures, risk assessments, policies, job descriptions and daily '
+        + 'checklists, written for luxury spas and ready for your name. From 39 pounds for one.',
+      href: '/standards',
+      cta: 'See the library',
+    },
   ]
   return (
     <section className="border-b border-black/10 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">Talent House Collective</p>
-        <h2 className="site-heading mt-2 max-w-3xl text-[26px] font-semibold leading-tight md:text-[32px]">The professional platform for spa and wellness careers.</h2>
-        <p className="mt-2 max-w-2xl text-[14px] leading-6 text-secondary">Find exceptional people. Build better careers. Develop stronger spa businesses.</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <h2 className="site-heading mt-2 max-w-3xl text-[26px] font-semibold leading-tight md:text-[32px]">Run the spa, and staff it.</h2>
+        <p className="mt-2 max-w-2xl text-[14px] leading-6 text-secondary">The documents a luxury spa is expected to have in writing, and the people to run it. Choose the door you came for.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {routes.map(route => (
             <Link key={route.title} href={route.href} className="group flex flex-col border border-border bg-white p-6 transition-colors hover:border-accent">
               <h3 className="text-[18px] font-semibold text-ink">{route.title}</h3>
