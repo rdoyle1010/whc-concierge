@@ -115,7 +115,11 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/verify', label: 'Verify a Certificate' }, { href: '/how-to-use', label: 'How It Works' }, { href: '/match', label: 'How Matching Works' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
   ]
 
-  const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div className="space-y-2.5">{items.map(link => <Link key={link.href} href={link.href} className="block text-[12px] text-secondary hover:text-ink transition-colors">{link.label}</Link>)}</div>
+  // Footer rows were about nineteen pixels tall on a phone, which is a fiddly
+  // target for a thumb and a row of near-misses for anybody with shaky hands.
+  // The link box is now forty-four; the spacing between rows carries the look,
+  // so nothing appears further apart than before.
+  const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div>{items.map(link => <Link key={link.href} href={link.href} className="flex min-h-11 items-center text-[12px] text-secondary hover:text-ink transition-colors">{link.label}</Link>)}</div>
 
   const currentUrl = () => typeof window !== 'undefined' ? window.location.href : 'https://talenthousecollective.co.uk'
   const pageTitle = () => typeof document !== 'undefined' ? document.title : 'Talent House Collective'
@@ -177,6 +181,6 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
         </form>
       )}
     </div>
-    </div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Discover</p><LinkList items={primary} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Talent House</p><LinkList items={company} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Support</p><LinkList items={support} /></div></div><div className="border-t border-[#dcd4c8] pt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><p className="text-[11px] text-muted">{content.footer.copyright}</p><Link href="/admin-sign-in" className="text-[11px] text-muted hover:text-ink transition-colors" aria-label={`${content.footer.staffLabel} sign in`}>{content.footer.staffLabel}</Link></div></div></footer>
+    </div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Discover</p><LinkList items={primary} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Talent House</p><LinkList items={company} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Support</p><LinkList items={support} /></div></div><div className="border-t border-[#dcd4c8] pt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><p className="text-[11px] text-muted">{content.footer.copyright}</p><Link href="/admin-sign-in" className="inline-flex min-h-11 items-center text-[11px] text-muted hover:text-ink transition-colors" aria-label={`${content.footer.staffLabel} sign in`}>{content.footer.staffLabel}</Link></div></div></footer>
   </>
 }

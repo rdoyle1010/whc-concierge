@@ -125,5 +125,11 @@ test('events are reachable and in the sitemap', () => {
   const sitemap = body('src/app/sitemap.ts')
   assert.match(sitemap, /\$\{BASE\}\/events/)
   assert.match(sitemap, /\$\{BASE\}\/events\/\$\{row\.slug\}/)
-  assert.match(sitemap, /Promise\.all\(\[roles, properties, brands, posts, events\]\)/)
+  // That events are IN the dynamic set, not what else is in it. Pinning the
+  // whole array meant adding course pages to the sitemap broke a test about
+  // events, which tells you nothing and costs somebody ten minutes.
+  const dynamicCall = sitemap.match(/Promise\.all\(\[([^\]]*)\]\)/)
+  assert.ok(dynamicCall, 'the sitemap should still gather its dynamic sections in one place')
+  assert.ok(dynamicCall[1].split(',').map(name => name.trim()).includes('events'),
+    `events must be among the sitemap's dynamic sections, found: ${dynamicCall[1]}`)
 })

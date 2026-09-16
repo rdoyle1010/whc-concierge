@@ -156,6 +156,25 @@ Of the remaining weight, about 72KB is React itself and 38KB is a legacy
 polyfill modern browsers never download. The real figure a current phone
 fetches is nearer 166KB, and getting much below that means leaving React.
 
+### The Academy is now findable, which changes what it is
+
+Forty-eight courses used to live only at /talent/academy/[slug], which robots
+blocks, and the card on /academy was a button rather than a link. The whole
+Academy was one URL to a search engine.
+
+Every course now has a public page: the syllabus, the CPD hours, the price, and
+a guest checkout. Lesson bodies stay behind the paywall. The career ladder that
+had been sitting in the code behind a login is published at /career, with each
+rung linking to the courses that climb it.
+
+This matters commercially rather than technically. A course is the second thing
+on this platform that sells to a stranger with no marketplace behind it -
+fifteen pounds, no account - and the search terms are unusually soft because
+almost nobody in the UK has written this material: "LQA training", "Forbes five
+star spa standards", "CPD courses for spa therapists", "how to become a spa
+manager". Alongside the document library, that is two revenue lines that work at
+today's scale rather than at a scale that does not exist yet.
+
 Four things a description of this business would otherwise get wrong:
 
 1. The document library (561 operational documents, £10 to £2,450) is the only

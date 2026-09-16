@@ -32,6 +32,8 @@ export const PUBLIC_CACHE_TAGS = {
   blog: 'public-blog',
   /** Reviews and the live counts the homepage prints as proof. */
   proof: 'public-proof',
+  /** The course catalogue: the Academy list and every course page. */
+  academy: 'public-academy',
 } as const
 
 export type PublicCacheTag = typeof PUBLIC_CACHE_TAGS[keyof typeof PUBLIC_CACHE_TAGS]

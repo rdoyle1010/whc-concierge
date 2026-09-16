@@ -61,7 +61,24 @@ export async function POST(req: NextRequest) {
         metadata: { candidate_id: candidate.id, platform: 'whc' },
       })
       accountId = account.id
-      await admin.from('candidate_profiles').update({ stripe_connect_account_id: accountId }).eq('id', candidate.id)
+
+      // Checked, because this is the line that decides whether the account we
+      // just created is ever found again.
+      //
+      // The write was unchecked. A Connect account is created at Stripe first
+      // and linked here second, so a failed link leaves a real account that
+      // this platform has no record of - and the next time the professional
+      // presses the button, the branch above sees no id and creates another
+      // one. Every attempt makes a new account, none of them can be paid out
+      // to, and nothing anywhere says so.
+      const { error: linkError } = await admin.from('candidate_profiles')
+        .update({ stripe_connect_account_id: accountId }).eq('id', candidate.id)
+      if (linkError) {
+        console.error('[payouts] Connect account created but not linked:', accountId, candidate.id, linkError.message)
+        return NextResponse.json({
+          error: 'Your payout account was created but we could not save it against your profile. Please tell us before trying again, so we do not create a second one.',
+        }, { status: 502 })
+      }
     }
 
     // Agency and Residency both start onboarding here, so the professional

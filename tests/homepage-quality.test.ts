@@ -42,7 +42,13 @@ test('footer copy uses readable public-site contrast', () => {
   const footer = source.slice(source.indexOf('<footer className='))
   assert.match(footer, /bg-\[#ede8df\]/, 'the footer band is light grey')
   assert.doesNotMatch(footer, /text-white\//, 'no faded white text on a light band')
-  assert.match(source, /block text-\[12px\] text-secondary hover:text-ink/, 'the link columns must be ink, not white')
+  // The colour, not the layout. This pinned "block text-[12px] text-secondary
+  // hover:text-ink" as one string, so making the footer links a big enough tap
+  // target on a phone failed a test about contrast.
+  const linkList = source.slice(source.indexOf('const LinkList ='), source.indexOf('const LinkList =') + 600)
+  assert.match(linkList, /text-secondary/, 'the link columns must be ink, not white')
+  assert.match(linkList, /hover:text-ink/)
+  assert.doesNotMatch(linkList, /text-white/)
   assert.match(footer, /text-secondary/)
 })
 

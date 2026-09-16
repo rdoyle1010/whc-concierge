@@ -409,11 +409,35 @@ check('Academy course content leaves the database only when it is owned and comp
   const catalogRoute = read('src/app/api/academy/catalog/route.ts')
   assert.match(catalogRoute, /getAcademySummaries|getAcademyCatalog/)
   assert.match(catalogRoute, /getAcademyCourseBySlug/)
-  assert.match(source, /export async function getAcademySummaries[\s\S]{0,200}?getAcademyCatalog\(false\)\.?[\s\S]{0,40}?courseSummary/)
+  // Both public reads come from the same merge, whatever shape they are
+  // written in. This pinned `export async function getAcademySummaries`, which
+  // broke the day that function was wrapped in a cache - a test asserting a
+  // declaration rather than a guarantee. It now takes the slice between the
+  // name and the end of its body and checks what it actually calls.
+  for (const [name, through] of [
+    ['getAcademySummaries', 'getAcademyCatalog(false)'],
+    ['getCourseSyllabus', 'getAcademyCourseBySlug('],
+  ] as const) {
+    const at = source.indexOf(`export const ${name}`) >= 0
+      ? source.indexOf(`export const ${name}`)
+      : source.indexOf(`export async function ${name}`)
+    assert.ok(at >= 0, `${name} must exist: it is how a course reaches the public`)
+    const fn = source.slice(at, at + 700)
+    assert.ok(fn.includes(through), `${name} must read through ${through}, not the raw table`)
+  }
+  assert.match(source, /courseSummary\(/)
+  assert.match(source, /courseSyllabus\(/)
   // And a summary must never carry the teaching it exists to leave behind.
   const summary = source.split('export function courseSummary(')[1].split('\n}')[0]
   for (const paid of ['lessons:', 'quiz:', 'rich:', 'answer_key']) {
     assert.equal(summary.includes(paid), false, `a course summary must not carry ${paid}`)
+  }
+  // The syllabus is the public course page, so it may name the lessons and may
+  // never carry them. That distinction is the Academy's entire business model.
+  const syllabus = source.split('export function courseSyllabus(')[1].split('\n}')[0]
+  assert.ok(syllabus.includes('lesson_titles'), 'a syllabus lists what the course covers')
+  for (const paid of ['content', 'answer_key', 'rich:']) {
+    assert.equal(syllabus.includes(paid), false, `a course syllabus must not carry ${paid}`)
   }
   // The precedence is the rule: an admin's own version wins, code content is
   // the fallback. The code content is now fetched for this one course instead
