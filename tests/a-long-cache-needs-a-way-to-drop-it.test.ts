@@ -161,3 +161,49 @@ test('a public page does not read cookies it has no use for', () => {
       `${page} declares a revalidate window and then reads cookies, which makes the window a dead setting`)
   }
 })
+
+test('an invalidation takes effect on the next request, not the one after', () => {
+  // The bug this file failed to prevent, the first time it mattered.
+  //
+  // revalidateTag takes a second argument that decides what "invalid" means,
+  // and the difference is invisible at the call site. 'max' marks the tag stale
+  // and serves stale-while-revalidate: the NEXT visitor still gets the old page
+  // while a fresh one is built behind them. That is right for a cache warming
+  // up and wrong for every reason this function is called.
+  //
+  // A property closed a role, went to look at the board, and the advert was
+  // still on it - because "serve the stale copy once more" is precisely what it
+  // had just asked us to stop doing. Putting a role up late is a delay. Taking
+  // one down late means applications to a role that is already filled.
+  //
+  // { expire: 0 } expires it immediately, so the next request waits for fresh
+  // data. That costs one visitor one render, once, after a change somebody made
+  // deliberately.
+  const lib = body('src/lib/public-cache.ts')
+  assert.match(lib, /revalidateTag\(tag, \{ expire: 0 \}\)/,
+    'invalidation must expire immediately, not serve one more stale response')
+  assert.doesNotMatch(lib, /revalidateTag\([^)]*'max'\)/,
+    "'max' is stale-while-revalidate: the visitor who prompted the change still sees the old page")
+
+  // updateTag() is the documented way to get this, and cannot be used here: it
+  // throws outside a Server Action and every caller of this is a route handler.
+  // If that ever changes, this comment is the reason it was not used.
+  assert.doesNotMatch(lib, /updateTag/)
+})
+
+test('every way of taking a role down drops the cache', () => {
+  // Closed, filled and deleted all take an advert off the public board, and all
+  // three go through this one route. A role that is down must be down.
+  const status = body('src/app/api/employer/jobs/status/route.ts')
+  for (const action of ["'reopen'", "'delete'", "action === 'filled'"]) {
+    assert.ok(status.includes(action), `the status route should still handle ${action}`)
+  }
+  const drops = (status.match(/revalidatePublic\(PUBLIC_CACHE_TAGS\.jobs\)/g) || []).length
+  assert.ok(drops >= 3, `each takedown path must drop the cache; found ${drops}`)
+
+  // And the screen an employer actually presses must reach this route, or none
+  // of the above runs at all.
+  const screen = body('src/app/employer/jobs/page.tsx')
+  assert.match(screen, /\/api\/employer\/jobs\/status/,
+    'the employer jobs screen must take roles down through the route that drops the cache')
+})
