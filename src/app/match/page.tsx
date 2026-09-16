@@ -5,7 +5,7 @@ import Footer from '@/components/Footer'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables } from '@/lib/site-content'
 
-export const revalidate = 60
+export const revalidate = 3600
 
 // The image on the sample role card.
 //

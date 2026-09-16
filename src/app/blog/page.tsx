@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 //
 // Revalidated rather than dynamic: the posts change when Rebecca publishes one,
 // which is not often enough to pay for a database read on every visit.
-export const revalidate = 300
+export const revalidate = 3600
 
 async function publishedPosts() {
   try {

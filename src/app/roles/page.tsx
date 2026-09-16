@@ -4,7 +4,7 @@ import SponsoredAd from '@/components/SponsoredAd'
 import PublicRolesBrowser from '@/components/PublicRolesBrowser'
 import { getPublicRoles } from '@/lib/public-roles-server'
 
-export const revalidate = 180
+export const revalidate = 3600
 
 import type { Metadata } from 'next'
 import { OG_DEFAULTS } from '@/lib/og-defaults'

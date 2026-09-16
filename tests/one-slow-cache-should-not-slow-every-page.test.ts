@@ -37,12 +37,44 @@ test('the tag is what makes a change land, so it has to be revalidated', () => {
   }
 })
 
-// Five minutes, not an hour. A newly published advert appearing on /roles an
-// hour later is not acceptable on a jobs board, and those list pages inherit
-// this number rather than declaring their own.
-test('the root layout stays short enough for a jobs board', () => {
+// A newly published advert must reach the public quickly. That was true when
+// this file was written and it is still the rule; what has changed is what
+// guarantees it.
+//
+// The guarantee used to be a five-minute ceiling on the root layout, because
+// nothing dropped the jobs pages when a role went live, so the only way to make
+// one appear was to wait. That ceiling applied to every static page on the site
+// - Next takes the lowest revalidate in a segment chain - so the whole site
+// re-rendered against the database every five minutes, and on a quiet site that
+// is a cold render for most visitors.
+//
+// The guarantee is now invalidation: every path that puts a role on the market
+// calls triggerJobAlerts, which drops the jobs tag first thing. So the window
+// may be long, and an advert still appears at once.
+//
+// The rule this test holds is therefore the promise, not the number: a long
+// window is allowed only while that invalidation exists. Delete the drop and
+// this fails, which is the point.
+test('a new advert reaches the public without waiting for a window', () => {
   const layout = read('src/app/layout.tsx')
   const match = layout.match(/export const revalidate = (\d+)/)
   assert.ok(match, 'the root layout must declare a revalidate')
-  assert.ok(Number(match[1]) <= 300, 'a new advert must not wait longer than five minutes to appear')
+
+  if (Number(match[1]) <= 300) return // a short ceiling is its own guarantee
+
+  const trigger = read('src/lib/job-alerts-trigger.ts')
+  assert.match(trigger, /revalidatePublic\(PUBLIC_CACHE_TAGS\.jobs\)/,
+    `the root layout is at ${match[1]}s, so a published role only appears when publishing drops the jobs cache - and nothing does`)
+
+  // Above the early return, or a deployment without the alert secret publishes
+  // a role that nobody sees until the window expires.
+  const secretCall = trigger.indexOf('getInternalApiSecret()')
+  assert.ok(secretCall > 0)
+  assert.match(trigger.slice(0, secretCall), /revalidatePublic/,
+    'the drop must not sit behind a condition that can skip it')
+
+  // And taking one down, which matters more than putting one up.
+  const status = read('src/app/api/employer/jobs/status/route.ts')
+  assert.match(status, /revalidatePublic\(PUBLIC_CACHE_TAGS\.jobs\)/,
+    'a filled or closed role must come off the board without waiting either')
 })

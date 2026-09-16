@@ -4,6 +4,7 @@ import { sendRoleFilledEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Only these applications are still "in play" and need closing + notifying
 // when the role ends. Drafts were never sent; withdrawn/rejected/accepted are
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
     const { error: reopenError } = await admin.from('job_listings')
       .update({ is_live: true, status: 'active' }).eq('id', job.id)
     if (reopenError) return NextResponse.json({ error: 'Could not put this role back up.' }, { status: 500 })
+    revalidatePublic(PUBLIC_CACHE_TAGS.jobs)
     return NextResponse.json({ success: true, status: 'active', is_live: true, expiresAt: job.expires_at })
   }
 
@@ -85,12 +87,17 @@ export async function POST(req: NextRequest) {
     if (deleteError) {
       return NextResponse.json({ error: 'This role could not be deleted. Close it instead, and tell us if it keeps happening.' }, { status: 500 })
     }
+    revalidatePublic(PUBLIC_CACHE_TAGS.jobs)
     return NextResponse.json({ success: true, deleted: true })
   }
 
   const status = action === 'filled' ? 'filled' : 'closed'
   const { error: updateError } = await admin.from('job_listings').update({ is_live: false, status }).eq('id', jobId)
   if (updateError) return NextResponse.json({ error: 'Could not update role' }, { status: 500 })
+  // Filled or closed: the role comes off the public board now, not within the
+  // hour. Taking a role down late is worse than putting one up late - it means
+  // applications to something that is already gone.
+  revalidatePublic(PUBLIC_CACHE_TAGS.jobs)
 
   let notified = 0
   const propertyName = employer.property_name || employer.company_name || 'the property'

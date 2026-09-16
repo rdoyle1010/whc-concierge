@@ -3,6 +3,7 @@ import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { reviewSchema, validateRequest } from '@/lib/validations'
 import { getRequestUser } from '@/lib/request-user'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 const REVIEWABLE_BOOKING_STATUSES = ['confirmed', 'completed']
 
@@ -234,6 +235,8 @@ export async function POST(req: NextRequest) {
       )
     } catch { /* the review itself is saved either way */ }
 
+    // The homepage prints review counts as proof, so a new review changes it.
+    revalidatePublic(PUBLIC_CACHE_TAGS.proof)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

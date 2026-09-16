@@ -12,9 +12,14 @@ import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
 import { cheapestSingle, formatPrice } from '@/lib/documents/pricing'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 import { readConfigString } from '@/lib/platform-access'
 
-export const revalidate = 60
+// An hour, not a minute. Every read below is tagged, so publishing a role or
+// approving a property drops this page at once rather than up to sixty seconds
+// later - which means the window no longer has to be short, and a visitor gets
+// a prerendered homepage instead of paying for ten database round trips.
+export const revalidate = 3600
 
 // Both businesses, in the tab.
 //
@@ -93,7 +98,7 @@ const getFeaturedRoles = unstable_cache(async (): Promise<FeaturedRole[]> => {
   } catch {
     return []
   }
-}, ['homepage-featured-roles-v2'], { revalidate: 60 })
+}, ['homepage-featured-roles-v2'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.jobs] })
 
 // The homepage's proof is the live state of the platform, not a claim. Each
 // count is real; a figure only appears once it is greater than zero.
@@ -122,7 +127,7 @@ const getLiveNumbers = unstable_cache(async (): Promise<LiveNumbers> => {
   } catch {
     return empty
   }
-}, ['homepage-live-numbers-v1'], { revalidate: 300 })
+}, ['homepage-live-numbers-v1'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.proof, PUBLIC_CACHE_TAGS.jobs] })
 
 // Real reviews only - written by professionals after verified placements and
 // completed shifts. When none exist yet, the section renders nothing.
@@ -164,7 +169,7 @@ const getVerifiedReviews = unstable_cache(async (): Promise<VerifiedReview[]> =>
   } catch {
     return []
   }
-}, ['homepage-verified-reviews-v1'], { revalidate: 300 })
+}, ['homepage-verified-reviews-v1'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.proof] })
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">{children}</p>
@@ -338,7 +343,7 @@ const getFeaturedPlacements = unstable_cache(async (): Promise<{ properties: Fea
       })
     return { properties, professionals }
   } catch { return { properties: [], professionals: [] } }
-}, ['homepage-featured-placements-v1'], { revalidate: 300 })
+}, ['homepage-featured-placements-v1'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.proof] })
 
 // The two things she is selling, on the page where people arrive.
 //

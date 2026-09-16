@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeArticleHtml } from '@/lib/article-html'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Admin blog management - the blog_posts table is RLS-locked to public reads
 // of published posts only (migration 023), so all writes come through this
@@ -72,6 +73,8 @@ export async function POST(req: NextRequest) {
   const { data, error } = await admin.from('blog_posts').insert(withCleanBody(post)).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // A published or edited post reaches the Journal immediately.
+  revalidatePublic(PUBLIC_CACHE_TAGS.blog)
   return NextResponse.json({ success: true, post: data })
 }
 
@@ -91,6 +94,7 @@ export async function PATCH(req: NextRequest) {
   const { data, error } = await admin.from('blog_posts').update(updates).eq('id', id).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePublic(PUBLIC_CACHE_TAGS.blog)
   return NextResponse.json({ success: true, post: data })
 }
 
@@ -106,5 +110,6 @@ export async function DELETE(req: NextRequest) {
   const { error } = await admin.from('blog_posts').delete().eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePublic(PUBLIC_CACHE_TAGS.blog)
   return NextResponse.json({ success: true })
 }

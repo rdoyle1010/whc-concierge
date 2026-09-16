@@ -119,9 +119,17 @@ export async function generateMetadata(): Promise<Metadata> {
   return { ...baseMetadata, icons: { icon: logo.url, apple: '/icons/apple-touch-icon.png' } }
 }
 
-// Static pages inherit this: brand changes published in admin reach every
-// page within five minutes without a redeploy.
-export const revalidate = 300
+// The ceiling for every page beneath it, which is the whole site.
+//
+// Next takes the lowest revalidate in a segment chain, so this five minutes was
+// silently capping every page under it: a page asking for an hour got five
+// minutes, and on a site this quiet that is a cold render for most visitors.
+// The number was chosen so that a brand change published in admin reached every
+// page without a redeploy - but the read it protects (getWebsiteContent) is
+// already cached under the 'website-content' tag and already dropped the moment
+// that change is saved, so the short window was buying nothing and costing
+// every page below it.
+export const revalidate = 3600
 
 const organizationJsonLd = (logoUrl: string) => ({
   '@context': 'https://schema.org',

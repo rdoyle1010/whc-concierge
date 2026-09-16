@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
 const DEFAULT_PER_PAGE = 12
 const MAX_PER_PAGE = 50
@@ -44,7 +45,7 @@ const readPublicJobs = unstable_cache(async (search: string, location: string, o
     } catch { /* best-effort merge */ }
   }
   return rows
-}, ['public-jobs-page-v6'], { revalidate: 60, tags: ['public-jobs'] })
+}, ['public-jobs-page-v6'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.jobs] })
 
 export async function GET(req: NextRequest) {
   const pageParam = Number(req.nextUrl.searchParams.get('page'))

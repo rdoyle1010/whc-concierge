@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendApprovalEmail, sendRejectionEmail, sendWelcomeEmail } from '@/lib/emails'
 import { sendTransactionalEmail } from '@/lib/send-email'
 import { startMarketingOptIn } from '@/lib/privacy-consent'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Delegated to the shared admin guard, which enforces two-step
 // verification as well as the admin role.
@@ -218,6 +219,11 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // An approval decision changes the public site: an approved property appears
+  // in the directory, and its held roles go live in the block below. The public
+  // pages cache for an hour, which is only safe because this runs.
+  revalidatePublic(PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.jobs, PUBLIC_CACHE_TAGS.proof)
 
   // Approving an employer releases any paid roles held back by the approval
   // gate: a held role is a draft that already carries a live paid term.

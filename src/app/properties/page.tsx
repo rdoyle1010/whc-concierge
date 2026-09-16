@@ -5,8 +5,13 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Building2 } from 'lucide-react'
 import { getPublicPageContent } from '@/lib/public-page-content-server'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
-export const revalidate = 60
+// An hour, not a minute. The reads behind this page are tagged, so an edit
+// drops the cached copy at once instead of it expiring on a timer - which is
+// what made a short window necessary and what made nearly every visit a cold
+// render on a site this quiet.
+export const revalidate = 3600
 
 const PUBLIC_PROPERTIES_LIMIT = 120
 const PROPERTY_FIELDS = 'id,company_name,property_name,hotel_group,location,city,about_text,logo_url,property_photos,review_score,review_count,star_rating,property_type,tagline,featured_employer,featured_until,created_at,is_verified,approval_status'
@@ -93,7 +98,10 @@ async function readPublicProperties() {
   }
 }
 
-const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v4'], { revalidate: 60 })
+// Tagged, so approving a property shows it here at once. Untagged, an hour's
+// window would mean an hour's wait, which is why the window used to be a minute
+// and why nearly every visit was a cold render.
+const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v4'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.properties] })
 
 export default async function PropertiesPage() {
   return renderProperties(false)
