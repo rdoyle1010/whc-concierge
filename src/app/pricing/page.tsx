@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ChevronDown, Shield, Check, CalendarDays, MapPin, Sparkles, Building2, BriefcaseBusiness, ArrowRight } from 'lucide-react'
 import { JOB_TIERS, TALENT_MEMBERSHIPS, FEATURED_TALENT, EMPLOYER_MEMBERSHIPS, RESIDENCY_PRICING, AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
-import { type PublicPageContent } from '@/lib/public-page-content'
+import type { PublicPageContent } from '@/lib/public-page-content'
 
 const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
 

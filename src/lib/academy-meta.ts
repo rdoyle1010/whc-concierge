@@ -5,7 +5,6 @@
 // skills use the platform's own vocabulary (services, business skills, product
 // houses) so the matching engine's gap analysis can join to courses directly.
 
-import { ACADEMY } from './academy'
 
 export type CourseLevel = 'Foundation' | 'Professional' | 'Leadership'
 
@@ -37,7 +36,16 @@ const CORE_META: Record<string, CourseMeta> = {
 
 const metaCache = new Map<string, CourseMeta>()
 
-export function courseMeta(slug: string): CourseMeta {
+/**
+ * What a course teaches, its level and its CPD hours.
+ *
+ * The title is optional and worth passing. It used to be looked up from the
+ * ACADEMY constant, which meant every client component calling this pulled the
+ * full text of every lesson in the Academy into its page - 109KB gzipped, for
+ * a CPD number. Callers that already hold the course pass its title; the slug
+ * fallback is only for the ones that do not.
+ */
+export function courseMeta(slug: string, title?: string): CourseMeta {
   const cached = metaCache.get(slug)
   if (cached) return cached
 
@@ -45,8 +53,9 @@ export function courseMeta(slug: string): CourseMeta {
   if (!meta && slug.endsWith('-masterclass')) {
     // Brand masterclasses: the skill IS the product house, named as the
     // platform names it, so brand gaps in matching map straight to a course.
-    const course = ACADEMY.find(c => c.slug === slug)
-    const brand = course ? course.title.replace(/\s*Masterclass\s*$/i, '').trim() : slug.replace(/-masterclass$/, '').replace(/-/g, ' ')
+    const brand = title
+      ? title.replace(/\s*Masterclass\s*$/i, '').trim()
+      : slug.replace(/-masterclass$/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     meta = { level: 'Professional', skills: [brand, 'Product Knowledge', 'Retail'], cpdHours: 0.5 }
   }
   if (!meta) meta = { level: 'Professional', skills: [], cpdHours: 0.5 }
@@ -56,17 +65,9 @@ export function courseMeta(slug: string): CourseMeta {
 
 const norm = (value: string) => value.trim().toLowerCase()
 
-// Find active courses that teach a given skill (loose containment both ways,
-// matching how the matching engine compares skills).
-export function coursesForSkill(skill: string, slugs?: string[]): string[] {
-  const key = norm(skill)
-  if (!key) return []
-  const pool = slugs || ACADEMY.map(c => c.slug)
-  return pool.filter(slug => courseMeta(slug).skills.some(s => {
-    const candidate = norm(s)
-    return candidate === key || candidate.includes(key) || key.includes(candidate)
-  }))
-}
+// coursesForSkill lives in academy-meta-server.ts. It needs the catalogue to
+// know which courses exist, and every caller is a server route, so keeping it
+// here would put the whole Academy into any page that wanted a CPD number.
 
 // The career ladder used for "where you are → what's next".
 export const CAREER_LADDER: { level: number; label: string; nextLabel: string; recommendedSlugs: string[] }[] = [

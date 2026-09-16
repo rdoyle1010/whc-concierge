@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAcademyCatalog } from '@/lib/academy-catalog-server'
-import { coursesForSkill } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 
 // Live demand per Academy course: how many live Talent House roles ask for a skill the
 // course teaches. A job counts once per course even when several of its

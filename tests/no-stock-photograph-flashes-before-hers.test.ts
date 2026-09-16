@@ -106,7 +106,7 @@ test('the third defaults file has no photographs either', () => {
   const files = [
     'src/lib/academy-extras.ts',
     'src/lib/academy-catalog-server.ts',
-    'src/app/academy/page.tsx',
+    'src/app/academy/AcademyBrowser.tsx',
     'src/app/talent/academy/page.tsx',
     'src/app/talent/academy/[slug]/page.tsx',
     ...readdirSync('src/lib/academy-more').filter(name => name.endsWith('.ts')).map(name => `src/lib/academy-more/${name}`),
@@ -123,7 +123,7 @@ test('a course with no photograph draws nothing, not an empty src', () => {
   // and an img with an empty src re-requests the page itself. Every course
   // image must be behind a check, and the space behind it must be painted or
   // the card collapses.
-  for (const file of ['src/app/academy/page.tsx', 'src/app/talent/academy/page.tsx', 'src/app/talent/academy/[slug]/page.tsx']) {
+  for (const file of ['src/app/academy/AcademyBrowser.tsx', 'src/app/talent/academy/page.tsx', 'src/app/talent/academy/[slug]/page.tsx']) {
     const source = readFileSync(file, 'utf8')
     const tags = source.match(/<img\b[^>]*?src=\{(?:course\.image_url|displayCourseImage\(course\))\}/g) || []
     for (const tag of tags) {

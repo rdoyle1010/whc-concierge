@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { getAcademyCatalog } from '@/lib/academy-catalog-server'
-import { courseMeta, coursesForSkill, careerPosition } from '@/lib/academy-meta'
+import { courseMeta, careerPosition } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 
 // The career engine behind the Academy: where this person is, what the live
 // market is asking for that they don't yet have, and which learning closes

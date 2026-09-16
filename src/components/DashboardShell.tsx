@@ -14,7 +14,7 @@ import UniversalSearch from '@/components/UniversalSearch'
 import PostHireReviews from '@/components/PostHireReviews'
 import SponsoredAd from '@/components/SponsoredAd'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { supabaseLazy } from '@/lib/supabase/lazy'
 import {
   employerFeatureAccess, FeatureAccess, FeatureKey, talentFeatureAccess,
 } from '@/lib/feature-access'
@@ -178,7 +178,6 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
   // happened to navigate back to the dashboard home page.
   const [viewerId, setViewerId] = useState<string | null>(null)
   const pathname = usePathname()
-  const supabase = createClient()
   const [accountFocus, setAccountFocus] = useState<string | null>(null)
   const [hasConsultancy, setHasConsultancy] = useState(false)
   const baseItems = role === 'talent' && accountFocus === 'consultant' ? navItems.consultant : navItems[role]
@@ -236,12 +235,14 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
       const user = await getViewer()
       if (!active || !user) return
       if (role === 'talent') {
+        const supabase = await supabaseLazy()
         const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,academy_discount_pct,free_feature_credits,account_focus').eq('user_id', user.id).maybeSingle()
         if (active) { setAccess(talentFeatureAccess(data)); setAccountFocus(data?.account_focus || null) }
         const consultancy = await fetch('/api/consultancy/mine', { cache: 'no-store' })
           .then(res => res.ok ? res.json() : null).catch(() => null)
         if (active) setHasConsultancy(Boolean(consultancy?.profile))
       } else {
+        const supabase = await supabaseLazy()
         const { data } = await supabase.from('employer_profiles_private').select('membership_tier,annual_job_allowance,annual_jobs_used,featured_employer,featured_until,talent_search_until').eq('user_id', user.id).maybeSingle()
         if (active) setAccess(employerFeatureAccess(data))
       }
@@ -256,7 +257,7 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
     getViewer().then(async user => {
       if (!active) return
       if (!user) { setAgencyShell('public'); return }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+      const { data: profile } = await (await supabaseLazy()).from('profiles').select('role').eq('id', user.id).maybeSingle()
       if (!active) return
       setAgencyShell(profile?.role === 'employer' ? 'employer' : 'public')
     }).catch(() => { if (active) setAgencyShell('public') })
@@ -265,7 +266,7 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
 
   const handleSignOut = async () => {
     forgetViewer()
-    await supabase.auth.signOut()
+    await (await supabaseLazy()).auth.signOut()
     window.location.href = '/'
   }
 

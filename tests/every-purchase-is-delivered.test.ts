@@ -81,7 +81,7 @@ test('every checkout returns with its session id', () => {
 // A page a buyer lands on after paying has to actually make the call.
 test('the pages people land on after paying confirm the purchase', () => {
   for (const page of [
-    'src/app/academy/page.tsx',
+    'src/app/academy/AcademyBrowser.tsx',
     'src/app/talent/academy/page.tsx',
     'src/app/talent/upgrade/page.tsx',
     'src/app/talent/agency/page.tsx',

@@ -140,8 +140,21 @@ a visitor gets a prerendered page, and a published change is live at once rather
 than up to five minutes later. A test holds the pairing, because a long window
 with no invalidation would be far worse than the slow page it replaced.
 
-Still open, and a bigger piece of work: every page ships roughly 200KB of
-gzipped JavaScript before it does anything, and the Academy ships 450KB.
+The JavaScript went next. Every public page now ships between 204KB and 233KB
+gzipped, where the range used to run from 204KB to 450KB. Four causes, all the
+same mistake in different clothes: a module imported for one small thing and
+arriving with everything sitting beside it.
+
+The worst of them was commercial rather than technical. /academy imported the
+course catalogue to draw cards showing a title and a module count, and that
+catalogue carries the full text of every lesson - so the page selling the
+Academy handed its teaching material to anyone who opened a browser's network
+tab. The API behind it did the same, 305KB per request. Both now return a
+summary: title, tagline, minutes, price, picture, number of modules.
+
+Of the remaining weight, about 72KB is React itself and 38KB is a legacy
+polyfill modern browsers never download. The real figure a current phone
+fetches is nearer 166KB, and getting much below that means leaving React.
 
 Four things a description of this business would otherwise get wrong:
 

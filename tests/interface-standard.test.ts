@@ -178,7 +178,7 @@ test('headings on charcoal cards name their own colour', () => {
   const cases: [string, string][] = [
     ['pricing/page.tsx', 'Featured Talent'],
     ['pricing/page.tsx', 'Employer Group'],
-    ['academy/page.tsx', 'What do you want to be better at next?'],
+    ['academy/AcademyBrowser.tsx', 'What do you want to be better at next?'],
   ]
   for (const [path, heading] of cases) {
     const text = readFileSync(join(APP, path), 'utf8')
@@ -488,7 +488,7 @@ test('the employer dashboard asks for the columns it draws', () => {
 // stock picture outranked the one an administrator had uploaded and the upload
 // appeared to do nothing. The presence of the picture is the decision.
 test('an uploaded picture is never outranked by a flag beside it', () => {
-  const academy = readFileSync(new URL('../src/app/academy/page.tsx', import.meta.url), 'utf8')
+  const academy = readFileSync(new URL('../src/app/academy/AcademyBrowser.tsx', import.meta.url), 'utf8')
   const chooser = academy.slice(academy.indexOf('const displayCourseImage'), academy.indexOf('const purchaseButton'))
   assert.ok(!/image_admin_set/.test(chooser), 'the upload must not be gated behind a flag')
   assert.match(chooser, /course\.image_url \|\|/, 'the uploaded image comes first')

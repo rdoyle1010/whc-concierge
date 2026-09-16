@@ -17,7 +17,7 @@ import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/consta
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL as PRODUCT_HOUSES, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import type { CvSuggestions } from '@/lib/cv-analysis'
 import { Save, Upload, FileText, Sparkles, CheckCircle2, Eye, Award, ShieldCheck, BrainCircuit } from 'lucide-react'
-import { courseTitle } from '@/lib/academy'
+import { courseTitle } from '@/lib/academy-titles'
 import { tidyProficiencies, PROFICIENCY_OPTIONS } from '@/lib/skill-depth'
 
 const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']

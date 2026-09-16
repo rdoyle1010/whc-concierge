@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
-import { coursesForSkill } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 import { ACADEMY } from '@/lib/academy'
 
 // The signed-in professional's personal brief - the "what needs my attention

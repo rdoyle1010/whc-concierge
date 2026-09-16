@@ -5,8 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { createClient } from '@/lib/supabase/client'
-import { courseTitle } from '@/lib/academy'
+import { courseTitle } from '@/lib/academy-titles'
 import { ShieldCheck, ShieldX } from 'lucide-react'
 
 // Certificate lookup by code. RLS only exposes COMPLETED enrolments, so a
@@ -15,7 +14,10 @@ import { ShieldCheck, ShieldX } from 'lucide-react'
 export default function VerifyResultPage() {
   const params = useParams()
   const code = decodeURIComponent(Array.isArray(params?.code) ? params.code[0] : (params?.code as string) || '').toUpperCase()
-  const supabase = createClient()
+  // The Supabase client used to be constructed here and never used once: the
+  // check goes through /api/certificates/verify, as it must, because a public
+  // visitor has no business reading the certificates table directly. It cost
+  // 57KB gzipped on a page whose whole job is to answer one question quickly.
   const [loading, setLoading] = useState(true)
   const [cert, setCert] = useState<any>(null)
   const [name, setName] = useState('')

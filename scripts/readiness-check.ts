@@ -386,7 +386,7 @@ check('Academy course content leaves the database only when it is owned and comp
   //
   // There is now nothing underneath. A course has her photograph or it draws a
   // charcoal field, and this asserts the absence rather than an ordering.
-  const chooser = read('src/app/academy/page.tsx')
+  const chooser = read('src/app/academy/AcademyBrowser.tsx')
   assert.match(chooser, /course\.image_url \|\| ''/)
   assert.ok(
     !/image_admin_set && course\.image_url/.test(chooser),
@@ -399,7 +399,22 @@ check('Academy course content leaves the database only when it is owned and comp
 
   // 7. Every course surface reads the same merged catalogue, so custom content
   //    reaches talent, the public page and the app together.
-  assert.match(read('src/app/api/academy/catalog/route.ts'), /getAcademyCatalog/)
+  //
+  //    The list arm now returns summaries rather than whole courses, because it
+  //    was shipping every lesson body to draw a card. The guarantee is unchanged
+  //    and simply sits one call deeper: getAcademySummaries is defined as the
+  //    merged catalogue with the teaching stripped off, so both arms of this
+  //    route still come from the same merge, and this asserts that rather than
+  //    the name that used to appear in the file.
+  const catalogRoute = read('src/app/api/academy/catalog/route.ts')
+  assert.match(catalogRoute, /getAcademySummaries|getAcademyCatalog/)
+  assert.match(catalogRoute, /getAcademyCourseBySlug/)
+  assert.match(source, /export async function getAcademySummaries[\s\S]{0,200}?getAcademyCatalog\(false\)\.?[\s\S]{0,40}?courseSummary/)
+  // And a summary must never carry the teaching it exists to leave behind.
+  const summary = source.split('export function courseSummary(')[1].split('\n}')[0]
+  for (const paid of ['lessons:', 'quiz:', 'rich:', 'answer_key']) {
+    assert.equal(summary.includes(paid), false, `a course summary must not carry ${paid}`)
+  }
   // The precedence is the rule: an admin's own version wins, code content is
   // the fallback. The code content is now fetched for this one course instead
   // of imported, because the static index pulls all forty-five courses into

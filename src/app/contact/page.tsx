@@ -1,12 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
-import { createClient } from '@/lib/supabase/client'
+// The defaults come from the values file, not from public-page-content.
+// That module builds the zod schemas these types are inferred from, so
+// importing a default through it pulled the whole of zod into this page:
+// 62KB gzipped, to render copy that is already in the HTML. Types are
+// erased at compile time, so `import type` from it stays free.
+import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
+import type { PublicPageContent } from '@/lib/public-page-content'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Mail, MapPin, Send, Check } from 'lucide-react'
-import { contactFormSchema } from '@/lib/validations'
 import { CONTACT_EMAIL } from '@/lib/contact'
 
 const TYPES = [
@@ -28,7 +32,6 @@ export default function ContactPage() {
       .catch(() => {})
   }, [])
 
-  const supabase = createClient()
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', type: 'general' })
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -37,13 +40,23 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError(''); setFieldErrors({})
+
+    // zod is loaded when somebody submits, not when the page opens.
+    //
+    // The schema was a static import, which put the whole of zod - 61KB
+    // gzipped - into every visit to the contact page, to check five fields on
+    // a form most visitors never submit. The rules and the wording of every
+    // error are unchanged; they simply arrive with the press of the button.
+    // The server validates this again regardless, which is where it counts.
+    const { contactFormSchema } = await import('@/lib/validations')
     const result = contactFormSchema.safeParse(form)
     if (!result.success) {
       const errs: Record<string, string> = {}
       result.error.issues.forEach(i => { errs[i.path[0] as string] = i.message })
       setFieldErrors(errs); setLoading(false); return
     }
-    const { error: insertError } = await supabase.from('contact_queries').insert({
+    const { createClient } = await import('@/lib/supabase/client')
+    const { error: insertError } = await createClient().from('contact_queries').insert({
       name: form.name, email: form.email,
       subject: form.subject || null,
       type: form.type || 'general',

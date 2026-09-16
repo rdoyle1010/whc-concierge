@@ -152,7 +152,7 @@ test('a guest is told which account the course landed on', () => {
   assert.equal((confirm.match(/deliveredTo: deliveryAddress\(session\)/g) || []).length, 2,
     'the already-fulfilled reply must name the account too')
 
-  const page = body('src/app/academy/page.tsx')
+  const page = body('src/app/academy/AcademyBrowser.tsx')
   assert.match(page, /Your course is on the account/)
   assert.match(page, /This address becomes your Talent House account/,
     'the buyer should be told before the money moves, not only after')

@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { ACADEMY } from '@/lib/academy'
-import { coursesForSkill } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 
 const COURSE_TITLES = new Map(ACADEMY.map(course => [course.slug, course.title]))
 const courseTitle = (slug: string) =>
