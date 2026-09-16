@@ -4,7 +4,8 @@ import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice, type AcademyCourse } from '@/lib/academy'
+import { COURSE_PRICE, BUNDLE_PRICE, coursePrice } from '@/lib/academy-pricing'
+import type { CourseSummary } from '@/lib/academy-types-public'
 import { GraduationCap, Award, Clock, Check, Download } from 'lucide-react'
 
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
@@ -13,7 +14,11 @@ export default function AcademyPage() {
   // Stripe has just sent this person back. Confirm the purchase from the
   // browser as well, so a missed webhook is a delay rather than a loss.
   useConfirmPaymentOnReturn()
-  const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string; is_core?: boolean })[]>(ACADEMY)
+  // Empty until the catalogue arrives, which is what the loading state below
+  // already handles. Seeding from the ACADEMY constant put every lesson in the
+  // Academy into this page's JavaScript - 109KB gzipped of the material members
+  // are paying to read - so that a card could show a title and a module count.
+  const [courses, setCourses] = useState<CourseSummary[]>([])
   const [enrollments, setEnrollments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busySlug, setBusySlug] = useState<string | null>(null)
@@ -92,7 +97,7 @@ export default function AcademyPage() {
   const enrolmentFor = (slug: string) => enrollments.find(e => e.course_slug === slug && e.paid_at)
   const completedCount = enrollments.filter(e => e.completed_at).length
   const categories = Array.from(new Set(courses.map(c => c.category)))
-  const coreCourses = courses.filter(course => course.is_core ?? CORE_SLUGS.includes(course.slug))
+  const coreCourses = courses.filter(course => course.is_core)
   const activeCoreSlugs = coreCourses.map(course => course.slug)
 
   return (
@@ -223,7 +228,7 @@ export default function AcademyPage() {
                           {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-accent text-white px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
                         </div>
                         <p className="text-[12px] text-secondary mb-2">{course.tagline}</p>
-                        <p className="text-[11px] text-muted mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
+                        <p className="text-[11px] text-muted mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lesson_count} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
                         {isManagement && <div className="mb-4 rounded-xl border border-accent/20 bg-[#ede8df] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
                         <div className="mt-auto">
                           {done ? (
@@ -236,7 +241,7 @@ export default function AcademyPage() {
                             </div>
                           ) : enr ? (
                             <div className="grid gap-2">
-                              <Link href={`/talent/academy/${course.slug}`} className="btn-primary text-[12px] block text-center">{lessonsDone > 0 ? `Continue (${lessonsDone}/${course.lessons.length} lessons)` : 'Start course'}</Link>
+                              <Link href={`/talent/academy/${course.slug}`} className="btn-primary text-[12px] block text-center">{lessonsDone > 0 ? `Continue (${lessonsDone}/${course.lesson_count} lessons)` : 'Start course'}</Link>
                               {isManagement && <Link href={`/talent/academy/${course.slug}/toolkit`} className="btn-secondary text-[12px] inline-flex items-center justify-center gap-2"><Download size={13} /> Open toolkit</Link>}
                             </div>
                           ) : (

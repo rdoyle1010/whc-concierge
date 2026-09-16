@@ -6,7 +6,7 @@ import DashboardShell from '@/components/DashboardShell'
 import CandidatePortfolio from '@/components/CandidatePortfolio'
 import { createClient } from '@/lib/supabase/client'
 import { careerValue } from '@/lib/career-value'
-import { courseTitle } from '@/lib/academy'
+import { courseTitle } from '@/lib/academy-titles'
 import { ArrowLeft, ArrowRight, Eye } from 'lucide-react'
 
 type Enrolment = { course_slug: string; completed_at: string }

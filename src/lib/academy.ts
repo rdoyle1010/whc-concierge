@@ -5,23 +5,16 @@
 
 import { MORE_COURSES } from './academy-more'
 
-export const COURSE_PRICE = 1000 // pence - £10 per course
-export const BUNDLE_PRICE = 7900 // pence - all 11 courses for £79 (save £31)
-export const PUBLIC_COURSE_PRICE = 1500 // pence - £15 for non-members buying from the public page
-export const PASS_MARK = 80 // percent required on the final quiz
+// The prices moved to academy-pricing.ts, which carries no data. They are
+// re-exported here so existing server-side callers keep working; anything that
+// runs in a browser should import from academy-pricing directly, or it pulls
+// every lesson in this file into the page.
+export { COURSE_PRICE, BUNDLE_PRICE, PUBLIC_COURSE_PRICE, PASS_MARK, coursePrice, publicCoursePrice } from './academy-pricing'
 
-export type AcademyLesson = { title: string; content: string }
-export type AcademyQuestion = { q: string; options: string[] }
-export type AcademyCourse = {
-  slug: string
-  title: string
-  tagline: string
-  category: 'Guest Experience' | 'Standards' | 'Treatments' | 'Commercial' | 'Brands' | 'Specialist Care'
-  minutes: number
-  price?: number // pence; defaults to COURSE_PRICE (brand masterclasses are 500)
-  lessons: AcademyLesson[]
-  quiz: AcademyQuestion[]
-}
+// The shapes live in academy-types-public.ts so a client component can name one
+// without importing this file, which carries every lesson in the Academy.
+export type { AcademyLesson, AcademyQuestion, AcademyCourse } from './academy-types-public'
+import type { AcademyCourse } from './academy-types-public'
 
 export const ACADEMY: AcademyCourse[] = [
   {
@@ -503,8 +496,6 @@ export const CORE_SLUGS = ACADEMY.map(c => c.slug)
 // Additional courses (brand masterclasses, specialist care) register here.
 ACADEMY.push(...MORE_COURSES)
 
-export const coursePrice = (c: { price?: number }) => c.price ?? COURSE_PRICE
-export const publicCoursePrice = (c: { price?: number }) => (c.price ?? COURSE_PRICE) + 500
 
 export const courseBySlug = (slug: string) => ACADEMY.find(c => c.slug === slug)
 export const courseTitle = (slug: string) => courseBySlug(slug)?.title || slug

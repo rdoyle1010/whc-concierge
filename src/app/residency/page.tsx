@@ -6,7 +6,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Clock, MapPin, Sparkles } from 'lucide-react'
 import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
-import { type PublicPageContent } from '@/lib/public-page-content'
+import type { PublicPageContent } from '@/lib/public-page-content'
 import SponsoredAd from '@/components/SponsoredAd'
 
 export default function ResidencyPage() {

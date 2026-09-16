@@ -2,11 +2,10 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
 import Link from 'next/link'
 import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X, GraduationCap, CalendarCheck2 } from 'lucide-react'
-import { courseTitle, ACADEMY } from '@/lib/academy'
+import { courseTitle, COURSE_TITLES } from '@/lib/academy-titles'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
 import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
@@ -17,7 +16,6 @@ import { useDialog } from '@/components/useDialog'
 export default function AgencyProfilePage() {
   const { id } = useParams()
   const profileId = Array.isArray(id) ? id[0] : (id as string)
-  const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [loadError, setLoadError] = useState('')
   const [reviews, setReviews] = useState<any[]>([])
@@ -73,6 +71,12 @@ export default function AgencyProfilePage() {
       const data = directoryRes.ok ? (directoryJson?.candidate || null) : null
       setProfile(data)
       if (data?.hourly_rate) setOfferRate(String(data.hourly_rate))
+      // 57KB of client, wanted only once the profile is already drawn. It was
+      // a static import at the top of the file, so every visitor downloaded it
+      // before the page appeared.
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+
       if (data) {
         // Reviews arrive with the directory response. They are private to
         // their two parties in the database, so the browser no longer reads
@@ -176,7 +180,7 @@ export default function AgencyProfilePage() {
                 <span className={`flex items-center gap-1 ${profile.whc_verified ? 'font-semibold text-green-700' : 'text-amber-600'}`}><Shield size={13} />{profile.whc_verified ? 'Talent House Verified' : 'Identity not yet verified'}</span>
                 <span className={`flex items-center gap-1 ${profile.has_insurance ? 'text-success' : 'text-amber-600'}`}><Shield size={13} />{profile.has_insurance ? 'Insured' : 'No insurance on file'}</span></div>
               {academyBadges.length > 0 && <div className="flex flex-wrap items-center gap-1.5 mt-3"><span className="text-[11px] font-semibold uppercase tracking-wide text-accent inline-flex items-center gap-1"><GraduationCap size={13} /> Talent House Academy:</span>{academyBadges.map(b => <span key={b.course_slug} className="text-[11px] font-medium bg-[#ede8df] text-accent border border-accent/20 px-2.5 py-1 rounded-full">{courseTitle(b.course_slug)}</span>)}</div>}
-              {isEmployer && (suggestNotice ? <p role="status" className="text-[12px] text-green-700 mt-3">{suggestNotice}</p> : <div className="flex flex-wrap items-center gap-2 mt-3"><select value={suggestSlug} aria-label="Suggest a course" onChange={e => setSuggestSlug(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]"><option value="">Suggest a course...</option>{ACADEMY.filter(c => !academyBadges.some(b => b.course_slug === c.slug)).map(c => <option key={c.slug} value={c.slug}>{c.title}</option>)}</select>{suggestSlug && <button type="button" disabled={suggestBusy} onClick={async () => { setSuggestBusy(true); try { const res = await fetch('/api/academy/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId: profileId, courseSlug: suggestSlug }) }); if (res.ok) setSuggestNotice(`Suggested - ${profile.full_name?.split(' ')[0] || 'they'} will be told your property would value this training.`) } catch {} finally { setSuggestBusy(false) } }} className="btn-secondary !py-1.5 text-[12px] disabled:opacity-50">{suggestBusy ? 'Sending...' : 'Send suggestion'}</button>}</div>)}
+              {isEmployer && (suggestNotice ? <p role="status" className="text-[12px] text-green-700 mt-3">{suggestNotice}</p> : <div className="flex flex-wrap items-center gap-2 mt-3"><select value={suggestSlug} aria-label="Suggest a course" onChange={e => setSuggestSlug(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]"><option value="">Suggest a course...</option>{COURSE_TITLES.filter(c => !academyBadges.some(b => b.course_slug === c.slug)).map(c => <option key={c.slug} value={c.slug}>{c.title}</option>)}</select>{suggestSlug && <button type="button" disabled={suggestBusy} onClick={async () => { setSuggestBusy(true); try { const res = await fetch('/api/academy/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId: profileId, courseSlug: suggestSlug }) }); if (res.ok) setSuggestNotice(`Suggested - ${profile.full_name?.split(' ')[0] || 'they'} will be told your property would value this training.`) } catch {} finally { setSuggestBusy(false) } }} className="btn-secondary !py-1.5 text-[12px] disabled:opacity-50">{suggestBusy ? 'Sending...' : 'Send suggestion'}</button>}</div>)}
             </div>
             <div className="shrink-0">{profile.hourly_rate ? <p className="text-[20px] font-semibold text-accent mb-1">£{profile.hourly_rate}<span className="text-[12px] font-normal text-muted"> /hour</span></p> : (profile.day_rate_min || profile.day_rate_max) && <p className="text-[20px] font-semibold text-accent mb-1">£{profile.day_rate_min}{profile.day_rate_max ? `-£${profile.day_rate_max}` : ''}<span className="text-[12px] font-normal text-muted"> /day</span></p>}<a href="#enquire" className="btn-primary block text-center mt-2">{offer ? 'View Current Offer' : 'Make an Offer'}</a></div>
           </div>

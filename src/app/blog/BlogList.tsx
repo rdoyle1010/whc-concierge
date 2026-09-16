@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -22,23 +21,18 @@ import SponsoredAd from '@/components/SponsoredAd'
 // waiting for the next revalidation, but it now refreshes a list that is
 // already correct rather than filling an empty one.
 export default function BlogList({ initialPosts }: { initialPosts: any[] }) {
-  const supabase = createClient()
-  const [posts, setPosts] = useState<any[]>(initialPosts)
-  const [loading, setLoading] = useState(initialPosts.length === 0)
+  // The posts arrive from the server and there is no second fetch.
+  //
+  // This used to re-read them in the browser to catch a post published since
+  // the page was cached. That is no longer a thing that can happen: publishing
+  // a post drops the blog cache on the same request, so what the server rendered
+  // is already current. The refetch was redundant, and it carried the Supabase
+  // client - 57KB gzipped - into a page that otherwise needs no database at all.
+  const [posts] = useState<any[]>(initialPosts)
+  const loading = false
   const [filter, setFilter] = useState('All')
   const [page, setPage] = useState(1)
   const perPage = 9
-
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from('blog_posts').select('*').eq('status', 'published')
-        .order('published_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false })
-      if (data) setPosts(data)
-      setLoading(false)
-    }
-    load()
-  }, [])
 
   const categories = ['All', ...Array.from(new Set(posts.map(p => p.category).filter(Boolean)))]
   const filtered = filter === 'All' ? posts : posts.filter(p => p.category === filter)

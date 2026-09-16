@@ -1,7 +1,7 @@
 'use client'
 
 import type { User } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
+import { supabaseLazy } from '@/lib/supabase/lazy'
 
 // supabase.auth.getUser() is not a local read. It sends the token to Supabase
 // to be validated, so every call is a network round trip.
@@ -14,6 +14,12 @@ import { createClient } from '@/lib/supabase/client'
 //
 // One in-flight promise, shared. Cleared whenever the session actually changes,
 // so signing out or refreshing a token is never served from a stale answer.
+//
+// The client itself is fetched on first use rather than imported at the top.
+// This module is reached from the dashboard shell, so a static import put 57KB
+// gzipped of auth and database client into the first load of every page using
+// that shell - including /agency, which is public and where most visitors are
+// signed out and the answer is "nobody".
 
 let pending: Promise<User | null> | null = null
 let listening = false
@@ -23,13 +29,14 @@ function listen() {
   listening = true
   // Any change of session invalidates the answer: a sign-out must not leave
   // the previous user cached behind it.
-  createClient().auth.onAuthStateChange(() => { pending = null })
+  void supabaseLazy().then(supabase => supabase.auth.onAuthStateChange(() => { pending = null }))
 }
 
 export function getViewer(): Promise<User | null> {
   listen()
   if (!pending) {
-    pending = createClient().auth.getUser()
+    pending = supabaseLazy()
+      .then(supabase => supabase.auth.getUser())
       .then(({ data }) => data.user ?? null)
       // A failed lookup must not be cached as "signed out" forever.
       .catch(() => { pending = null; return null })

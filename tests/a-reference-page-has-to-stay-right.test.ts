@@ -81,7 +81,7 @@ test('a section that no longer exists loses its entries quietly', () => {
 // something has gone wrong rather than when they are choosing what to study.
 test('somebody can find it', () => {
   assert.match(read('src/components/Footer.tsx'), /\/good-to-know/)
-  assert.match(read('src/app/academy/page.tsx'), /\/good-to-know/, 'where a therapist is already thinking about qualifications')
+  assert.match(read('src/app/academy/AcademyBrowser.tsx'), /\/good-to-know/, 'where a therapist is already thinking about qualifications')
   assert.match(read('src/app/talent/dashboard/page.tsx'), /\/good-to-know/, 'and where they build the profile it applies to')
   assert.match(read('src/components/DashboardShell.tsx'), /\/admin\/good-to-know/, 'and she can reach the editor')
 })

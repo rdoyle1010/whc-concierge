@@ -27,7 +27,7 @@ const PAGE_FILE: Record<PublicPageSlug, string> = {
   about: 'src/app/about/page.tsx',
   advertise: 'src/app/advertise/page.tsx',
   'how-to-use': 'src/app/how-to-use/page.tsx',
-  academy: 'src/app/academy/page.tsx',
+  academy: 'src/app/academy/AcademyBrowser.tsx',
   'agency-cover': 'src/app/agency/page.tsx',
   contact: 'src/app/contact/page.tsx',
 }

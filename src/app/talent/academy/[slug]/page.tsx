@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/academy'
-import { lessonExtras } from '@/lib/academy-extras'
+import { coursePrice, PASS_MARK } from '@/lib/academy-pricing'
+import type { AcademyCourse } from '@/lib/academy-types-public'
 import { courseMeta } from '@/lib/academy-meta'
 import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisual'
 import { loadCourseContent } from '@/lib/academy-content-lazy'
+import type { LessonExtras } from '@/lib/academy-extras'
 import type { CourseContent } from '@/lib/academy-types'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
@@ -96,8 +97,17 @@ function ManagedLessonContent({ content }: { content: string }) {
 export default function CoursePlayerPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
-  const fallbackCourse = courseBySlug(slug)
-  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean; rich?: CourseContent | null }) | null>(fallbackCourse || null)
+  // No seed from the static catalogue.
+  //
+  // The comment below already worked this out for the lesson content and the
+  // seed was left behind: courseBySlug reaches into the same index, so reading
+  // one course still downloaded every lesson of all forty-eight. The course is
+  // fetched a few lines down, which is where it was always coming from.
+  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean; rich?: CourseContent | null }) | null>(null)
+  // The guest's view, the career benefit and the tips, for this course only.
+  // They used to be imported, which reached the module registering every course
+  // on the platform and its content.
+  const [extras, setExtras] = useState<(LessonExtras | null)[]>([])
   // Course content comes from code unless an admin has taken editorial control
   // of this course AND her version passes validation - in which case the
   // catalogue serves her content, including the rich layer below. A partial or
@@ -148,6 +158,7 @@ export default function CoursePlayerPage() {
         if (catalogueResponse.ok) {
           const catalogue = await catalogueResponse.json()
           if (catalogue.course) setCourse(catalogue.course)
+          if (Array.isArray(catalogue.extras)) setExtras(catalogue.extras)
         }
         if (res.ok) {
           const j = await res.json()
@@ -359,7 +370,7 @@ export default function CoursePlayerPage() {
             const i = view
             const lesson = course.lessons[i]
             const richLesson = rich?.lessons[i]
-            const extra = lessonExtras(slug, i)
+            const extra = extras[i] || null
             return (
               <div className="dashboard-card">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Module {i + 1} of {total}</p>

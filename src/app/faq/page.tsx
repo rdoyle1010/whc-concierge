@@ -6,7 +6,12 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 import { FEATURED_TALENT } from '@/lib/constants'
-import { DEFAULT_FAQ_SECTIONS } from '@/lib/public-page-content'
+// The defaults come from the values file, not from public-page-content.
+// That module builds the zod schemas these types are inferred from, so
+// importing a default through it pulled the whole of zod into this page:
+// 62KB gzipped, to render copy that is already in the HTML. Types are
+// erased at compile time, so `import type` from it stays free.
+import { DEFAULT_FAQ_SECTIONS } from '@/lib/public-page-content-values'
 
 // Prices are substituted, not stored.
 //

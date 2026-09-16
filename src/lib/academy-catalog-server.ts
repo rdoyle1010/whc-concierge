@@ -16,6 +16,7 @@ import {
   type AcademyContentDoc,
 } from '@/lib/academy-course-content'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { CourseSummary } from './academy-types-public'
 
 // The commercial fields an admin controls on every course, whoever authored
 // the teaching content.
@@ -223,6 +224,42 @@ export function publicCourse(course: ManagedAcademyCourse) {
   // server on a public surface.
   const { answer_key: _answerKey, override: _override, content_doc: _contentDoc, ...safe } = course
   return safe
+}
+
+// The shape lives in academy-types-public.ts. This module holds the
+// service-role client, so nothing that runs in a browser may name it - not even
+// for a type, because a type import is one edit away from a value import.
+export type { CourseSummary } from './academy-types-public'
+
+/**
+ * A course with its teaching removed.
+ *
+ * The list endpoint used to return whole courses - every lesson body, every
+ * quiz question, the rich content document - which made it 305KB uncompressed
+ * and the heaviest asset on the platform. Both pages that call it draw cards:
+ * a title, a tagline, minutes, a price, a picture and the number of modules.
+ * Nothing on either page has ever rendered a lesson.
+ *
+ * It was also the paid material, handed to anybody who opened the network tab
+ * on a page that sells it.
+ */
+export function courseSummary(course: ManagedAcademyCourse): CourseSummary {
+  return {
+    slug: course.slug,
+    title: course.title,
+    tagline: course.tagline,
+    category: course.category,
+    minutes: course.minutes,
+    price: course.price ?? 1000,
+    image_url: course.image_url || '',
+    is_core: Boolean(course.is_core),
+    lesson_count: Array.isArray(course.lessons) ? course.lessons.length : 0,
+  }
+}
+
+/** The card data for every live course, read on the server. */
+export async function getAcademySummaries(): Promise<CourseSummary[]> {
+  return (await getAcademyCatalog(false)).map(courseSummary)
 }
 
 // Admin display order first (lowest sort_order wins), then the code order.

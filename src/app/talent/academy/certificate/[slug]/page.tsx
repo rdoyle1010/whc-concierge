@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { courseBySlug, type AcademyCourse } from '@/lib/academy'
+import type { AcademyCourse } from '@/lib/academy-types-public'
 import { Printer, ArrowLeft } from 'lucide-react'
 
 // The certificate - designed to be printed or saved as PDF and to look
@@ -12,7 +12,9 @@ import { Printer, ArrowLeft } from 'lucide-react'
 export default function CertificatePage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
-  const [course, setCourse] = useState<AcademyCourse | null>(courseBySlug(slug) || null)
+  // Fetched below, not seeded from the static catalogue: that index carries
+  // every lesson of every course, which is a lot of download for a certificate.
+  const [course, setCourse] = useState<AcademyCourse | null>(null)
   const [loading, setLoading] = useState(true)
   const [enr, setEnr] = useState<any>(null)
   const [name, setName] = useState('')

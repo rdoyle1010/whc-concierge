@@ -1,13 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
-import { createClient } from '@/lib/supabase/client'
+// The defaults come from the values file, not from public-page-content.
+// That module builds the zod schemas these types are inferred from, so
+// importing a default through it pulled the whole of zod into this page:
+// 62KB gzipped, to render copy that is already in the HTML. Types are
+// erased at compile time, so `import type` from it stays free.
+import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
+import type { PublicPageContent } from '@/lib/public-page-content'
 import DashboardShell from '@/components/DashboardShell'
 import SwipeDeck from '@/components/SwipeDeck'
 import Link from 'next/link'
 import { Search, MapPin, ChevronDown, X, SlidersHorizontal, CheckCircle2, Rows3, Layers3, Heart, ShieldCheck } from 'lucide-react'
-import { ACADEMY } from '@/lib/academy'
+import { COURSE_TITLES } from '@/lib/academy-titles'
 import { shiftHours } from '@/lib/agency-time'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import SponsoredAd from '@/components/SponsoredAd'
@@ -75,7 +80,6 @@ export default function AgencyPage() {
       .catch(() => {})
   }, [])
 
-  const supabase = createClient()
   const [candidates, setCandidates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [directoryChecked, setDirectoryChecked] = useState(false)
@@ -200,7 +204,11 @@ export default function AgencyPage() {
       loadDirectory(ukWideParams())
     }
     loadFavourites()
-    supabase.from('course_enrollments').select('candidate_id, course_slug').not('completed_at', 'is', null).then(({ data }) => {
+    // Fetched after paint, not before it. The Supabase client is 57KB gzipped
+    // and everything here needs it only once the page is already on screen.
+    import('@/lib/supabase/client').then(({ createClient }) =>
+      createClient().from('course_enrollments').select('candidate_id, course_slug').not('completed_at', 'is', null)
+    ).then(({ data }) => {
       if (!data) return
       const m = new Map<string, string[]>()
       for (const r of data) m.set(r.candidate_id, [...(m.get(r.candidate_id) || []), r.course_slug])
@@ -283,7 +291,7 @@ export default function AgencyPage() {
       {subHeading('Insurance')}
       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={insuredOnly} onChange={() => setInsuredOnly(!insuredOnly)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">Insured only</span></label>
       {subHeading('Talent House Academy')}
-      {ACADEMY.map(course => <label key={course.slug} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={academySel.includes(course.slug)} onChange={() => toggleFilter(academySel, setAcademySel, course.slug)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{course.title}</span></label>)}
+      {COURSE_TITLES.map(course => <label key={course.slug} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={academySel.includes(course.slug)} onChange={() => toggleFilter(academySel, setAcademySel, course.slug)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{course.title}</span></label>)}
     </FilterSection>
   </div>
 

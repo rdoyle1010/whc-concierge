@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { useTaxonomy } from '@/lib/use-sectors'
 import { liveDoors, liveSectorsForDoor } from '@/lib/sectors'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import SponsoredAd from '@/components/SponsoredAd'
@@ -33,7 +32,6 @@ function postedLabel(value: any): string | null {
 }
 
 export default function PublicJobsBrowser() {
-  const supabase = createClient()
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
@@ -84,7 +82,8 @@ export default function PublicJobsBrowser() {
   useEffect(() => {
     let active = true
     async function loadSaved() {
-      const { data: sessionData } = await supabase.auth.getSession()
+      const { createClient } = await import('@/lib/supabase/client')
+      const { data: sessionData } = await createClient().auth.getSession()
       const user = sessionData.session?.user
       if (!active || !user) return
       setIsLoggedIn(true)

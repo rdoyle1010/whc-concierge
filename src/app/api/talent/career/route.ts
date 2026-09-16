@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
-import { careerPosition, coursesForSkill, courseMeta } from '@/lib/academy-meta'
+import { careerPosition, courseMeta } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 import { courseBySlug } from '@/lib/academy'
 import { calculateMatchScore } from '@/lib/matching'
 
