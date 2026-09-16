@@ -47,9 +47,27 @@ export type PublicCacheTag = typeof PUBLIC_CACHE_TAGS[keyof typeof PUBLIC_CACHE_
 export function revalidatePublic(...tags: PublicCacheTag[]): void {
   for (const tag of tags) {
     try {
-      revalidateTag(tag, 'max')
+      // { expire: 0 }, not 'max'. This is the whole difference between a
+      // takedown that works and one that does not.
+      //
+      // 'max' marks the tag stale and serves stale-while-revalidate: the next
+      // visitor still gets the old page while a fresh one is built behind them.
+      // That is right for a cache warming up and wrong for everything this
+      // function is called for. A property closed a role, went to look, and the
+      // advert was still on the board - because "stale" is exactly what it had
+      // just asked us to stop showing.
+      //
+      // Expiring at zero makes the next request wait for fresh data instead.
+      // That costs one visitor one render, once, after a change somebody made
+      // on purpose. Taking an advert down late means applications to a role
+      // that is already filled.
+      //
+      // updateTag() is the documented way to do this, and cannot be used here:
+      // it throws outside a Server Action, and every caller of this is a route
+      // handler.
+      revalidateTag(tag, { expire: 0 })
     } catch {
-      /* stale for a while beats failing the write that caused it */
+      /* a missed drop is a stale page; a thrown one loses the write itself */
     }
   }
 }
