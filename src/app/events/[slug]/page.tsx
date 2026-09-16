@@ -50,8 +50,35 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
 
   const past = !isUpcoming(event)
 
+  // Event structured data, which this page has never carried.
+  //
+  // An event is one of the few things Google will show with its date, place and
+  // a booking link attached, and every field it wants is already stored here.
+  // Past events keep their markup deliberately: "spa masterclass London" is
+  // searched all year, and a finished event that still describes itself is how
+  // somebody finds the next one.
+  const eventLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: event.title,
+    startDate: event.starts_at,
+    url: `${SITE_URL}/events/${event.slug}`,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: event.is_online
+      ? 'https://schema.org/OnlineEventAttendanceMode'
+      : 'https://schema.org/OfflineEventAttendanceMode',
+    location: event.is_online
+      ? { '@type': 'VirtualLocation', url: event.booking_url || `${SITE_URL}/events/${event.slug}` }
+      : { '@type': 'Place', name: event.location || 'To be confirmed', address: event.location || 'United Kingdom' },
+    organizer: { '@type': 'Organization', name: event.host || 'Talent House Collective', url: SITE_URL },
+  }
+  if (event.ends_at) eventLd.endDate = event.ends_at
+  if (event.summary || event.description) eventLd.description = String(event.summary || event.description)
+  if (event.image_url) eventLd.image = [event.image_url]
+
   return (
     <div className="min-h-screen bg-parchment flex flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventLd) }} />
       <Navbar />
       <main id="main-content" className="flex-1 pt-[76px]">
         <div className="mx-auto max-w-3xl px-6 py-14">

@@ -31,11 +31,11 @@ export default function CookieConsent() {
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <button type="button" onClick={() => respond('declined')}
-              className="px-4 py-1.5 text-[12px] font-medium text-muted border border-border rounded-lg hover:border-ink/20 hover:text-ink transition-colors">
+              className="inline-flex min-h-11 items-center px-5 text-[13px] font-medium text-muted border border-border rounded-lg hover:border-ink/20 hover:text-ink transition-colors">
               Decline
             </button>
             <button type="button" onClick={() => respond('accepted')}
-              className="px-4 py-1.5 text-[12px] font-semibold rounded-lg bg-accent text-white transition-colors hover:bg-navy-light">
+              className="inline-flex min-h-11 items-center px-5 text-[13px] font-semibold rounded-lg bg-accent text-white transition-colors hover:bg-navy-light">
               Accept
             </button>
           </div>

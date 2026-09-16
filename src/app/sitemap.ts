@@ -78,6 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/register/talent`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/register/employer`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/advertising-terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${BASE}/career`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/residency`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/properties`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/brands`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
@@ -206,6 +207,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   })
 
-  const dynamic = await Promise.all([roles, properties, brands, posts, events])
+  // Every course now has a public page, so every course belongs here. This is
+  // the section of the site most likely to be found by somebody who has never
+  // heard of Talent House: "CPD courses for spa therapists" is a search with
+  // intent and almost no UK competition.
+  const courses = safely(async () => {
+    const { getAcademySlugs } = await import('@/lib/academy-catalog-server')
+    return (await getAcademySlugs()).map(slug => ({
+      url: `${BASE}/academy/${slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    }))
+  })
+
+  const dynamic = await Promise.all([roles, properties, brands, posts, events, courses])
   return [...staticPages, ...dynamic.flat()]
 }

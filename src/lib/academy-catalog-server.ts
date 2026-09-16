@@ -17,6 +17,8 @@ import {
 } from '@/lib/academy-course-content'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { CourseSummary } from './academy-types-public'
+import { unstable_cache } from 'next/cache'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
 // The commercial fields an admin controls on every course, whoever authored
 // the teaching content.
@@ -257,10 +259,52 @@ export function courseSummary(course: ManagedAcademyCourse): CourseSummary {
   }
 }
 
-/** The card data for every live course, read on the server. */
-export async function getAcademySummaries(): Promise<CourseSummary[]> {
-  return (await getAcademyCatalog(false)).map(courseSummary)
+/**
+ * A course's public page: what it covers, without covering it.
+ *
+ * Lesson titles, because a syllabus is what somebody deciding whether to spend
+ * fifteen pounds actually wants to read. Lesson bodies are the thing being
+ * sold, so they stay on the paid side; this is the shop window, not the shop.
+ */
+export type CourseSyllabus = CourseSummary & {
+  lesson_titles: string[]
+  quiz_count: number
 }
+
+export function courseSyllabus(course: ManagedAcademyCourse): CourseSyllabus {
+  return {
+    ...courseSummary(course),
+    lesson_titles: (Array.isArray(course.lessons) ? course.lessons : []).map(lesson => String(lesson?.title || '').trim()).filter(Boolean),
+    quiz_count: Array.isArray(course.quiz) ? course.quiz.length : 0,
+  }
+}
+
+/**
+ * One course's public page data, or null when there is no such live course.
+ *
+ * Cached for an hour under the academy tag, so the page is prerendered for
+ * almost every visitor and an edit in admin still lands immediately.
+ */
+export const getCourseSyllabus = unstable_cache(
+  async (slug: string): Promise<CourseSyllabus | null> => {
+    const course = await getAcademyCourseBySlug(slug, false)
+    return course && course.is_active !== false ? courseSyllabus(course) : null
+  },
+  ['public-course-syllabus-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.academy] },
+)
+
+/** Every live course slug, for prerendering and the sitemap. */
+export async function getAcademySlugs(): Promise<string[]> {
+  return (await getAcademyCatalog(false)).map(course => course.slug)
+}
+
+/** The card data for every live course, read on the server. */
+export const getAcademySummaries = unstable_cache(
+  async (): Promise<CourseSummary[]> => (await getAcademyCatalog(false)).map(courseSummary),
+  ['public-academy-summaries-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.academy] },
+)
 
 // Admin display order first (lowest sort_order wins), then the code order.
 function bySortOrder(courses: ManagedAcademyCourse[]) {

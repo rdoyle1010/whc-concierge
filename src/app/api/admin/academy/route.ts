@@ -21,6 +21,7 @@ import {
   normaliseContent,
   validateContent,
 } from '@/lib/academy-course-content'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
 
@@ -205,6 +206,9 @@ export async function POST(req: NextRequest) {
         sort_order: sortOrder,
       }, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
+      // The Academy list and every course page cache for an hour, which is only
+      // safe because saving a course here drops them now.
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, sort_order_saved: result.sortOrderSaved !== false })
     }
 
@@ -225,6 +229,7 @@ export async function POST(req: NextRequest) {
       }
       const result = await saveAcademyCourseContent(admin, slug, doc, 'custom', user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, content: doc, content_source: 'custom' })
     }
 
@@ -240,6 +245,7 @@ export async function POST(req: NextRequest) {
       const source = body.publish === false ? course.content_source : 'custom'
       const result = await saveAcademyCourseContent(admin, slug, doc, source, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, content_source: source, stats: contentStats(doc) })
     }
 
@@ -250,6 +256,7 @@ export async function POST(req: NextRequest) {
       const source = action === 'publish_content' ? 'custom' : 'platform'
       const result = await setAcademyContentSource(admin, slug, source, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, content_source: source })
     }
 
@@ -298,6 +305,7 @@ export async function POST(req: NextRequest) {
         rich: null,
       })
       const contentResult = validateContent(doc) ? { error: null } : await saveAcademyCourseContent(admin, course.slug, doc, 'custom', user.id)
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug: course.slug, content_saved: !contentResult.error })
     }
 
@@ -313,6 +321,7 @@ export async function POST(req: NextRequest) {
         sort_order: existing.sort_order,
       }, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 
@@ -338,6 +347,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch { /* best effort */ }
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 
@@ -353,6 +363,7 @@ export async function POST(req: NextRequest) {
       try {
         if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate awarded', `Talent House has awarded you the certificate for ${course?.title || enrolment.course_slug}.`, '/talent/academy')
       } catch { /* best effort */ }
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 
@@ -362,6 +373,7 @@ export async function POST(req: NextRequest) {
       try {
         if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate withdrawn', `Your certificate for ${course?.title || enrolment.course_slug} has been withdrawn by Talent House${body.reason ? `: ${String(body.reason).slice(0, 300)}` : ''}.`, '/talent/academy')
       } catch { /* best effort */ }
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 

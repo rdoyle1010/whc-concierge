@@ -237,7 +237,7 @@ export default function AcademyBrowser({ initialCourses }: { initialCourses: Cou
                     <div className="absolute inset-0 bg-gradient-to-t from-[#222321]/95 via-[#222321]/35 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-white">
                       <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} Talent House Leadership Programme</div>
-                      <h3 className="text-[27px] font-semibold tracking-[-0.03em]">{course.title}</h3>
+                      <h3 className="text-[27px] font-semibold tracking-[-0.03em]"><Link href={`/academy/${course.slug}`}>{course.title}</Link></h3>
                     </div>
                   </div>
                   <div className="p-7">
@@ -278,7 +278,12 @@ export default function AcademyBrowser({ initialCourses }: { initialCourses: Cou
                       {displayCourseImage(course) && <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />}
                     </div>
                     <div className="flex flex-1 flex-col p-6">
-                      <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#222321]">{course.title}</h3>
+                      {/* A link, not just a heading. Every course has a public
+                          page now; without a crawlable link to it, the page
+                          exists and nothing can find it. */}
+                      <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#222321]">
+                        <Link href={`/academy/${course.slug}`} className="hover:text-accent">{course.title}</Link>
+                      </h3>
                       <p className="mb-3 text-[12px] text-[#57544c]">{course.tagline}</p>
                       <p className="text-[11px] text-[#6e6a60]">{course.lesson_count} module{course.lesson_count === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug, course.title).cpdHours} CPD hour{courseMeta(course.slug, course.title).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
                       {(demand[course.slug] || 0) > 0 && (
