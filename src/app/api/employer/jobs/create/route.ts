@@ -4,6 +4,7 @@ import { geocodeLocation } from '@/lib/geo'
 import { countryCode, DEFAULT_COUNTRY, productAvailableIn } from '@/lib/countries'
 import { CURRENCIES, currencyForCountry } from '@/lib/money'
 import { getRequestUser } from '@/lib/request-user'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Job storytelling columns (20260831170000). Optional narrative fields; if the
 // live database does not have them yet, the insert retries without them.
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
     }
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  revalidatePublic(PUBLIC_CACHE_TAGS.jobs)
   return NextResponse.json({
     job,
     ...(droppedStoryFields.length ? {

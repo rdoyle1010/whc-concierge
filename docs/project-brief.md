@@ -120,6 +120,29 @@ makes sense:
   a set of files neither test looked at, so /academy painted a stock photo and
   swapped in the real one about 300ms later.
 
+### Why the site felt slow, in case it comes up
+
+Nearly every public page was set to re-validate its cache every sixty seconds,
+and the root layout capped the whole site at five minutes. Those numbers were
+not a caching policy, they were an apology for not having one: nothing dropped a
+cached page when its content changed, so the window had to be short enough that
+a new advert appeared quickly.
+
+On a busy site that is invisible, because somebody is always warming the cache.
+On this one it inverted: with pages stale within minutes and long gaps between
+visitors, most visits paid for a full server render and a round trip to the
+database. The person it punished hardest was the owner, because she is the one
+reloading a page she has just changed.
+
+Every public page now caches for an hour, and publishing, closing or approving
+anything drops the affected pages on the same request. Both directions improve:
+a visitor gets a prerendered page, and a published change is live at once rather
+than up to five minutes later. A test holds the pairing, because a long window
+with no invalidation would be far worse than the slow page it replaced.
+
+Still open, and a bigger piece of work: every page ships roughly 200KB of
+gzipped JavaScript before it does anything, and the Academy ships 450KB.
+
 Four things a description of this business would otherwise get wrong:
 
 1. The document library (561 operational documents, £10 to £2,450) is the only

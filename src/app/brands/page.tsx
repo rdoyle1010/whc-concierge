@@ -7,8 +7,14 @@ import { ArrowRight, GraduationCap, Sparkles } from 'lucide-react'
 import { BRAND_FIELDS, normaliseBrand, type BrandProfile } from '@/lib/brand-profiles'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
 import { SITE_URL } from '@/lib/site-url'
+import { unstable_cache } from 'next/cache'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
-export const revalidate = 60
+// An hour, not a minute. The reads behind this page are tagged, so an edit
+// drops the cached copy at once instead of it expiring on a timer - which is
+// what made a short window necessary and what made nearly every visit a cold
+// render on a site this quiet.
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: { absolute: 'Spa and Wellness Brands | Talent House Collective' },
@@ -22,7 +28,7 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: 'Spa and Wellness Brands | Talent House Collective', description: 'The case for stocking each product house, written for the person who has to decide.' }
 }
 
-async function readPublishedBrands(): Promise<BrandProfile[]> {
+async function fetchPublishedBrands(): Promise<BrandProfile[]> {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -150,3 +156,11 @@ export default async function BrandsPage() {
     </>
   )
 }
+
+// Cached and tagged. Publishing a brand page in admin drops this immediately,
+// so the hour-long window costs nobody a wait.
+const readPublishedBrands = unstable_cache(
+  fetchPublishedBrands,
+  ['public-brands-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.brands] },
+)

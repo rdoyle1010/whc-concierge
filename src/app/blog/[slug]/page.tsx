@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { unstable_cache } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 import { SITE_ORIGIN } from '@/lib/site-content'
 import { toArticleHtml, isRichArticle } from '@/lib/article-html'
 import { notFound } from 'next/navigation'
@@ -13,7 +15,29 @@ import BlogImage from '@/components/BlogImage'
 import SponsoredAd from '@/components/SponsoredAd'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
 
-export const revalidate = 60
+// An hour, not a minute, and the page can finally honour it.
+//
+// This read the cookie-aware Supabase client purely to query a public table.
+// Reading cookies makes a page dynamic, so the old `revalidate = 60` was a
+// setting that did nothing at all and every visit re-rendered the article from
+// the database. A published post is identical for every reader, so there is no
+// session to read: the query below is cached under the blog tag, and publishing
+// or editing a post in admin drops it at once.
+export const revalidate = 3600
+
+const readPost = unstable_cache(
+  async (slug: string) => {
+    const { data } = await createAdminClient()
+      .from('blog_posts')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .maybeSingle()
+    return data || null
+  },
+  ['public-blog-post-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.blog] },
+)
 
 // Every Journal article shared one title and one description in search results,
 // because this page exported no metadata and there is no layout beside it to
@@ -24,11 +48,7 @@ export const revalidate = 60
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await props.params
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data: post } = await supabase
-      .from('blog_posts')
-      .select('title, excerpt, content, image_url, author, published_at, created_at, category')
-      .eq('slug', slug).eq('status', 'published').single()
+    const post = await readPost(slug)
     if (!post) return {}
 
     // A description Google will actually show: the excerpt if there is one,
@@ -69,13 +89,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
-  const supabase = await createServerSupabaseClient()
-  const { data: post } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('slug', params.slug)
-    .eq('status', 'published')
-    .single()
+  const post = await readPost(params.slug)
 
   if (!post) notFound()
 

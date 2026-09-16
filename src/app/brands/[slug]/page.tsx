@@ -10,13 +10,15 @@ import BrandEnquiryForm from '@/components/BrandEnquiryForm'
 import { BRAND_FIELDS, normaliseBrand, type BrandProfile } from '@/lib/brand-profiles'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
 import { SITE_URL } from '@/lib/site-url'
+import { unstable_cache } from 'next/cache'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
 // No revalidate here, deliberately. This page reads whether the visitor is
 // signed in, which forces dynamic rendering, and a declared revalidate would
 // then be a setting that silently does nothing. The directory at /brands stays
 // cached, which is the page that carries the search traffic.
 
-async function readBrand(slug: string): Promise<BrandProfile | null> {
+async function fetchBrand(slug: string): Promise<BrandProfile | null> {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -356,3 +358,17 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
     </>
   )
 }
+
+// Same tag as the list, so one publish refreshes both.
+const readBrand = unstable_cache(
+  fetchBrand,
+  ['public-brand-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.brands] },
+)
+
+// No page-level revalidate here, deliberately, and a test enforces it.
+//
+// This page reads the session to decide whether to show a brand's contact
+// details, so it is dynamic by nature: caching the rendered page would store
+// one member's unlocked view and serve it to the public. What is cached is the
+// brand row above, which is the same for everybody and is the expensive part.

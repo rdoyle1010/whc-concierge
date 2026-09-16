@@ -6,7 +6,9 @@
 // now read from here, so there is one definition of what "a live role" means
 // rather than two that drift.
 
+import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 import { formatSalary } from '@/lib/money'
 import { countryName, isUnitedKingdom } from '@/lib/countries'
 
@@ -35,7 +37,21 @@ export function overseasLocation(town: string | null | undefined, country: strin
   return `${place}, ${named}`
 }
 
-export async function getPublicRoles(limit = 150): Promise<PublicRole[]> {
+/**
+ * The live roles, cached under the jobs tag.
+ *
+ * Both /jobs and /roles render from this, and both used to run the query on
+ * every request. It is cached for an hour and dropped the moment a role is
+ * published, taken down or edited, so the common case is a prerendered page and
+ * the edit case is immediate.
+ */
+export const getPublicRoles = unstable_cache(
+  readPublicRoles,
+  ['public-roles-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.jobs] },
+)
+
+async function readPublicRoles(limit = 150): Promise<PublicRole[]> {
   try {
     const admin = createAdminClient()
     const { data, error } = await admin

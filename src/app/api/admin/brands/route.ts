@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ADMIN_REFUSAL_MESSAGE, adminRequestOutcome } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { BRAND_FIELDS, cleanBrandSlug, normaliseBrand, validateBrand } from '@/lib/brand-profiles'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Brand pages, from the admin side. Reads every brand including drafts; the
 // public page reads only published ones through the anon key, where the RLS
@@ -42,6 +43,9 @@ export async function POST(req: NextRequest) {
     if (!slug) return NextResponse.json({ error: 'Which brand?' }, { status: 400 })
     const { error } = await admin.from('brand_profiles').delete().eq('slug', slug)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    // A published brand page appears now, not within the hour. The public
+    // pages cache for an hour precisely because edits drop it here.
+    revalidatePublic(PUBLIC_CACHE_TAGS.brands)
     return NextResponse.json({ success: true })
   }
 
@@ -69,6 +73,7 @@ export async function POST(req: NextRequest) {
     // brand page that already exists, with nothing explaining why.
     const { error: markError } = await admin.from('brand_applications').update({ status: 'converted', converted_slug: slug }).eq('id', id)
     if (markError) return NextResponse.json({ error: `The brand page was created at /brands/${slug}, but the application could not be marked as converted. Mark it by hand before converting anything else.` }, { status: 500 })
+    revalidatePublic(PUBLIC_CACHE_TAGS.brands)
     return NextResponse.json({ success: true, slug })
   }
 
@@ -78,6 +83,7 @@ export async function POST(req: NextRequest) {
     if (!id || !status) return NextResponse.json({ error: 'Which enquiry, and what status?' }, { status: 400 })
     const { error } = await admin.from('brand_enquiries').update({ status }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    revalidatePublic(PUBLIC_CACHE_TAGS.brands)
     return NextResponse.json({ success: true })
   }
 
@@ -89,5 +95,6 @@ export async function POST(req: NextRequest) {
 
   const { error } = await admin.from('brand_profiles').upsert({ ...brand, updated_at: new Date().toISOString() }, { onConflict: 'slug' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePublic(PUBLIC_CACHE_TAGS.brands)
   return NextResponse.json({ success: true, slug: brand.slug })
 }

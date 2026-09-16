@@ -16,7 +16,11 @@ import { externalUrl } from '@/lib/external-url'
 import { SITE_URL } from '@/lib/site-url'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
 
-export const revalidate = 60
+// An hour, not a minute. The reads behind this page are tagged, so an edit
+// drops the cached copy at once instead of it expiring on a timer - which is
+// what made a short window necessary and what made nearly every visit a cold
+// render on a site this quiet.
+export const revalidate = 3600
 
 const SITE = 'https://talenthousecollective.co.uk'
 type Job = Record<string, any>

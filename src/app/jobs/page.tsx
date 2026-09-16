@@ -16,7 +16,7 @@ import { getPublicRoles } from '@/lib/public-roles-server'
 // document has every job title, salary and link before a line of JavaScript
 // runs. The interactive browser takes over on hydration and nothing about it
 // changed.
-export const revalidate = 180
+export const revalidate = 3600
 
 export default async function PublicJobsPage() {
   const roles = await getPublicRoles()

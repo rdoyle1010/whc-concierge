@@ -7,8 +7,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Star, ArrowLeft, ExternalLink, BadgeCheck, BookOpen } from 'lucide-react'
 import { externalUrl } from '@/lib/external-url'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
-export const revalidate = 60
+// An hour, not a minute. The reads behind this page are tagged, so an edit
+// drops the cached copy at once instead of it expiring on a timer - which is
+// what made a short window necessary and what made nearly every visit a cold
+// render on a site this quiet.
+export const revalidate = 3600
 
 const SITE = 'https://talenthousecollective.co.uk'
 
@@ -145,7 +150,7 @@ const getPropertyPageData = unstable_cache(async (id: string) => {
   if (!property) return null
   const reviewData = await loadReviews(admin, (property as any).user_id)
   return { property: property as any, jobs: jobs || [], ...reviewData }
-}, ['public-property-destination-v3'], { revalidate: 60 })
+}, ['public-property-destination-v3'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.jobs, PUBLIC_CACHE_TAGS.proof] })
 
 function normaliseAwards(raw: any): Array<{ name: string; year: string | null }> {
   if (!Array.isArray(raw)) return []
