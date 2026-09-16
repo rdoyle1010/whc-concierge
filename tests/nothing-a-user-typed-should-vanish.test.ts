@@ -57,7 +57,7 @@ test('choosing a quieter inbox does not turn off the platform', () => {
 // "live but expired" as a warning. The public list filters expiry inside its
 // RPC; the other two public surfaces did not.
 test('an advert whose term has ended is not still on sale', () => {
-  for (const page of ['src/app/roles/page.tsx', 'src/app/jobs/[id]/page.tsx']) {
+  for (const page of ['src/lib/public-roles-server.ts', 'src/app/jobs/[id]/page.tsx']) {
     const source = read(page)
     assert.match(source, /expires_at\.is\.null,expires_at\.gt\./,
       `${page} showed adverts the property had stopped paying for`)
@@ -81,12 +81,18 @@ test('an unapproved property cannot send a shift to a real person', () => {
 // The first item in the main navigation and the highest-priority page in the
 // sitemap prerendered to an empty document.
 test('the jobs page is never an empty document', () => {
+  // The fallback used to be null, then a heading with "Loading live roles..."
+  // under it, and now the roles themselves. Each version of this test asserted
+  // the strongest thing true at the time; this one asserts that the static
+  // document a crawler receives actually lists the jobs.
   const page = read('src/app/jobs/page.tsx')
   assert.doesNotMatch(page, /<Suspense fallback=\{null\}>/,
     'a searchParams subtree bails out of prerendering, so the fallback is the static HTML')
-  assert.match(page, /<Suspense fallback=\{<JobsShell\/>\}>/)
-  const shell = page.slice(page.indexOf('function JobsShell'), page.indexOf('export default function PublicJobsPage'))
+  assert.match(page, /fallback=\{<JobsFirstPaint roles=\{roles\} \/>\}/)
+
+  const shell = read('src/components/JobsFirstPaint.tsx')
   assert.match(shell, /<h1/, 'a crawler needs a heading')
-  assert.match(shell, /<Navbar\/>/)
-  assert.match(shell, /<Footer\/>/)
+  assert.match(shell, /<Navbar \/>/)
+  assert.match(shell, /<Footer \/>/)
+  assert.match(shell, /roles\.map/, 'and by now it needs the roles as well')
 })

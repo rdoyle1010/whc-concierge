@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { DEFAULT_PUBLIC_PAGES_CONTENT, PUBLIC_PAGE_SLUGS } from '../src/lib/public-page-content'
 
 // "Still sat behind."
@@ -90,5 +90,45 @@ test('nothing renders a picture it was not given', () => {
   for (const file of ['src/components/HeroCarousel.tsx', 'src/components/WebsiteEditorPreview.tsx']) {
     const source = readFileSync(file, 'utf8')
     assert.match(source, /image\.url \? \(/, `${file} renders without checking there is a picture`)
+  }
+})
+
+test('the third defaults file has no photographs either', () => {
+  // Two files were emptied and two files were guarded, and the complaint came
+  // back a third time - because the course photographs came from somewhere
+  // neither test looked at. /academy painted a stock Unsplash picture at first
+  // paint and replaced it with hers about three hundred milliseconds later, on
+  // every course she had uploaded a photograph for.
+  //
+  // The lesson, written down for the fourth time: a check that only knows about
+  // the places you already found is a check that passes while the bug is live.
+  // This one walks the whole academy content tree rather than naming files.
+  const files = [
+    'src/lib/academy-extras.ts',
+    'src/lib/academy-catalog-server.ts',
+    'src/app/academy/page.tsx',
+    'src/app/talent/academy/page.tsx',
+    'src/app/talent/academy/[slug]/page.tsx',
+    ...readdirSync('src/lib/academy-more').filter(name => name.endsWith('.ts')).map(name => `src/lib/academy-more/${name}`),
+  ]
+  for (const file of files) {
+    const body = readFileSync(file, 'utf8').replace(/^\s*\/\/.*$/gm, '')
+    assert.doesNotMatch(body, /images\.unsplash\.com/,
+      `${file} ships a stock photograph, which is the one every visitor sees first`)
+  }
+})
+
+test('a course with no photograph draws nothing, not an empty src', () => {
+  // Emptying the defaults means displayCourseImage can return an empty string,
+  // and an img with an empty src re-requests the page itself. Every course
+  // image must be behind a check, and the space behind it must be painted or
+  // the card collapses.
+  for (const file of ['src/app/academy/page.tsx', 'src/app/talent/academy/page.tsx', 'src/app/talent/academy/[slug]/page.tsx']) {
+    const source = readFileSync(file, 'utf8')
+    const tags = source.match(/<img\b[^>]*?src=\{(?:course\.image_url|displayCourseImage\(course\))\}/g) || []
+    for (const tag of tags) {
+      const before = source.slice(Math.max(0, source.indexOf(tag) - 60), source.indexOf(tag))
+      assert.match(before, /&& $/, `${file} renders a course image without checking there is one`)
+    }
   }
 })

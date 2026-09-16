@@ -10,6 +10,7 @@ import {
   formatPrice, singlePriceFor, categoryPacks, everythingPacks, VAT_NOTE,
 } from '@/lib/documents/pricing'
 import { DOCUMENT_STATUS, DOCUMENT_DISCLAIMER } from '@/lib/documents/status'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 // A page for each document.
 //
@@ -93,6 +94,7 @@ export async function generateMetadata(
     description: description.slice(0, 158),
     alternates: { canonical: `${BASE}/standards/${reference}` },
     openGraph: {
+      ...OG_DEFAULTS,
       type: 'website',
       url: `${BASE}/standards/${reference}`,
       title: entry.title,

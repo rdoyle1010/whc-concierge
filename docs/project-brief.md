@@ -80,6 +80,58 @@ Not the product. Distribution and activation.
   and no hotels until there are thirty real profiles.
 - One LinkedIn post is an announcement, not a campaign.
 
+## What a six-way audit found, and what was done about it
+
+Six independent passes over the site in September 2026 - copy and brand voice,
+silent failures, trust in an empty marketplace, live technical, search and
+discoverability, and commercial structure. The site was technically sound: no
+dead links across the whole navigation, no horizontal scroll on a phone, one
+heading per page, layout shift inside the good threshold everywhere. What was
+wrong was almost all at the point of conversion or discovery, and none of it
+produced an error anybody would ever see.
+
+The ones worth an outside view knowing about, because they change what advice
+makes sense:
+
+- **/jobs served Google a loading state.** The top URL in the sitemap and the
+  first item in the navigation prerendered to a heading and the words "Loading
+  live roles...". It competed with Indeed using an empty div. Now
+  server-rendered, with every title, salary and link in the static document.
+- **The one crawlable roles listing passed nothing to any job.** /roles renders
+  150 roles on the server and wrapped every link in /login, which robots.txt
+  blocks. Fixed: roles link straight to the role.
+- **/pricing quoted fourteen prices and had one link out, for talent.** An
+  employer who had decided to spend £995 could not do it from the page that
+  quoted the number. Every price now has a destination.
+- **Apply threw the role away.** It carried ?intent=apply&role=<id>; the
+  registration form reads ?redirect=. Someone who pressed Apply on a specific
+  job landed on an empty profile editor. Fixed.
+- **Paid adverts fell out of Google Jobs after thirty days.** The JobPosting
+  schema set validThrough only from an application deadline most properties do
+  not fill in, while the page already knew the real expiry. Fixed.
+- **Twenty-six pages had silently lost their share image.** Next merges page
+  metadata shallowly, so declaring an openGraph title replaced the root object
+  outright. No warning; the symptom is only ever visible on LinkedIn.
+- **The old brand name was on the page that proves the platform is real.** The
+  certificate verification page said "Issued by Wellness House Collective". The
+  contact address, previously typed into eight files, is now defined once.
+- **The stock-photograph flash had a third source.** Two defaults files were
+  emptied and guarded in an earlier round; the Academy course pictures came from
+  a set of files neither test looked at, so /academy painted a stock photo and
+  swapped in the real one about 300ms later.
+
+Four things a description of this business would otherwise get wrong:
+
+1. The document library (561 operational documents, £10 to £2,450) is the only
+   revenue line that works with no users at all. Eleven of the twelve need
+   marketplace liquidity that does not exist yet.
+2. Job detail pages are fully public. Copy claiming an account is needed to see
+   the property or the brief was never true and has been corrected.
+3. There are 29 product-house masterclasses live in the Academy while /brands
+   said the first brand pages were being written.
+4. The founder photograph on /about has never existed as a file. The page has
+   always shown a grey monogram, and it degrades so gracefully nobody noticed.
+
 ## Where AI is used, and where it deliberately is not
 
 **Used:** reading a CV into a draft profile, in the professional's own account

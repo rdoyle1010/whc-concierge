@@ -72,7 +72,7 @@ export default function VerifyResultPage() {
                 Completed {new Date(cert.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <p className="text-[11px] text-muted font-mono mb-6">{cert.certificate_code}</p>
-              <p className="text-[11px] text-muted">Issued by Wellness House Collective. This certificate evidences completion of a Talent House Academy course and its assessment.</p>
+              <p className="text-[11px] text-muted">Issued by Talent House Collective. This certificate evidences completion of a Talent House Academy course and its assessment.</p>
             </>
           ) : (
             <>

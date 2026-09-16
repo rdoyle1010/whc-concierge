@@ -6,6 +6,7 @@ import { ArrowRight, Banknote, CalendarCheck, CheckCircle2, Clock3, MapPin, Sear
 import { getPublicPageContent } from '@/lib/public-page-content-server'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import PanelPicture from '@/components/PanelPicture'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const revalidate = 3600
 
@@ -13,13 +14,15 @@ export const revalidate = 3600
 // this page and every professional's Agency profile told Google they were
 // really /agency - which asks the index to drop them, and it does.
 export const metadata: Metadata = {
-  title: { absolute: 'How Agency & Freelance Spa Shifts Work | Talent House Collective' },
-  description: 'How last-minute spa cover works on Talent House Collective: post the shift, see verified professionals with real availability, and book at a rate agreed up front.',
+  title: { absolute: 'How Freelance Spa Shift Cover Works | Talent House' },
+  description: 'Post the shift, see verified spa professionals with real availability, and book at a rate agreed up front.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/agency/about' },
   openGraph: {
-    title: 'How Agency & Freelance Spa Shifts Work | Talent House Collective',
+    ...OG_DEFAULTS,
+    title: 'How Freelance Spa Shift Cover Works | Talent House',
     description: 'Post the shift, see verified professionals with real availability, book at an agreed rate.',
   },
+  twitter: { card: 'summary_large_image', title: 'How Freelance Spa Shift Cover Works | Talent House', description: 'Post the shift, see verified professionals with real availability, book at an agreed rate.' }
 }
 
 const benefits = [

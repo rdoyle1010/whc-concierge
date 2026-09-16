@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Star, ArrowLeft, ExternalLink, BadgeCheck, BookOpen } from 'lucide-react'
 import { externalUrl } from '@/lib/external-url'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const revalidate = 60
 
@@ -180,7 +181,9 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   return {
     title: { absolute: `Work at ${name} | Talent House Collective` }, description,
     alternates: { canonical: url },
-    openGraph: { title: `Work at ${name}`, description, url, type: 'website', ...(image ? { images: [image] } : {}) },
+    openGraph: {
+    ...OG_DEFAULTS, title: `Work at ${name}`, description, url, type: 'website', ...(image ? { images: [image] } : {}),
+  },
     twitter: { title: `Work at ${name}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },
   }
 }

@@ -123,7 +123,7 @@ Finally, protect the standard: correct products in correct quantities, faithful 
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa carried a brand I'd never seen in a department store, and the therapist told me about the Victorian head gardener and the estate it grew from. By the end of the story I understood exactly what I was paying for."`,

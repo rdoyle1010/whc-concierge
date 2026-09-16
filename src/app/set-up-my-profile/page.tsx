@@ -11,8 +11,10 @@ import ProfileBuildForm from '@/components/ProfileBuildForm'
 // the wrong way round, so this asks for a CV and gives her a finished profile.
 
 export const metadata: Metadata = {
-  title: 'We will set up your profile for you | Talent House Collective',
-  description: 'Send us your CV and we will build your professional spa and wellness profile properly, then send it to you to approve. Free, and nothing goes live until you say so.',
+  // The root layout appends "| Talent House Collective" to any plain title
+  // string. Spelling the brand out here printed it twice in every search result.
+  title: 'We Will Build Your Spa Profile For You',
+  description: 'Send us your CV and we will build your spa and wellness profile properly, then send it to you to approve. Free.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/set-up-my-profile' },
 }
 

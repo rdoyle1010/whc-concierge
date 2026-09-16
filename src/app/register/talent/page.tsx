@@ -207,18 +207,18 @@ export default function TalentRegisterPage() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="reg-full-name" className="block text-[10px] font-semibold text-[#57544c] uppercase tracking-[0.14em] mb-1.5">Full name</label>
+                <label htmlFor="reg-full-name" className="block text-[12px] font-semibold text-[#57544c] uppercase tracking-[0.1em] mb-1.5">Full name</label>
                 <input id="reg-full-name" type="text" value={fullName} onChange={(e) => { setError(''); setFullName(e.target.value) }} className="input-field" autoComplete="name" />
               </div>
               <div>
-                <label htmlFor="reg-email" className="block text-[10px] font-semibold text-[#57544c] uppercase tracking-[0.14em] mb-1.5">Email</label>
+                <label htmlFor="reg-email" className="block text-[12px] font-semibold text-[#57544c] uppercase tracking-[0.1em] mb-1.5">Email</label>
                 <input id="reg-email" type="email" value={email} onChange={(e) => { setError(''); setEmail(e.target.value) }} className="input-field" autoComplete="email" />
               </div>
               <div>
-                <label htmlFor="reg-password" className="block text-[10px] font-semibold text-[#57544c] uppercase tracking-[0.14em] mb-1.5">Password</label>
+                <label htmlFor="reg-password" className="block text-[12px] font-semibold text-[#57544c] uppercase tracking-[0.1em] mb-1.5">Password</label>
                 <div className="relative">
                   <input id="reg-password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => { setError(''); setPassword(e.target.value) }} className="input-field pr-10" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#222321]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted hover:text-[#222321]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
                 <p className="mt-1.5 text-[11px] text-[#6e6a60]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>

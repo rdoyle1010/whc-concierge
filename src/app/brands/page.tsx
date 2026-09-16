@@ -5,16 +5,21 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowRight, GraduationCap, Sparkles } from 'lucide-react'
 import { BRAND_FIELDS, normaliseBrand, type BrandProfile } from '@/lib/brand-profiles'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { SITE_URL } from '@/lib/site-url'
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
   title: { absolute: 'Spa and Wellness Brands | Talent House Collective' },
-  description: 'The product houses behind the treatment menus, and the case for stocking each one: the proposition, the ingredients, the signature treatments and how a therapist sells it.',
+  description: 'The product houses behind the treatment menus, and the case for stocking each one.',
+  alternates: { canonical: `${SITE_URL}/brands` },
   openGraph: {
+    ...OG_DEFAULTS,
     title: 'Spa and Wellness Brands | Talent House Collective',
     description: 'The case for stocking each product house, written for the person who has to decide.',
   },
+  twitter: { card: 'summary_large_image', title: 'Spa and Wellness Brands | Talent House Collective', description: 'The case for stocking each product house, written for the person who has to decide.' }
 }
 
 async function readPublishedBrands(): Promise<BrandProfile[]> {
@@ -103,11 +108,19 @@ export default async function BrandsPage() {
           {brands.length === 0 ? (
             <div className="border border-border bg-surface px-6 py-16 text-center">
               <Sparkles size={22} className="mx-auto text-muted" />
-              <p className="mt-4 text-[15px] font-medium text-ink">The first brand pages are being written.</p>
+              {/* This said "the first brand pages are being written" while
+                  twenty-nine product-house masterclasses were already live in
+                  the Academy. A visitor who had just read one was told the work
+                  had not started. The masterclasses are the proof, so the empty
+                  state points at them instead of apologising. */}
+              <p className="mt-4 text-[15px] font-medium text-ink">The brand pages are opening shortly.</p>
               <p className="mx-auto mt-2 max-w-md text-[13px] leading-6 text-secondary">
-                Product houses working with Talent House get a page here alongside their Academy masterclass.
+                The Academy masterclasses for these product houses are already written and live. A brand page sits alongside its masterclass and makes the commercial case to spa directors.
               </p>
-              <Link href="/brands/apply" className="btn-primary mt-6 inline-block text-[13px]">Apply for a brand page</Link>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Link href="/academy" className="btn-primary inline-block text-[13px]">See the brand masterclasses</Link>
+                <Link href="/brands/apply" className="btn-secondary inline-block text-[13px]">Apply for a brand page</Link>
+              </div>
             </div>
           ) : (
             <div className={`grid gap-6 ${brands.length === 1 ? '' : brands.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>

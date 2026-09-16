@@ -2,15 +2,19 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
 import type { Metadata } from 'next'
+import { CONTACT_EMAIL } from '@/lib/contact'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const metadata: Metadata = {
   title: { absolute: 'Privacy Policy | Talent House Collective' },
   description: 'How Talent House Collective collects, uses, stores and protects your personal data, and the rights you have over it.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/privacy' },
   openGraph: {
+    ...OG_DEFAULTS,
     title: 'Privacy Policy | Talent House Collective',
     description: 'How Talent House Collective collects, uses, stores and protects your personal data, and the rights you have over it.',
   },
+  twitter: { card: 'summary_large_image', title: 'Privacy Policy | Talent House Collective', description: 'How Talent House Collective collects, uses, stores and protects your personal data, and the rights you have over it.' },
 }
 
 export default function PrivacyPage() {
@@ -18,7 +22,7 @@ export default function PrivacyPage() {
     <main id="main-content">
     <section className="bg-[#ede8df] pt-32 pb-16"><div className="max-w-3xl mx-auto px-6 text-center"><h1 className="text-4xl font-semibold text-ink">Privacy Policy</h1><p className="text-secondary mt-3 text-[14px]">Last updated: 1 September 2026</p></div></section>
     <section className="py-16 bg-white"><div className="max-w-3xl mx-auto px-6 prose prose-lg prose-headings:text-[#222321] prose-p:text-[#57544c] prose-li:text-[#57544c]">
-      <h2>1. Who we are</h2><p>Wellness House Collective (&ldquo;Talent House&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates a UK recruitment, flexible-work and professional-development platform for spa and wellness professionals and employers. We act as data controller for personal data processed through the platform. Privacy enquiries and data-rights requests can be sent to <a href="mailto:hello@wellnesshousecollective.co.uk">hello@wellnesshousecollective.co.uk</a>.</p>
+      <h2>1. Who we are</h2><p>Wellness House Collective (&ldquo;Talent House&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates a UK recruitment, flexible-work and professional-development platform for spa and wellness professionals and employers. We act as data controller for personal data processed through the platform. Privacy enquiries and data-rights requests can be sent to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
 
       <h2>2. Data we process</h2><p>Depending on the service you use, this can include account and contact information, professional profile information, CVs, qualifications and certificates, right-to-work information, optional insurance documents, skills, career history, availability, location and travel preferences, job applications, interviews, messages, reviews, Agency and Residency booking records, payment records, communication preferences, consent records, activity records of how the platform is used (see section 12) and security/audit information.</p><p>Employer data can include company and property details, job descriptions, salaries, role requirements, candidate-search preferences and recruitment activity.</p>
 
@@ -62,12 +66,12 @@ export default function PrivacyPage() {
       <p><strong>Financial and statutory records are the exception.</strong> Agency and Residency bookings, purchases, Academy enrolments, placements and salary records carry amounts, payment references and hire outcomes that UK company and tax law requires Talent House to keep for six years from the end of the relevant accounting period. Those records are <em>anonymised</em> rather than deleted: the link to the person is removed and the amounts and dates survive. A user deleting their account is told which records this applies to.</p>
       <p>Talent House may also need to keep information longer where there is a continuing legal claim, a live dispute, or a legal obligation to retain it.</p>
 
-      <h2>11. Your UK GDPR rights</h2><p>Subject to the law and the circumstances, you may have rights to access, rectify, erase, restrict or object to processing, obtain portable data, withdraw consent and complain to the Information Commissioner&apos;s Office. You also have protections relating to solely automated decisions with legal or similarly significant effects. Talent House matching is designed as decision support rather than a solely automated hiring decision.</p><p>Requests can be sent to <a href="mailto:hello@wellnesshousecollective.co.uk">hello@wellnesshousecollective.co.uk</a>. We may need to verify identity before releasing or changing account data.</p>
+      <h2>11. Your UK GDPR rights</h2><p>Subject to the law and the circumstances, you may have rights to access, rectify, erase, restrict or object to processing, obtain portable data, withdraw consent and complain to the Information Commissioner&apos;s Office. You also have protections relating to solely automated decisions with legal or similarly significant effects. Talent House matching is designed as decision support rather than a solely automated hiring decision.</p><p>Requests can be sent to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We may need to verify identity before releasing or changing account data.</p>
 
       <h2>12. Cookies and activity records</h2><p>Talent House uses necessary authentication and security cookies to provide logged-in services. It sets no analytics or advertising cookies, and none may be introduced without the appropriate consent mechanism. Payment providers may set cookies necessary for fraud prevention and payment security.</p>
       <p><strong>Talent House does, however, keep a record of activity on its own servers.</strong> This is not a cookie and it is not a third-party analytics product: it is a table in the Talent House database. It records events such as a job being viewed, a candidate profile being viewed by an employer, an application moving between stages, a search being run and an administrative decision being taken. Each row can hold the acting account, the candidate, employer, job or application involved, a timestamp and a small amount of context about the event. Over time this amounts to a behavioural record of how an individual uses the platform.</p>
       <p>The lawful basis is <strong>legitimate interests</strong>: Talent House needs to know whether roles are being seen, whether matching is working, where applications stall and where the platform is being misused. Talent House has weighed that against the interests of the people involved - the record is not sold, not shared with third parties for their own purposes, not used to build advertising profiles, and not used to make an automated decision about anyone. These records are <strong>deleted after 13 months</strong>, and are deleted immediately when the account they relate to is deleted.</p>
-      <p>Any user can obtain their own activity records through the data export in their account settings, and can object to this processing by writing to <a href="mailto:hello@wellnesshousecollective.co.uk">hello@wellnesshousecollective.co.uk</a>.</p>
+      <p>Any user can obtain their own activity records through the data export in their account settings, and can object to this processing by writing to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
 
       <h2>13. Changes</h2><p>We may update this policy as the platform, service providers or law change. Material changes will be communicated where required, and fresh consent will be sought when the law requires it for a new processing purpose.</p>
     </div></section></main><Footer /></div>

@@ -8,6 +8,8 @@ import Footer from '@/components/Footer'
 import { ArrowLeft, ArrowRight, ExternalLink, GraduationCap, Heart, Lock, Mail, Phone, Quote, Sparkles } from 'lucide-react'
 import BrandEnquiryForm from '@/components/BrandEnquiryForm'
 import { BRAND_FIELDS, normaliseBrand, type BrandProfile } from '@/lib/brand-profiles'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { SITE_URL } from '@/lib/site-url'
 
 // No revalidate here, deliberately. This page reads whether the visitor is
 // signed in, which forces dynamic rendering, and a declared revalidate would
@@ -41,12 +43,22 @@ async function readBrand(slug: string): Promise<BrandProfile | null> {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const brand = await readBrand(slug)
-  if (!brand) return { title: 'Brand not found | Talent House Collective' }
+  if (!brand) return { title: 'Brand not found' }
   const description = brand.usp || brand.tagline || `${brand.name} on Talent House Collective.`
   return {
     title: { absolute: `${brand.name} | Talent House Collective` },
     description,
-    openGraph: { title: `${brand.name} | Talent House Collective`, description, images: brand.image_url ? [brand.image_url] : undefined },
+    openGraph: {
+      ...OG_DEFAULTS,
+      title: `${brand.name} | Talent House Collective`,
+      description,
+      url: `${SITE_URL}/brands/${slug}`,
+      // Spread, not `images: x ? [x] : undefined`. An explicit undefined after
+      // the spread removes the default card image instead of leaving it alone.
+      ...(brand.image_url ? { images: [{ url: brand.image_url }] } : {}),
+    },
+    twitter: { card: 'summary_large_image', title: `${brand.name} | Talent House Collective`, description },
+    alternates: { canonical: `${SITE_URL}/brands/${slug}` },
   }
 }
 

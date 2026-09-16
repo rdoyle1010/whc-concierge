@@ -121,7 +121,7 @@ Finally, protect the brand: follow protocols exactly, respect patch-test and con
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa carried Murad and the therapist told me it was founded by a practising dermatologist who built the products for his own patients. From that moment I treated her advice like a consultation, not a sales pitch."`,

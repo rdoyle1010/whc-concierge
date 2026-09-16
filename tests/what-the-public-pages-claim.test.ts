@@ -53,7 +53,11 @@ test('a number that is nought does not print itself onto the page', () => {
 test('the Academy price on the pricing page comes from the Academy', () => {
   const source = body('src/app/pricing/page.tsx')
   assert.doesNotMatch(source, /£29–£199\+/, 'the hard-coded Academy range disagreed with the live catalogue')
-  assert.match(source, /api\/academy\/catalog/, 'the pricing page must read the real prices')
+  // From /api/academy/price-range, not /api/academy/catalog: the catalogue is
+  // 305KB of course bodies and this page shows no courses.
+  assert.match(source, /api\/academy\/price-range/, 'the pricing page must read the real prices')
+  assert.doesNotMatch(source, /fetch\('\/api\/academy\/catalog'\)/,
+    'and must not pull the whole catalogue to read two numbers')
 })
 
 test('the database keeps a star rating tied to real reviews', () => {

@@ -68,7 +68,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
       })),
     { url: `${BASE}/roles`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
-    { url: `${BASE}/agency`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    // /agency/about, not /agency. The sitemap advertised /agency, which renders
+    // a signed-in search tool or a skeleton depending on who is asking, while
+    // the real server-rendered marketing page - the one the navigation links to
+    // - was in no sitemap at all.
+    { url: `${BASE}/agency/about`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/match`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE}/consultancy/join`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/register/talent`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/register/employer`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/advertising-terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE}/residency`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/properties`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/brands`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
@@ -90,11 +99,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/good-to-know`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    // /register/* is disallowed in robots.txt: they are thin forms, and an
-    // indexed sign-up form outranking a real page helps nobody. Listing a
-    // blocked URL in the sitemap is not a small inconsistency - Search Console
-    // reports it as an error against the whole file, which is the file every
-    // other page depends on being trusted.
+    // Only /register/buyer is disallowed now. The talent and employer sign-up
+    // pages are real landing pages with real copy and the strongest commercial
+    // intent on the site, so they are indexed and listed above. The rule this
+    // comment used to defend still holds for the buyer form: a blocked URL in
+    // the sitemap is reported by Search Console as an error against the whole
+    // file, which is the file every other page depends on being trusted.
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ]

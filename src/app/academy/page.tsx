@@ -11,14 +11,10 @@ import { useDialog } from '@/components/useDialog'
 import { createClient } from '@/lib/supabase/client'
 import { ACADEMY, coursePrice, publicCoursePrice, type AcademyCourse } from '@/lib/academy'
 import { courseMeta } from '@/lib/academy-meta'
-import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, ShieldCheck, X, ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, CheckCircle2, Award, Sparkles, TrendingUp, BadgeCheck, BrainCircuit } from 'lucide-react'
 
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
 const ACADEMY_ACCENT = '#57544c'
-const MODERN_COURSE_IMAGES: Record<string, string> = {
-  'five-star-service': 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=85&auto=format&fit=crop',
-}
 
 export default function PublicAcademyPage() {
   // Header wording, hers to change without a deploy. Loaded in the browser
@@ -111,15 +107,14 @@ export default function PublicAcademyPage() {
   const managementCourses = courses.filter(course => MANAGEMENT_PROGRAMMES.has(course.slug))
   const standardCourses = courses.filter(course => !MANAGEMENT_PROGRAMMES.has(course.slug))
   const categories = Array.from(new Set(standardCourses.map(c => c.category)))
-  // An uploaded image wins, and the presence of the image is the whole of the
-  // decision. It used to be gated behind image_admin_set, which is hardcoded
-  // false for every course defined in code - so for those courses a stock
-  // picture in MODERN_COURSE_IMAGES outranked the one an administrator had
-  // actually uploaded, and the upload appeared to do nothing at all. That is
-  // the third time on this platform a flag beside a picture has decided the
-  // picture does not count.
-  const displayCourseImage = (course: AcademyCourse & { image_url?: string }) =>
-    course.image_url || MODERN_COURSE_IMAGES[course.slug] || courseImage(course.slug)
+  // Her photograph, or none. There is no longer a placeholder underneath it.
+  //
+  // This page painted a stock Unsplash picture at first paint and replaced it
+  // with hers about three hundred milliseconds later, on every course she had
+  // uploaded a photograph for. Emptying two defaults files fixed the same bug
+  // on the public pages; the course pictures came from a third source nobody
+  // looked at, and no test covered it. Now they do.
+  const displayCourseImage = (course: AcademyCourse & { image_url?: string }) => course.image_url || ''
 
   const purchaseButton = (course: AcademyCourse) => isCandidate ? (
     <Link href="/talent/academy" className="btn-primary text-[12px] inline-flex items-center justify-center gap-1.5">Member enrolment <ArrowRight size={12} /></Link>
@@ -223,11 +218,11 @@ export default function PublicAcademyPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               {managementCourses.map((course, index) => (
                 <article key={course.slug} className="overflow-hidden border border-[#dcd4c8] bg-white">
-                  <div className="relative h-64">
-                    <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                  <div className="relative h-64 bg-[#222321]">
+                    {displayCourseImage(course) && <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#222321]/95 via-[#222321]/35 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-white">
-                      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} Talent House Leadership Programme</div>
+                      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} Talent House Leadership Programme</div>
                       <h3 className="text-[27px] font-semibold tracking-[-0.03em]">{course.title}</h3>
                     </div>
                   </div>
@@ -265,8 +260,8 @@ export default function PublicAcademyPage() {
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {standardCourses.filter(c => c.category === cat).map(course => (
                   <article key={course.slug} className="flex flex-col overflow-hidden border border-[#dcd4c8] bg-white">
-                    <div className="relative h-44 shrink-0">
-                      <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                    <div className="relative h-44 shrink-0 bg-[#222321]">
+                      {displayCourseImage(course) && <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />}
                     </div>
                     <div className="flex flex-1 flex-col p-6">
                       <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#222321]">{course.title}</h3>

@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/academy'
-import { courseImage, lessonExtras } from '@/lib/academy-extras'
+import { lessonExtras } from '@/lib/academy-extras'
 import { courseMeta } from '@/lib/academy-meta'
 import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisual'
 import { loadCourseContent } from '@/lib/academy-content-lazy'
@@ -244,8 +244,8 @@ export default function CoursePlayerPage() {
     <DashboardShell role="talent">
       <Link href="/talent/academy" className="text-[13px] text-muted hover:text-ink flex items-center gap-1 mb-4"><ArrowLeft size={14} /> Academy</Link>
 
-      <div className="relative rounded-2xl overflow-hidden mb-5 h-44 md:h-52">
-        <img decoding="async" src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="relative rounded-2xl overflow-hidden mb-5 h-44 md:h-52 bg-ink">
+        {course.image_url && <img decoding="async" src={course.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
           <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">Talent House Academy · {course.category}</p>

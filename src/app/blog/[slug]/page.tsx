@@ -11,6 +11,7 @@ import { generateBlogJsonLd } from '@/lib/blog-jsonld'
 import ShareButtons from '@/components/ShareButtons'
 import BlogImage from '@/components/BlogImage'
 import SponsoredAd from '@/components/SponsoredAd'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const revalidate = 60
 
@@ -41,10 +42,12 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
     const published = post.published_at || post.created_at
 
     return {
-      title: `${post.title} | Talent House Collective`,
+      // The root template adds the brand; naming it here printed it twice.
+      title: post.title,
       description,
       alternates: { canonical: url },
       openGraph: {
+        ...OG_DEFAULTS,
         type: 'article', url, title: post.title, description,
         publishedTime: published || undefined,
         authors: post.author ? [post.author] : undefined,

@@ -123,7 +123,7 @@ Finally, protect the house: correct products, correct quantities, faithful proto
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the spa chose Medik8 and she gave me one sentence - vitamin C and sunscreen by day, vitamin A by night, from a British house founded by a pharmacologist. For the first time skincare actually made sense to me."`,

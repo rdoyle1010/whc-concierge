@@ -121,7 +121,7 @@ Upsell paths are natural: the classic facial guest moves up to the Diamond tier,
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why this facial cost what it did, and the therapist told me the story - a family house from Barcelona, built on amino acid science, that five-star spas choose for their very best facials. By the end of the hour I understood every penny."`,

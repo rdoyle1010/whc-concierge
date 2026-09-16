@@ -13,6 +13,7 @@ import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { FREE_SAMPLES } from '@/lib/documents/samples'
 import StandardsCatalogue from '@/components/StandardsCatalogue'
 import StandardsStickyBuy from '@/components/StandardsStickyBuy'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 // The shop, rebuilt around the thing it is selling.
 //
@@ -28,7 +29,7 @@ import StandardsStickyBuy from '@/components/StandardsStickyBuy'
 // you a page.
 
 export const metadata: Metadata = {
-  title: { absolute: 'Spa Standards, SOPs and Risk Assessments | Talent House Collective' },
+  title: { absolute: 'Spa SOPs, Policies & Risk Assessments | Talent House' },
   description:
     'Professional standard operating procedures, risk assessments, checklists and job descriptions for luxury '
     + 'spa and wellness operations. Buy a single document, a department, or the full pre-opening suite.',
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
   // LinkedIn or WhatsApp was imageless and described as something else.
   alternates: { canonical: 'https://talenthousecollective.co.uk/standards' },
   openGraph: {
+    ...OG_DEFAULTS,
     type: 'website',
     url: 'https://talenthousecollective.co.uk/standards',
     title: 'Spa Standards, SOPs and Risk Assessments',

@@ -119,7 +119,7 @@ Finally, protect the house: follow protocols, use correct quantities, report low
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa used Dermalogica and the therapist told me it was founded by a skin therapist who started with a training school, not a product. That one sentence made me trust every word she said about my skin afterwards."`,

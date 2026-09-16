@@ -16,7 +16,9 @@ import { eventDateLabel, eventKindLabel, eventWhereLabel, isUpcoming, type SpaEv
 export const revalidate = 900
 
 export const metadata: Metadata = {
-  title: 'Spa and wellness events | Talent House Collective',
+  // The root layout appends "| Talent House Collective" to any plain title
+  // string. Spelling the brand out here printed it twice in every search result.
+  title: 'Spa and Wellness Events',
   description: 'Brand launches, masterclasses, product house training, trade shows and awards across luxury spa and wellness. Know what is on before everybody else.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/events' },
 }

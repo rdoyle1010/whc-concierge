@@ -10,12 +10,13 @@ import Wordmark from '@/components/Wordmark'
 import type { WebsiteContent } from '@/lib/site-content'
 import { usePublicSiteContent } from '@/lib/use-site-content'
 import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
+import { SOCIAL_LINKS } from '@/lib/social-links'
 import { Linkedin, Instagram, Facebook, MessageCircle, Mail, Link2, Share2, Check, Youtube, Music2 } from 'lucide-react'
 
 const DEFAULT_SOCIAL = {
-  linkedin_url: 'https://www.linkedin.com/company/wellnesshousecollective/',
-  instagram_url: 'https://www.instagram.com/wellnesshousecollective/',
-  facebook_url: 'https://www.facebook.com/wellnesshousecollective',
+  linkedin_url: SOCIAL_LINKS.linkedin,
+  instagram_url: SOCIAL_LINKS.instagram,
+  facebook_url: SOCIAL_LINKS.facebook,
   tiktok_url: '',
   youtube_url: '',
 }

@@ -374,17 +374,27 @@ check('Academy course content leaves the database only when it is owned and comp
   // 6. The commercial settings path is unchanged and still works everywhere.
   assert.match(adminRoute, /save_course_settings/)
   assert.match(adminRoute, /saveAcademyCourseSettings/)
-  // An admin-set image is never overruled by a hard-coded page image. This
-  // used to pin the expression `image_admin_set && image_url`, which failed
-  // that intent for every course defined in code: image_admin_set is hardcoded
-  // false for those, so a stock picture beat the uploaded one and the upload
-  // appeared to do nothing. The rule is the intent, not the expression - the
-  // uploaded image comes first, and nothing gates it.
+  // An uploaded image is the only image.
+  //
+  // This check has been rewritten twice for the same underlying bug. First it
+  // pinned `image_admin_set && image_url`, which failed its own intent: the
+  // flag is hardcoded false for every course defined in code, so a stock
+  // picture beat the uploaded one and the upload appeared to do nothing. Then
+  // it pinned `image_url || MODERN_COURSE_IMAGES`, which put the uploaded
+  // picture first but left the stock one underneath - so /academy painted
+  // somebody else's spa and swapped in hers three hundred milliseconds later.
+  //
+  // There is now nothing underneath. A course has her photograph or it draws a
+  // charcoal field, and this asserts the absence rather than an ordering.
   const chooser = read('src/app/academy/page.tsx')
-  assert.match(chooser, /course\.image_url \|\| MODERN_COURSE_IMAGES/)
+  assert.match(chooser, /course\.image_url \|\| ''/)
   assert.ok(
     !/image_admin_set && course\.image_url/.test(chooser),
     'an uploaded image must not be gated behind a flag',
+  )
+  assert.ok(
+    !/unsplash/i.test(chooser.replace(/^\s*\/\/.*$/gm, '')),
+    'no stock photograph may sit behind an uploaded one',
   )
 
   // 7. Every course surface reads the same merged catalogue, so custom content

@@ -2,7 +2,6 @@ import 'server-only'
 
 import { ACADEMY, CORE_SLUGS, type AcademyCourse } from '@/lib/academy'
 import { ACADEMY_ANSWERS } from '@/lib/academy-answers'
-import { courseImage } from '@/lib/academy-extras'
 import { getCourseContent } from '@/lib/academy-content'
 import type { CourseContent } from '@/lib/academy-types'
 import {
@@ -155,7 +154,10 @@ function baseCourse(course: AcademyCourse): ManagedAcademyCourse {
   return {
     ...course,
     price: course.price ?? 1000,
-    image_url: courseImage(course.slug),
+    // Empty, and that is the point. This used to be a stock photograph, which
+    // meant the catalogue handed every course a picture nobody had chosen and
+    // the page had no way to tell it apart from one that had been uploaded.
+    image_url: '',
     is_active: true,
     is_core: CORE_SLUGS.includes(course.slug),
     is_custom: false,
@@ -184,7 +186,7 @@ function rowCourse(row: CourseRow): ManagedAcademyCourse {
     category: row.category,
     minutes: row.minutes,
     price: row.price,
-    image_url: row.image_url || courseImage(row.slug),
+    image_url: row.image_url || '',
     lessons: Array.isArray(row.lessons) ? row.lessons : [],
     quiz: Array.isArray(row.quiz) ? row.quiz : [],
     is_active: row.is_active,

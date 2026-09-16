@@ -50,7 +50,13 @@ test('product copy carries one brand, and it is Talent House', () => {
     if (LEGAL_ENTITY_FILES.has(file)) continue
     // Course content credits the company that wrote it, which is accurate.
     if (file.startsWith('src/lib/academy-content/') || file.startsWith('src/lib/academy-more/')) continue
-    if (readFileSync(file, 'utf8').includes('Wellness House')) offenders.push(file)
+    // Comments stripped first. A comment explaining why the old name has to go
+    // is not the old name reaching a member, and a check that matches its own
+    // explanation fails on the fix rather than on the bug.
+    const code = readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+    if (code.includes('Wellness House')) offenders.push(file)
   }
   assert.deepEqual(offenders, [],
     `these say Wellness House to somebody who signed up to Talent House: ${offenders.join(', ')}`)

@@ -121,7 +121,7 @@ Finally, protect the house: correct products in correct quantities, faithful pro
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the cream cost what it costs, and she told me the story - the physicist, the burns, the years of experiments, the broth fermented from sea kelp. By the end I understood I was not buying a jar; I was buying a legend that happens to work."`,

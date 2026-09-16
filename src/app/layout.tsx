@@ -11,6 +11,9 @@ import { showEntryGate } from '@/lib/platform-access'
 import NewsletterSignupBar from '@/components/NewsletterSignupBar'
 import { SiteBrandProvider } from '@/components/SiteBrandProvider'
 import { DEFAULT_LOGO, safeLogoUrl } from '@/lib/site-content'
+import { SOCIAL_PROFILE_URLS } from '@/lib/social-links'
+import { CONTACT_EMAIL } from '@/lib/contact'
+import { SITE_URL } from '@/lib/site-url'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -42,7 +45,7 @@ const poppins = Poppins({
   weight: ['400', '500', '600'],
 })
 
-const SITE_URL = 'https://talenthousecollective.co.uk'
+
 
 // The logo is uploaded in Website & Brand, so the favicon, the Organization
 // JSON-LD and the header lockup all have to read the published value rather
@@ -62,7 +65,7 @@ const baseMetadata: Metadata = {
     default: 'Talent House Collective | Spa and Wellness Careers',
     template: '%s | Talent House Collective',
   },
-  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
+  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills rather than CV keywords.',
   keywords: [
     'luxury spa jobs', 'wellness careers', 'spa therapist recruitment', 'hotel spa jobs UK',
     'spa manager jobs', 'beauty therapist vacancies', 'wellness recruitment platform',
@@ -77,7 +80,7 @@ const baseMetadata: Metadata = {
     locale: 'en_GB',
     siteName: 'Talent House Collective',
     title: 'Talent House Collective | Spa and Wellness Careers',
-    description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
+    description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills rather than CV keywords.',
     url: 'https://talenthousecollective.co.uk',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Talent House Collective - The professional platform for spa and wellness careers' }],
   },
@@ -127,7 +130,15 @@ const organizationJsonLd = (logoUrl: string) => ({
   url: SITE_URL,
   logo: logoUrl.startsWith('http') ? logoUrl : SITE_URL + logoUrl,
   description: 'The professional platform for spa and wellness careers',
-  sameAs: [],
+  sameAs: SOCIAL_PROFILE_URLS,
+  areaServed: { '@type': 'Country', name: 'United Kingdom' },
+  contactPoint: [{
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: CONTACT_EMAIL,
+    areaServed: 'GB',
+    availableLanguage: 'en-GB',
+  }],
 })
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -125,7 +125,7 @@ Finally, protect the standards: correct products in correct quantities, faithful
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa chose Bamford and the therapist told me about the farm - a brand that began with organic fields in the Cotswolds, not a lab. Everything about the treatment suddenly made sense, and I believed every word she said afterwards."`,

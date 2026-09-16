@@ -139,14 +139,35 @@ test('a page does not claim to be a different page', () => {
   assert.match(about, /canonical: 'https:\/\/talenthousecollective\.co\.uk\/agency\/about'/)
 })
 
-// robots.txt blocks /register/, and the sitemap asked Google to index it.
-// Search Console reports that as an error against the whole file.
+// A sitemap that lists a URL robots.txt blocks is reported by Search Console as
+// an error against the whole file, which is the file every other page depends on
+// being trusted.
+//
+// This used to name /register/talent and /register/employer specifically, and so
+// it failed the day they were unblocked - which is a test asserting a decision
+// rather than a rule. It now reads the disallow list out of robots.ts and checks
+// the sitemap against whatever that list currently says, so the two stay in step
+// however either one changes.
 test('the sitemap does not ask for pages robots forbids', () => {
-  const sitemap = read('src/app/sitemap.ts')
+  const sitemap = read('src/app/sitemap.ts').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   const robots = read('src/app/robots.ts')
-  assert.match(robots, /'\/register\/'/)
-  assert.doesNotMatch(sitemap, /\/register\/talent`/)
-  assert.doesNotMatch(sitemap, /\/register\/employer`/)
+
+  // Comments stripped, because the comment beside the list quotes the rule it
+  // replaced - and a quoted path inside an explanation is not a rule.
+  const robotsCode = robots.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  const disallowBlock = robotsCode.match(/disallow: \[([\s\S]*?)\]/)
+  assert.ok(disallowBlock, 'robots.ts must still have a disallow list')
+  const blocked = [...disallowBlock[1].matchAll(/'([^']+)'/g)].map(m => m[1])
+  assert.ok(blocked.length > 5, 'the disallow list looks suspiciously short')
+
+  // Every literal path the sitemap builds from BASE.
+  const listed = [...sitemap.matchAll(/\$\{BASE\}(\/[A-Za-z0-9/_-]*)/g)].map(m => m[1])
+  assert.ok(listed.length > 15, 'the sitemap looks suspiciously short')
+
+  const conflicts = listed.filter(path =>
+    blocked.some(rule => rule.endsWith('/') ? path.startsWith(rule) : path === rule || path.startsWith(rule + '/')))
+  assert.deepEqual([...new Set(conflicts)], [],
+    `the sitemap asks Google to index pages robots.txt forbids: ${[...new Set(conflicts)].join(', ')}`)
 })
 
 // The account was created on the sign-up button, before anybody had agreed to

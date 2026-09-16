@@ -38,14 +38,19 @@ test('no member-facing email replies to a personal inbox', () => {
 })
 
 test('the templates point at the company address', () => {
+  // The address itself lives in src/lib/contact.ts. It used to be typed into
+  // eight files, which is how a brand ends up half-renamed.
+  assert.match(read('src/lib/contact.ts'), /export const CONTACT_EMAIL = '[^']+@[^']+'/)
   for (const file of [
     'src/lib/application-email-templates.ts',
     'src/lib/decision-email-templates.ts',
     'src/lib/job-alert-email-template.ts',
     'src/lib/welcome-email-template.ts',
   ]) {
-    assert.match(read(file), /hello@wellnesshousecollective\.co\.uk/,
-      `${file} must reply to the company address`)
+    const source = read(file)
+    assert.match(source, /import \{ CONTACT_EMAIL \} from '@\/lib\/contact'/,
+      `${file} must take the company address from one place`)
+    assert.match(source, /\$\{CONTACT_EMAIL\}/, `${file} must reply to the company address`)
   }
 })
 

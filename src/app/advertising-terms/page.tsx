@@ -1,5 +1,22 @@
+import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { SITE_URL } from '@/lib/site-url'
+
+const TITLE = 'Advertising Terms & Conditions'
+const DESCRIPTION = 'The terms that apply to advertising, sponsorship and brand placements on Talent House Collective.'
+
+// This page had no metadata of any kind. With nothing of its own it inherited
+// the homepage's title and description, which put a second page into the index
+// competing with the homepage under the homepage's own words.
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/advertising-terms` },
+  openGraph: { ...OG_DEFAULTS, title: TITLE, description: DESCRIPTION, url: `${SITE_URL}/advertising-terms` },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
+}
 
 export default function AdvertisingTermsPage() {
   return <div className="min-h-screen bg-[#ede8df] text-[#222321]">
@@ -7,7 +24,7 @@ export default function AdvertisingTermsPage() {
     <main id="main-content" className="pt-[76px]">
       <section className="bg-[#ede8df] text-ink">
         <div className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#57544c]">Wellness House Collective</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#57544c]">Talent House Collective</p>
           <h1 className="mt-3 text-[40px] font-semibold tracking-[-0.04em]">Advertising Terms & Conditions</h1>
           <p className="mt-4 text-[13px] text-secondary">Version 25 August 2026</p>
         </div>
@@ -24,7 +41,7 @@ export default function AdvertisingTermsPage() {
           <div><h2 className="text-[18px] font-semibold text-[#222321]">7. Tracking and performance</h2><p>Talent House may report impressions and clicks generated through the platform. Talent House does not guarantee a minimum number of impressions, clicks, enquiries, applications, sales or other commercial outcomes.</p></div>
           <div><h2 className="text-[18px] font-semibold text-[#222321]">8. Pausing, rejection and removal</h2><p>Talent House may pause or remove an advert where there is a payment issue, policy issue, legal concern, broken destination, misleading claim or material change that makes the advert unsuitable. If creative is rejected, Talent House may work with the advertiser on reasonable amendments before publication.</p></div>
           <div><h2 className="text-[18px] font-semibold text-[#222321]">9. Cancellation</h2><p>You may cancel the recurring subscription so that it does not renew for a further billing period. Cancellation does not ordinarily refund a billing period already started, except where required by law or agreed by Talent House.</p></div>
-          <div><h2 className="text-[18px] font-semibold text-[#222321]">10. Contact</h2><p>Questions about an advertising booking, approval, cancellation or creative changes should be directed to Wellness House Collective through the contact details published on the platform.</p></div>
+          <div><h2 className="text-[18px] font-semibold text-[#222321]">10. Contact</h2><p>Questions about an advertising booking, approval, cancellation or creative changes should be directed to Talent House Collective through the contact details published on the platform.</p></div>
         </div>
       </section>
     </main>

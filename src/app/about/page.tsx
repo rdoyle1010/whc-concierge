@@ -5,12 +5,16 @@ import Link from 'next/link'
 import { Award, Shield, Users, Heart } from 'lucide-react'
 import FounderImage from '@/components/FounderImage'
 import { getPublicPageContent } from '@/lib/public-page-content-server'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const metadata: Metadata = {
-  title: { absolute: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers' },
+  title: { absolute: 'About Talent House Collective | Spa & Wellness Careers' },
   description: 'Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/about' },
-  openGraph: { title: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' },
+  openGraph: {
+    ...OG_DEFAULTS, title: 'About Talent House Collective | Spa & Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.',
+  },
+  twitter: { card: 'summary_large_image', title: 'About Talent House Collective | Spa & Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' }
 }
 
 export default async function AboutPage() {

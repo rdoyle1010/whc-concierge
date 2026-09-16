@@ -32,7 +32,12 @@ export default function robots(): MetadataRoute.Robots {
         '/hotel/',
         '/api/',
         '/login',
-        '/register/',
+        // Not '/register/' wholesale. /register/talent and /register/employer
+        // are the two strongest commercial-intent pages on the site - "Spa &
+        // Wellness Jobs: Join Free" and "Hire Spa & Wellness Staff" - with real
+        // copy on both, and a blanket rule was telling Google to ignore them.
+        // Only the buyer flow, which is a bare form, stays out.
+        '/register/buyer',
         '/forgot-password',
         '/reset-password',
         '/mfa-challenge',

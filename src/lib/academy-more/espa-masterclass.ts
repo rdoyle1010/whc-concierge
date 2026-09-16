@@ -121,7 +121,7 @@ Finally, protect the house. Use the correct products in the correct quantities, 
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa carried ESPA and the therapist told me the story - a British house built by spa people, for spas. Suddenly the whole menu made sense, and I trusted every recommendation after that."`,

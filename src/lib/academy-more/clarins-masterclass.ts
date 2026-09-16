@@ -117,7 +117,7 @@ Upsell paths are natural: the sixty-minute facial guest with real concerns benef
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the spa chose Clarins and she told me about the Paris institute in 1954, the plant oils, the listening to clients. It stopped being a counter brand and became a story - and I trusted every word she said after that."`,

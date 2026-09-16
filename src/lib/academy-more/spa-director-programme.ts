@@ -29,7 +29,7 @@ export const course: AcademyCourse = {
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     { guestView: '“The spa feels like part of the hotel, not a separate department.”', helpsYou: 'Senior leaders notice directors who can connect spa performance to the wider property strategy.', tips: ['Think like an owner', 'Translate spa language into business language', 'Bring solutions, not just problems'] },
     { guestView: '“The operation feels well resourced without looking overstaffed.”', helpsYou: 'P&L and forecasting confidence is essential for Spa Director, Cluster and Wellness Director roles.', tips: ['Explain the driver behind every variance', 'Forecast from capacity and demand', 'Separate controllable from structural cost'] },

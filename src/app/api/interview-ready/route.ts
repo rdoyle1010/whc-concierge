@@ -377,11 +377,20 @@ export async function POST(req: NextRequest) {
         try_again: clean(ai.try_again),
         follow_up: clean(ai.follow_up),
       } : {
-        score: 60,
-        strong: 'You have given a real answer in your own words.',
+        // No score when nothing read the answer.
+        //
+        // This returned sixty, with generic coaching beside it, whenever the
+        // model was unavailable - and sixty out of a hundred on your interview
+        // answer reads as a judgement, not an outage. Somebody could rewrite a
+        // good answer on the strength of a number that was a constant. The
+        // general advice is still worth having and is still offered; it is now
+        // labelled as general advice rather than dressed up as a mark.
+        score: null,
+        unavailable: true,
+        strong: 'The review could not run just now, so this is not a score of your answer.',
         improve: 'Make the situation, your personal action and the outcome easier to separate.',
         missing: 'Add the most relevant factual result, scale or learning if you have it.',
-        try_again: 'Try again with one specific example and finish with what changed because of your actions.',
+        try_again: 'Try again in a moment for a proper review, or finish with what changed because of your actions.',
         follow_up: 'What was the measurable guest, team, commercial or operational outcome?',
       })
     }

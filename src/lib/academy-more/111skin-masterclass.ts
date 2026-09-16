@@ -121,7 +121,7 @@ Finally, protect the brand: correct products, correct quantities, faithful proto
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why this brand cost what it did and the therapist told me the story - a Harley Street surgeon, a serum made for healing skin after surgery, even the space research. By the end I understood exactly what I was paying for."`,

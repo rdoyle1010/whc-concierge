@@ -2,6 +2,17 @@
 
 import { useState } from 'react'
 
+// The About page portrait.
+//
+// /images/founder-rebecca.jpg has never existed in this repository. The page
+// requested it, the browser returned a 404, and this component swallowed it
+// and drew a monogram - so the failure was invisible and the About page of a
+// luxury brand has always shown a grey box with two letters in it.
+//
+// The fallback stays, because a missing photograph should not leave a broken
+// image icon on the page. What changed is that it now says so in the console,
+// so the next person to look knows the file is missing rather than assuming
+// the monogram was the design.
 export default function FounderImage() {
   const [errored, setErrored] = useState(false)
 
@@ -20,7 +31,7 @@ export default function FounderImage() {
     <img
       src="/images/founder-rebecca.jpg"
       alt="Rebecca Doyle, founder of Talent House Collective"
-      onError={() => setErrored(true)}
+      onError={() => { console.error('[about] founder portrait missing: /images/founder-rebecca.jpg'); setErrored(true) }}
       className="w-full max-w-[380px] mx-auto"
     />
   )

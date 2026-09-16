@@ -123,7 +123,7 @@ Finally, protect the house: correct products in correct quantities, protocols fo
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked where the products came from and the therapist told me about an island in the Outer Hebrides, seaweed cut by hand, and a name that means water in Gaelic. I stopped comparing it with anything else on my shelf after that."`,

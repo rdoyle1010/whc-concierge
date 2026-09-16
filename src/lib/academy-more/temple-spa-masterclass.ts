@@ -121,7 +121,7 @@ Finally, protect the house: correct products, correct quantities, faithful proto
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1647960563439-0160d88ca2b7?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked about the name and the therapist told me the whole story - a British couple, the body as a temple, the Mediterranean way of living well. By the time she started the treatment I felt I had joined something, not just booked something."`,

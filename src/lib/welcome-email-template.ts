@@ -1,3 +1,4 @@
+import { CONTACT_EMAIL } from '@/lib/contact'
 export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
   firstName: string
   userType: 'talent' | 'employer'
@@ -63,7 +64,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
         <!-- Footer -->
         <tr><td style="background-color: #ede8df; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dcd4c8;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8c8c;">Talent House Collective</p>
-          <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:hello@wellnesshousecollective.co.uk" style="color: #57544c; text-decoration: none;">hello@wellnesshousecollective.co.uk</a></p>
+          <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:${CONTACT_EMAIL}" style="color: #57544c; text-decoration: none;">${CONTACT_EMAIL}</a></p>
           <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because you created an account on Talent House Collective. To stop receiving emails, you can delete your account from your settings page.</p>
         </td></tr>
 

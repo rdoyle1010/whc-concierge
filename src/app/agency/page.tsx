@@ -353,12 +353,25 @@ export default function AgencyPage() {
     </div>
   }
 
-  // First paint: nothing renders until the directory has said who this
-  // visitor is, so employers never glimpse the marketing page and the
+  // First paint: the search tool does not render until the directory has said
+  // who this visitor is, so employers never glimpse the marketing page and the
   // public never glimpse the tool.
+  //
+  // What the first paint does carry is the marketing heading and intro. It used
+  // to be skeleton blocks and nothing else, which meant the served HTML for
+  // /agency had no h1 at all - and on a phone the entire first screen was grey
+  // rectangles that then reflowed once the check came back. The heading is the
+  // same copy the public branch shows, so nobody sees it change.
   if (!directoryChecked) {
     return <DashboardShell role="employer">
-      <div className="max-w-[1460px] mx-auto"><div className="skeleton h-24 max-w-2xl mb-8" /><div className="grid grid-cols-1 xl:grid-cols-2 gap-5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-64" />)}</div></div>
+      <div className="max-w-5xl mx-auto">
+        <section className="pt-4 pb-10">
+          <p className="public-eyebrow">{cms.hero.eyebrow}</p>
+          <h1 className="mt-4 font-serif text-[34px] md:text-[46px] font-semibold leading-[1.08] tracking-[-.02em] text-ink max-w-3xl">{cms.hero.heading}</h1>
+          <p className="mt-6 text-[15px] leading-7 text-secondary max-w-2xl">{cms.hero.text}</p>
+        </section>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="skeleton h-64" />)}</div>
+      </div>
     </DashboardShell>
   }
 

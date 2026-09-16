@@ -177,7 +177,7 @@ Finally, guard the house. Keep the retail wall and testers immaculate, report lo
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"She told me the founder pitched this to The Dorchester on a snowy morning in 2009 and they said yes on the spot. After that I stopped asking whether the facial was worth it."`,
