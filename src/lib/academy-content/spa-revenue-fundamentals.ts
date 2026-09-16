@@ -19,7 +19,7 @@ const content: CourseContent = {
     'Diagnose a underperforming week using the demand → capacity → pricing → utilisation → RevPATH chain',
     'Present a commercial recommendation with the numbers to support it',
   ],
-  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective', note: 'Reviewed by the Talent House editorial team. Figures in worked examples are illustrative of typical UK luxury spa operations.' },
+  author: { name: 'Talent House Academy', role: 'Developed by Talent House Collective', note: 'Reviewed by the Talent House editorial team. Figures in worked examples are illustrative of typical UK luxury spa operations.' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: 'Global Wellness Institute - wellness economy research', url: 'https://globalwellnessinstitute.org' },

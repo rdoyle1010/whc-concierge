@@ -125,7 +125,7 @@ Finally, protect the standard. Correct products, correct quantities, faithful pr
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa used Decleor and the therapist told me the story - Paris, 1974, essential oils treated as serious skincare before anyone else took them seriously. From that moment I stopped seeing bottles and started seeing a philosophy."`,

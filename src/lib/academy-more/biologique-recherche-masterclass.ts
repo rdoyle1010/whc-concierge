@@ -122,7 +122,7 @@ Upsell paths are honest and clinical: a course of treatments to change a Skin In
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the bottles looked so plain and the therapist smiled and told me the story - a family of scientists in Paris who refused fragrance and marketing and put everything into the formulas. I have never trusted a brand faster."`,

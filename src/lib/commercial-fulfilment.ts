@@ -164,8 +164,19 @@ export async function fulfilCommercialPurchase(admin: any, stripe: Stripe, sessi
     if (updateError) return fail(500, `Residency listing update failed: ${updateError.message}`, product, role)
   }
 
-  await admin.from('commercial_purchases')
+  // The stamp that says this session has been fulfilled, and whether it landed.
+  //
+  // Stripe redelivers a webhook on any non-2xx, and the featured window above
+  // extends from the existing featured_until rather than from now. So a stamp
+  // that silently failed to write meant the next delivery ran the whole thing
+  // again and added another thirty days for one payment. Writing it unchecked
+  // is the one place in this function where losing an error costs money.
+  const { error: stampError } = await admin.from('commercial_purchases')
     .update({ metadata: { ...(session.metadata || {}), fulfilled_at: now.toISOString() } })
     .eq('stripe_session_id', session.id)
+  if (stampError) {
+    console.error('[fulfilment] delivered but not stamped:', session.id, stampError.message)
+    return fail(500, `Fulfilled but could not record it, so this may be delivered twice: ${stampError.message}`, product, role)
+  }
   return { ok: true, status: 200, product, role }
 }

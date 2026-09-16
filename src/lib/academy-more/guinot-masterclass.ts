@@ -123,7 +123,7 @@ Upsell paths follow results: a single facial guest becomes a course-of-treatment
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the salon carried Guinot and the therapist told me about the chemist who invented a machine facial in the 1960s, and why the brand only sells through professionals. I stopped seeing a cream and started seeing a method."`,

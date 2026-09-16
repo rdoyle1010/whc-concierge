@@ -61,15 +61,18 @@ const getSpecialismDemand = unstable_cache(async (): Promise<SpecialismDemand[]>
 }, ['specialism-demand-v1'], { revalidate: 300 })
 
 import type { Metadata } from 'next'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const metadata: Metadata = {
-  title: { absolute: 'Spa and Wellness Specialisms in Demand | Talent House Collective' },
+  title: { absolute: 'Spa Treatments & Specialisms in Demand | Talent House' },
   description: 'Where demand actually is across UK spa and wellness: the treatments, skills and specialisms properties are hiring for right now.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/specialisms' },
   openGraph: {
-    title: 'Spa and Wellness Specialisms in Demand | Talent House Collective',
+    ...OG_DEFAULTS,
+    title: 'Spa Treatments & Specialisms in Demand | Talent House',
     description: 'Where demand actually is across UK spa and wellness: the treatments, skills and specialisms properties are hiring for right now.',
   },
+  twitter: { card: 'summary_large_image', title: 'Spa Treatments & Specialisms in Demand | Talent House', description: 'Where demand actually is across UK spa and wellness: the treatments, skills and specialisms properties are hiring for right now.' },
 }
 
 export default async function SpecialismsPage() {

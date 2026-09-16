@@ -119,7 +119,7 @@ Upsell paths are natural: the stressed massage guest is a Tranquillity Pro-Sleep
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the spa had chosen this brand and she told me about the family laboratory in Parma and the B Corp certification. I came in for a facial and left feeling I had chosen well twice - for my skin and for my values."`,

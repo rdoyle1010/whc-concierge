@@ -13,8 +13,8 @@
 
 export const PRIVACY_POLICY_VERSION = '2026-08-26'
 
-export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective to send me marketing emails about jobs, Academy courses, platform features, events and relevant Talent House services. I can unsubscribe at any time.'
+export const MARKETING_CONSENT_WORDING = 'I would like Talent House Collective (Wellness House Collective Ltd) to send me marketing emails about jobs, Academy courses, platform features, events and relevant Talent House services. I can unsubscribe at any time.'
 
 export const TERMS_ACCEPTANCE_WORDING = 'I have read and agree to the Talent House Collective Terms & Conditions and Privacy Policy.'
 
-export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant Talent House services. I can unsubscribe at any time.'
+export const NEWSLETTER_CONSENT_WORDING = 'I would like Talent House Collective (Wellness House Collective Ltd) to email me its newsletter, including industry news, jobs, Academy updates, events and relevant Talent House services. I can unsubscribe at any time.'

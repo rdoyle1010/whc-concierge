@@ -115,7 +115,7 @@ Retail is the result continued at home. Prescribe two or three products linked t
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the clinic used IMAGE and the therapist told me: founded by an aesthetician, developed with a surgeon, and only sold through professionals like her. That one sentence made me trust the whole treatment."`,

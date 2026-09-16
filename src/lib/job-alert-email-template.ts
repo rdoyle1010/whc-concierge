@@ -1,3 +1,4 @@
+import { CONTACT_EMAIL } from '@/lib/contact'
 export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScore, location, salary }: {
   firstName: string; jobTitle: string; propertyName: string; matchScore: number; location?: string; salary?: string
 }): string {
@@ -58,7 +59,7 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
 
         <tr><td style="background-color: #ede8df; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dcd4c8;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8c8c;">Talent House Collective</p>
-          <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:hello@wellnesshousecollective.co.uk" style="color: #57544c; text-decoration: none;">hello@wellnesshousecollective.co.uk</a></p>
+          <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:${CONTACT_EMAIL}" style="color: #57544c; text-decoration: none;">${CONTACT_EMAIL}</a></p>
           <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this because job alerts are enabled on your Talent House Collective profile. Manage alerts in your <a href="https://talenthousecollective.co.uk/talent/settings" style="color: #57544c; text-decoration: none;">settings</a>.</p>
         </td></tr>
 

@@ -131,7 +131,7 @@ When in doubt, the professional moves are always the same: adapt conservatively,
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I did not have to explain anything. She simply understood why I was too warm, why I had not slept, why I ached - and nothing about her reaction made me feel old or awkward."`,

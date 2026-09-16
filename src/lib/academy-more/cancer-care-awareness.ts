@@ -135,7 +135,7 @@ And when the answer is genuinely unclear - adapt conservatively, or refer: to yo
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I braced myself to explain everything, the way I always have to. She already understood what chemotherapy does - the tiredness, the skin, all of it. For the first time since my diagnosis, somewhere felt easy."`,

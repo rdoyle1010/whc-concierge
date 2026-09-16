@@ -126,7 +126,7 @@ Referral is a professional act, not a failure. When something falls outside your
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I was thirty-two weeks and so tired of being treated like a problem. She talked to me like a woman who ached, not a risk assessment, and every cushion was exactly where my body needed it."`,

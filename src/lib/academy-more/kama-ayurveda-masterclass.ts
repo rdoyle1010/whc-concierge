@@ -121,7 +121,7 @@ Upsell paths are natural: the facial guest who melted at the scalp massage is a 
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist what made this brand different and she told me the story - classical recipes, a century-old Ayurvedic pharmacy, real tradition presented beautifully. I stopped seeing products and started seeing a heritage. I trusted every word after that."`,

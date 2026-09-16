@@ -111,9 +111,15 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
       </div>
 
       {slides.length > 1 && <div className="absolute bottom-8 left-6 lg:left-[calc((100vw-1280px)/2+2rem)] z-20 flex items-center gap-2">
+        {/* The rule the eye sees is still two pixels tall. The button around it
+            is forty-four, which is the smallest thing a thumb reliably hits -
+            these were two pixels of tappable area on a phone, which is to say
+            nobody has ever changed a hero slide on a phone. */}
         {slides.map((_, index) => <button key={index} type="button" onClick={() => showSlide(index)}
-          className="h-[2px] transition-all duration-300" style={{ width: index === current ? 44 : 24, background: index === current ? '#ffffff' : 'rgba(255,255,255,.4)' }}
-          aria-label={'Go to hero slide ' + (index + 1)} aria-current={index === current ? 'true' : undefined} />)}
+          className="flex h-11 items-center transition-opacity duration-300"
+          aria-label={'Go to hero slide ' + (index + 1)} aria-current={index === current ? 'true' : undefined}>
+          <span className="block h-[2px] transition-all duration-300" style={{ width: index === current ? 44 : 24, background: index === current ? '#ffffff' : 'rgba(255,255,255,.4)' }} />
+        </button>)}
       </div>}
     </div>
   )

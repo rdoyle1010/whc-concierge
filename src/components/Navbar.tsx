@@ -215,7 +215,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           )}
         </div>
 
-        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 rounded-lg p-2 text-ink transition-colors hover:bg-[#e3dcd1] lg:hidden" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
+        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-ink transition-colors hover:bg-[#e3dcd1] lg:hidden" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>

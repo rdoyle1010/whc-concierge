@@ -123,7 +123,7 @@ Finally, protect the house: correct products, correct quantities, full protocols
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist about the brand and she told me the story - an Irish house built by a spa director who wanted people to slow down, with treatments even my mum could have during her chemotherapy. I trusted the whole menu from that moment."`,

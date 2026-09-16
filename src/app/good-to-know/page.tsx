@@ -5,16 +5,21 @@ import Footer from '@/components/Footer'
 import { ArrowRight, ExternalLink, ShieldCheck } from 'lucide-react'
 import { type IndustryBody } from '@/lib/industry-bodies'
 import { getIndustryGroups } from '@/lib/industry-bodies-server'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { SITE_URL } from '@/lib/site-url'
 
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: { absolute: 'Good to Know | Spa Industry Bodies, Insurance and Standards | Talent House Collective' },
+  title: { absolute: 'UK Spa Industry Bodies, Insurance & Standards | Talent House' },
   description: 'The organisations that govern, insure, qualify and report on the UK spa and wellness industry, and why each one matters to your career or your spa.',
+  alternates: { canonical: `${SITE_URL}/good-to-know` },
   openGraph: {
+    ...OG_DEFAULTS,
     title: 'Good to Know | Spa Industry Bodies, Insurance and Standards',
     description: 'Professional bodies, awarding organisations, safety regulators and trade press for spa and wellness professionals.',
   },
+  twitter: { card: 'summary_large_image', title: 'Good to Know | Spa Industry Bodies, Insurance and Standards', description: 'Professional bodies, awarding organisations, safety regulators and trade press for spa and wellness professionals.' },
 }
 
 // Initials, drawn rather than photographed.

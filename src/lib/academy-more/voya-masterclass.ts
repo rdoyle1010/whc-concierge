@@ -117,7 +117,7 @@ Finally, protect the house: correct products, correct quantities, faithful proto
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa used VOYA and the therapist told me about the seaweed baths in Sligo, the family who brought them back, the hand-harvesting. By the end I did not feel I was buying skincare - I felt I was buying a piece of the Atlantic."`,

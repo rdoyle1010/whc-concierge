@@ -116,7 +116,7 @@ Finally, protect the house on shift: follow the trained protocol and dosages exa
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa chose Elemis and she told me the story - founded by a therapist, British, obsessed with results you can see. By the end I trusted the brand because I trusted her."`,

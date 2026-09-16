@@ -14,15 +14,19 @@ const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ?
 const agencyFeePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
 
 import type { Metadata } from 'next'
+import { CONTACT_EMAIL } from '@/lib/contact'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const metadata: Metadata = {
   title: { absolute: 'Terms of Service | Talent House Collective' },
   description: 'The terms governing use of Talent House Collective by professionals, properties, brands and advertisers.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/terms' },
   openGraph: {
+    ...OG_DEFAULTS,
     title: 'Terms of Service | Talent House Collective',
     description: 'The terms governing use of Talent House Collective by professionals, properties, brands and advertisers.',
   },
+  twitter: { card: 'summary_large_image', title: 'Terms of Service | Talent House Collective', description: 'The terms governing use of Talent House Collective by professionals, properties, brands and advertisers.' },
 }
 
 export default function TermsPage() {
@@ -96,7 +100,7 @@ export default function TermsPage() {
           <p>These terms are governed by the laws of England and Wales. Any disputes shall be subject to the jurisdiction of the courts of England and Wales unless applicable consumer law requires otherwise.</p>
 
           <h2 className="text-[18px] font-medium text-ink mt-8">Contact</h2>
-          <p>For questions about these terms, contact <a href="mailto:hello@wellnesshousecollective.co.uk" className="underline text-ink">hello@wellnesshousecollective.co.uk</a>.</p>
+          <p>For questions about these terms, contact <a href={`mailto:${CONTACT_EMAIL}`} className="underline text-ink">{CONTACT_EMAIL}</a>.</p>
         </div>
       </section>
       </main>

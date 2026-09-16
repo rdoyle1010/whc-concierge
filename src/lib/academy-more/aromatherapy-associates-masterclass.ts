@@ -118,7 +118,7 @@ Finally, protect the brand: correct oils in correct quantities, protocols follow
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the spa used this brand and she told me about two aromatherapists blending oils in London in the eighties. Suddenly it wasn't a product line - it was a practice, and I trusted every drop after that."`,

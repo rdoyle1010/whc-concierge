@@ -105,12 +105,30 @@ export async function POST(req: NextRequest) {
   if (coords) { payload.latitude = coords.latitude; payload.longitude = coords.longitude }
 
   let { data: job, error } = await admin.from('job_listings').insert(payload).select('id').single()
+  let droppedStoryFields: string[] = []
   if (error && /column/i.test(error.message) && STORY_FIELDS.some(field => field in payload)) {
     // Storytelling columns not migrated yet: post the role without them.
+    //
+    // This happened in complete silence. A property wrote the section about why
+    // somebody should want the job - the part of the advert that does the
+    // selling - pressed publish, got a success, and the words were gone with
+    // nothing in the logs and nothing on screen. A silent discard of the
+    // employer's own writing is the worst possible outcome on the one page
+    // where this platform earns.
+    droppedStoryFields = STORY_FIELDS.filter(field => field in payload && payload[field])
     const trimmed = { ...payload }
     for (const field of STORY_FIELDS) delete trimmed[field]
     ;({ data: job, error } = await admin.from('job_listings').insert(trimmed).select('id').single())
+    if (!error && droppedStoryFields.length) {
+      console.error('[jobs] story columns missing, published without:', droppedStoryFields.join(', '))
+    }
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-  return NextResponse.json({ job })
+  return NextResponse.json({
+    job,
+    ...(droppedStoryFields.length ? {
+      warning: 'The role is live, but the extra story sections could not be saved yet. Please let us know so we can add them.',
+      droppedFields: droppedStoryFields,
+    } : {}),
+  })
 }

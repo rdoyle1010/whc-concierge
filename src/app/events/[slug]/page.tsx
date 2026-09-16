@@ -5,6 +5,8 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { eventDateLabel, eventKindLabel, eventWhereLabel, isUpcoming, type SpaEvent } from '@/lib/events'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { SITE_URL } from '@/lib/site-url'
 
 export const revalidate = 900
 
@@ -22,13 +24,22 @@ async function loadEvent(slug: string): Promise<SpaEvent | null> {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const event = await loadEvent(slug)
-  if (!event) return { title: 'Event | Talent House Collective' }
+  if (!event) return { title: 'Event not found' }
   const when = eventDateLabel(event.starts_at, event.ends_at)
   return {
-    title: `${event.title} | Talent House Collective`,
+    // The root template appends "| Talent House Collective" to any plain title
+    // string, so spelling it out here produced it twice in every search result.
+    title: event.title,
     description: event.summary || `${eventKindLabel(event.kind)} on ${when} at ${eventWhereLabel(event)}.`,
-    alternates: { canonical: `https://talenthousecollective.co.uk/events/${event.slug}` },
-    openGraph: event.image_url ? { images: [event.image_url] } : undefined,
+    alternates: { canonical: `${SITE_URL}/events/${event.slug}` },
+    openGraph: {
+      ...OG_DEFAULTS,
+      title: event.title,
+      description: event.summary || `${eventKindLabel(event.kind)} on ${when} at ${eventWhereLabel(event)}.`,
+      url: `${SITE_URL}/events/${event.slug}`,
+      ...(event.image_url ? { images: [{ url: event.image_url }] } : {}),
+    },
+    twitter: { card: 'summary_large_image', title: event.title, description: event.summary || `${eventKindLabel(event.kind)} on ${when}.` },
   }
 }
 

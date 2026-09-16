@@ -9,7 +9,12 @@ import { MORE_EXTRAS } from './academy-more'
 export type LessonExtras = { guestView: string; helpsYou: string; tips: string[] }
 export type CourseExtras = { image: string; lessons: LessonExtras[] }
 
-const img = (id: string) => `https://images.unsplash.com/${id}?w=1200&q=80&auto=format&fit=crop`
+// Course photographs are hers, uploaded in admin, or there is no photograph.
+// This used to build an Unsplash URL from an id, which is why /academy painted
+// a stock picture at first paint and swapped in her own about 300ms later. The
+// ids are kept beside each course only as a record of what the placeholder was;
+// nothing renders them.
+const img = (_id: string) => ''
 
 export const ACADEMY_EXTRAS: Record<string, CourseExtras> = {
   'consultation-excellence': {
@@ -183,8 +188,12 @@ export const ACADEMY_EXTRAS: Record<string, CourseExtras> = {
   },
 }
 
-export const courseImage = (slug: string) =>
-  ACADEMY_EXTRAS[slug]?.image || MORE_EXTRAS[slug]?.image || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop'
+// courseImage() used to live here. It returned a stock Unsplash URL for any
+// course without an uploaded photograph, and every caller passed that straight
+// into an img src - which is why /academy painted somebody else's spa for about
+// three hundred milliseconds before hers arrived. There is no replacement on
+// purpose: a course either has her photograph or it draws a charcoal field, and
+// the decision is made where the picture is drawn rather than hidden in here.
 
 export const lessonExtras = (slug: string, index: number): LessonExtras | null =>
   ACADEMY_EXTRAS[slug]?.lessons[index] || MORE_EXTRAS[slug]?.lessons[index] || null

@@ -8,21 +8,26 @@ import { getWebsiteContent } from '@/lib/site-content-server'
 import PanelBackdrop from '@/components/PanelBackdrop'
 import PanelPicture from '@/components/PanelPicture'
 import { Clock, ArrowRight } from 'lucide-react'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const revalidate = 300
 
 const SITE = 'https://talenthousecollective.co.uk'
 
 export const metadata: Metadata = {
-  title: 'Talent House Intelligence',
-  description: 'Salary signals, hiring demand and editorial analysis for luxury spa and wellness - drawn from live Talent House platform data and published only when the sample clears our credibility thresholds.',
+  // absolute, because the title already names the brand and the root
+  // template would otherwise append it a second time.
+  title: { absolute: 'UK Spa Salary & Hiring Data | Talent House' },
+  description: 'Salary signals and hiring demand for luxury spa and wellness, drawn from live Talent House data.',
   alternates: { canonical: `${SITE}/intelligence` },
   openGraph: {
-    title: 'Talent House Intelligence',
+    ...OG_DEFAULTS,
+    title: 'UK Spa Salary & Hiring Data | Talent House',
     description: 'Verifiable industry intelligence for luxury spa and wellness, from a live hiring platform.',
     url: `${SITE}/intelligence`,
     type: 'website',
   },
+  twitter: { card: 'summary_large_image', title: 'UK Spa Salary & Hiring Data | Talent House', description: 'Verifiable industry intelligence for luxury spa and wellness, from a live hiring platform.' },
 }
 
 // House credibility rules - identical to the Career Intelligence API. A salary
@@ -199,7 +204,7 @@ export default async function IntelligencePage() {
       <header className="bg-charcoal pt-[76px]">
         <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">Talent House Intelligence</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">UK Spa Salary & Hiring Data | Talent House</p>
             <h1 className="mt-5 text-white text-[38px] md:text-[58px] leading-[1.05] tracking-[-.04em]">
               The numbers behind luxury wellness careers, reported straight.
             </h1>

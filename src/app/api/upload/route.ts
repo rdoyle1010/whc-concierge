@@ -125,8 +125,24 @@ export async function POST(req: NextRequest) {
       ? `/api/files?bucket=${encodeURIComponent(actualBucket)}&path=${encodeURIComponent(path)}`
       : admin.storage.from(actualBucket).getPublicUrl(path).data.publicUrl
 
-    if (profileId && column) await admin.from('candidate_profiles').update({ [column]: url }).eq('id', profileId)
-    return NextResponse.json({ url })
+    // The attach was unchecked. A file could upload cleanly, fail to reach the
+    // profile row, and this still returned a URL and a two hundred - so the
+    // member saw "uploaded", closed the page, and the CV or certificate was
+    // simply not on their profile. The file is genuinely in storage, so the
+    // URL is still returned; what changes is that the caller is told the
+    // profile was not updated instead of being told nothing.
+    if (profileId && column) {
+      const { error: attachError } = await admin.from('candidate_profiles').update({ [column]: url }).eq('id', profileId)
+      if (attachError) {
+        console.error('[upload] stored but not attached:', column, profileId, attachError.message)
+        return NextResponse.json({
+          url,
+          attached: false,
+          error: 'The file uploaded but could not be saved to your profile. Please try again.',
+        }, { status: 502 })
+      }
+    }
+    return NextResponse.json({ url, attached: Boolean(profileId && column) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

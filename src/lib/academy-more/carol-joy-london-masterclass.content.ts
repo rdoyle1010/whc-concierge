@@ -15,7 +15,7 @@ export const content: CourseContent = {
     `Prescribe home care from treatment findings, quote the hero range confidently, and uphold protocol, presentation and sustainability standards on every shift`,
   ],
   prerequisites: `A recognised beauty or spa therapy qualification, or equivalent professional experience. Suitable for therapists at any level working on or towards a Carol Joy London account.`,
-  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Talent House Collective' },
   references: [
     { label: 'Carol Joy London - the brand’s own spa, heritage, ingredient and product pages', url: 'https://caroljoylondon.com' },
     { label: 'Carol Joy London at The Dorchester - the founding spa partnership', url: 'https://caroljoylondon.com/pages/the-dorchester' },

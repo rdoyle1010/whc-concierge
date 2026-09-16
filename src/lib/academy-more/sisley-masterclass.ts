@@ -121,7 +121,7 @@ Upsell along genuine paths: the facial guest with scalp tension is a Hair Rituel
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the spa chose Sisley and she told me the story - a French family house, fifty years of plant science, still run by the founders' children. After that, every product she touched felt like it had a reason to be there."`,

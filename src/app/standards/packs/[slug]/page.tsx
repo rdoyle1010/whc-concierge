@@ -8,6 +8,7 @@ import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { kindLabel } from '@/lib/documents/journey'
 import { formatPrice, categoryPacks, everythingPacks, packBySlug, VAT_NOTE } from '@/lib/documents/pricing'
 import { DOCUMENT_STATUS } from '@/lib/documents/status'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 // A page for each pack.
 //
@@ -46,6 +47,7 @@ export async function generateMetadata(
     description,
     alternates: { canonical: `${BASE}/standards/packs/${pack.slug}` },
     openGraph: {
+      ...OG_DEFAULTS,
       type: 'website',
       url: `${BASE}/standards/packs/${pack.slug}`,
       title: pack.name,

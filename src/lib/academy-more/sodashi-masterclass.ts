@@ -121,7 +121,7 @@ Finally, protect the house. Correct products in correct quantities, protocols fo
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist why the spa chose Sodashi and she told me the story - a small Australian house, hand-blended, completely natural, in the best spas in the world. I stopped reading ingredient labels and started trusting her."`,

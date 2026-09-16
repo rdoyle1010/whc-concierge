@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice, type AcademyCourse } from '@/lib/academy'
-import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Award, Clock, Check, Download } from 'lucide-react'
 
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
@@ -213,8 +212,8 @@ export default function AcademyPage() {
                   const isManagement = MANAGEMENT_PROGRAMMES.has(course.slug)
                   return (
                     <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-accent ring-2 ring-accent shadow-lg shadow-accent/20' : ''}`}>
-                      <div className="relative h-28 shrink-0">
-                        <img loading="lazy" decoding="async" src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="relative h-28 shrink-0 bg-ink">
+                        {course.image_url && <img loading="lazy" decoding="async" src={course.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/80">Leadership programme</span>}
                       </div>

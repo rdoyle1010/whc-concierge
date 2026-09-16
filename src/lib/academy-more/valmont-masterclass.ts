@@ -123,7 +123,7 @@ Protect the standard: correct products, correct quantities, faithful protocols, 
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why this brand cost what it did, and the therapist told me the story - a Swiss house descended from a 1905 clinic, family-owned, obsessed with cellular science and art. By the end I understood I was not buying a cream, I was buying Switzerland in a jar."`,

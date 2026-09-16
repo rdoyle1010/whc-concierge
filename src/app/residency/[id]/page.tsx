@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import { ArrowLeft, Award, Calendar, Clock, MapPin, ShieldCheck, Sparkles, UserRound } from 'lucide-react'
 import type { Metadata } from 'next'
 import { toPublicResidencyProfile } from '@/lib/residency-public'
+import { SITE_URL } from '@/lib/site-url'
 
 export const revalidate = 120
 
@@ -32,7 +33,9 @@ async function publicProfile(id: string) {
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await props.params
   const r = await publicProfile(id)
-  return { title: `${r?.primary_specialism || 'Residency Specialist'} - Talent House Collective Residency` }
+  // The root template adds the brand, so this read "... - Talent House
+  // Collective Residency | Talent House Collective".
+  return { title: `${r?.primary_specialism || 'Residency'} Residency Specialist`, alternates: { canonical: `${SITE_URL}/residency/${id}` } }
 }
 
 export default async function ResidencyDetailPage(props: { params: Promise<{ id: string }> }) {

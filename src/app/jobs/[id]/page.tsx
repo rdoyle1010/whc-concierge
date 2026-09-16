@@ -13,6 +13,8 @@ import JobMatchPanel from '@/components/JobMatchPanel'
 import TrackView from '@/components/TrackView'
 
 import { externalUrl } from '@/lib/external-url'
+import { SITE_URL } from '@/lib/site-url'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const revalidate = 60
 
@@ -78,7 +80,9 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   return {
     title: { absolute: `${titleText} - ${propertyName} | Talent House Collective` }, description,
     alternates: { canonical: url },
-    openGraph: { title: `${titleText} - ${propertyName}`, description, url, type: 'article', ...(image ? { images: [image] } : {}) },
+    openGraph: {
+    ...OG_DEFAULTS, title: `${titleText} - ${propertyName}`, description, url, type: 'article', ...(image ? { images: [image] } : {}),
+  },
     twitter: { title: `${titleText} - ${propertyName}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },
   }
 }
@@ -106,13 +110,47 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
     hiringOrganization: { '@type': 'Organization', name: employer.company_name || propertyName, ...(externalUrl(employer.website) ? { sameAs: externalUrl(employer.website) } : {}) },
     jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: job.location || employer.location || employer.city || undefined, addressCountry: 'GB' } },
   }
-  if (job.application_deadline) jobPostingLd.validThrough = job.application_deadline
-  if (job.salary_min && job.salary_max) jobPostingLd.baseSalary = { '@type': 'MonetaryAmount', currency: 'GBP', value: { '@type': 'QuantitativeValue', minValue: Number(job.salary_min), maxValue: Number(job.salary_max), unitText: 'YEAR' } }
+  // validThrough decides how long Google keeps a paid advert in the jobs panel.
+  // Without it the posting is dropped roughly thirty days after datePosted,
+  // whether or not the role is still live - and this page already knows the
+  // real expiry, because the query above filters on it. Only the deadline was
+  // being passed, which most adverts do not set, so most adverts quietly fell
+  // out of the panel a month in while still being paid for.
+  const expiry = job.application_deadline || job.expires_at
+  if (expiry) jobPostingLd.validThrough = new Date(expiry).toISOString()
+  jobPostingLd.url = `${SITE_URL}/jobs/${job.id}`
+  jobPostingLd.directApply = true
+  jobPostingLd.identifier = { '@type': 'PropertyValue', name: 'Talent House Collective', value: String(job.id) }
+  if (job.salary_min && job.salary_max) jobPostingLd.baseSalary = {
+    '@type': 'MonetaryAmount',
+    currency: job.salary_currency || 'GBP',
+    value: {
+      '@type': 'QuantitativeValue',
+      minValue: Number(job.salary_min),
+      maxValue: Number(job.salary_max),
+      // Agency and residency work is quoted by the hour or the day. Declaring
+      // an hourly rate as a yearly salary tells Google this role pays fourteen
+      // pounds a year.
+      unitText: /hour/i.test(String(job.salary_display_text || '')) ? 'HOUR'
+        : /\bday|daily\b/i.test(String(job.salary_display_text || '')) ? 'DAY'
+        : 'YEAR',
+    },
+  }
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Roles', item: `${SITE_URL}/jobs` },
+      { '@type': 'ListItem', position: 2, name: propertyName, item: `${SITE_URL}/jobs/${job.id}` },
+      { '@type': 'ListItem', position: 3, name: titleText, item: `${SITE_URL}/jobs/${job.id}` },
+    ],
+  }
 
   return <>
     <Navbar />
     <TrackView kind="job" id={String(job.id)} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
     <main className="pt-[76px] bg-white">
       <section className="border-b border-[#dcd4c8] bg-white">
         <div className="max-w-6xl mx-auto px-6 py-4"><Link href="/jobs" className="text-[12px] text-[#57544c] hover:text-[#222321]">← All roles</Link></div>

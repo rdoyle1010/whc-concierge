@@ -86,7 +86,13 @@ export default function JobApplyButtons({ roleId }: Props) {
     )
   }
 
-  const applyHref = `/register/talent?intent=apply&role=${encodeURIComponent(roleId)}`
+  // ?redirect=, because that is the parameter the registration form actually
+  // reads. This used to send ?intent=apply&role=<id>, which nothing on the
+  // other end looks at: somebody who pressed Apply on a specific role made an
+  // account and landed on an empty profile editor with no way back to the job
+  // they wanted. The most motivated moment in the funnel, thrown away on a
+  // parameter name.
+  const applyHref = `/register/talent?redirect=${encodeURIComponent(`/jobs/${roleId}`)}`
 
   const handleApplyClick = async () => {
     if (applying) return

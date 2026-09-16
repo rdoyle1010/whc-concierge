@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Create your account | Talent House Collective',
+  // The root layout appends "| Talent House Collective" to any plain title
+  // string. Spelling the brand out here printed it twice in every search result.
+  title: 'Create Your Account',
   description: 'Four fields, then your spa documents are kept in your account for good.',
 }
 

@@ -84,9 +84,10 @@ test('the country and currency a property picks actually reach the database', ()
 
 test('every salary a member sees goes through the formatter', () => {
   for (const page of [
-    'src/app/roles/page.tsx',
+    // The public roles query moved here when /jobs started sharing it.
+    'src/lib/public-roles-server.ts',
     'src/app/jobs/[id]/page.tsx',
-    'src/app/jobs/page.tsx',
+    'src/app/jobs/JobsBrowser.tsx',
     'src/app/talent/jobs/page.tsx',
   ]) {
     const source = read(page)
@@ -104,7 +105,7 @@ test('every salary a member sees goes through the formatter', () => {
 // On a board still mostly British, "Harrogate, United Kingdom" on every card
 // is noise - and noise is what stops "Male, Maldives" standing out.
 test('a country is shown where it tells you something', () => {
-  const page = read('src/app/roles/page.tsx')
+  const page = read('src/lib/public-roles-server.ts')
   assert.match(page, /function overseasLocation/)
   assert.match(page, /if \(isUnitedKingdom\(country\)\) return place/, 'home roles read as they always did')
   assert.match(page, /place\.toLowerCase\(\) === named\.toLowerCase\(\)/, 'and "Hong Kong, Hong Kong" is avoided')

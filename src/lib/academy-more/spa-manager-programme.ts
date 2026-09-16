@@ -28,7 +28,7 @@ export const course: AcademyCourse = {
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     { guestView: '“The spa feels calm even when it is busy. Everyone seems to know what is happening.”', helpsYou: 'Operational control is what turns a strong therapist into someone trusted with a department.', tips: ['Start each day with priorities, risks and VIPs', 'Manage by standards, not moods', 'Fix the system as well as the immediate problem'] },
     { guestView: '“The team seem confident, warm and consistent rather than stressed or scripted.”', helpsYou: 'Managers are judged by the quality and stability of the team they build, not just by their own output.', tips: ['Use facts in feedback', 'Coach early before frustration grows', 'Keep expectations specific and measurable'] },

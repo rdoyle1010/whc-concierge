@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Mail, MapPin, Send, Check } from 'lucide-react'
 import { contactFormSchema } from '@/lib/validations'
+import { CONTACT_EMAIL } from '@/lib/contact'
 
 const TYPES = [
   { value: 'general', label: 'General' },
@@ -72,7 +73,7 @@ export default function ContactPage() {
               <div className="public-panel p-6">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-[#ede8df]"><Mail size={18} className="text-accent" /></div>
                 <h3 className="text-[15px] font-semibold text-ink mb-1.5">Email</h3>
-                <a href="mailto:hello@wellnesshousecollective.co.uk" className="text-[13px] text-secondary hover:text-ink hover:underline">hello@wellnesshousecollective.co.uk</a>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-[13px] text-secondary hover:text-ink hover:underline">{CONTACT_EMAIL}</a>
               </div>
               <div className="public-panel p-6">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-[#ede8df]"><MapPin size={18} className="text-accent" /></div>

@@ -119,7 +119,7 @@ Finally, protect the house. Follow the protocols faithfully, use correct product
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked the therapist what made ila different and she told me about the founder, a nurse who believed skin and spirit heal together, and the Cotswolds room where everything is blended by hand. I stopped comparing prices and started listening."`,

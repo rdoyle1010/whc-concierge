@@ -6,7 +6,7 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = {
-  title: { absolute: 'How Talent House proves what it publishes | Talent House Collective' },
+  title: { absolute: 'Verified Reviews from Spas and Therapists | Talent House' },
   description: 'Every review on Talent House comes from a completed, paid engagement between two verified accounts. Here is the standard, and what is published today.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/testimonials' },
 }

@@ -38,7 +38,10 @@ export default function PublicRolesBrowser({ jobs }: { jobs: any[] }) {
             </select>
             <input type="text" placeholder="Location..." aria-label="Filter by location" value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]" />
           </div>
-          <p className="text-[11px] text-muted mt-2">{filtered.length} opportunity{filtered.length !== 1 ? 'ies' : 'y'} available</p>
+          {/* "opportunity" + "ies" is "opportunityies", and "opportunity" + "y"
+              is "opportunityy". Both branches were wrong, so every visitor who
+              ever loaded this page saw a misspelling. */}
+          <p className="text-[11px] text-muted mt-2">{filtered.length} {filtered.length === 1 ? 'opportunity' : 'opportunities'} available</p>
         </div>
       </section>
 
@@ -76,10 +79,14 @@ export default function PublicRolesBrowser({ jobs }: { jobs: any[] }) {
                   <div className="mt-6 pt-5 border-t border-border flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <div>
                       <p className="text-[12px] font-medium text-ink">Like the sound of this?</p>
-                      <p className="text-[11px] text-muted mt-0.5">Create a free profile to reveal the property, full brief and your personal match.</p>
+                      {/* This used to promise that an account "reveals the property and
+                          full brief". It never did: /jobs/[id] is a public, fully
+                          server-rendered page. Only the match score needs an account,
+                          so only the match score is offered for one. */}
+                      <p className="text-[11px] text-muted mt-0.5">Read the full brief now. A free profile adds your personal match score against it.</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <Link href={`/login?redirect=${encodeURIComponent(`/jobs/${job.id}`)}`} className="btn-secondary inline-flex items-center gap-1.5 text-[12px]">Unlock full role <ArrowRight size={12} /></Link>
+                      <Link href={`/jobs/${job.id}`} className="btn-secondary inline-flex items-center gap-1.5 text-[12px]">See the full role <ArrowRight size={12} /></Link>
                       <Link href="/login?redirect=/roles/match" className="btn-primary inline-flex items-center gap-1.5 text-[12px]"><Sparkles size={12} /> See my match</Link>
                     </div>
                   </div>

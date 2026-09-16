@@ -121,7 +121,7 @@ Upsell paths stay honest: the sixty-minute guest with real tension benefits from
 }
 
 export const extras: CourseExtras = {
-  image: 'https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1200&q=80&auto=format&fit=crop',
+  image: '',
   lessons: [
     {
       guestView: `"I asked why the spa carried Susanne Kaufmann and the therapist told me about the Alpine valley, the family hotel and the naturopathic tradition behind it. Suddenly the whole shelf made sense, and I trusted every recommendation after that."`,
