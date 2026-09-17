@@ -5,26 +5,35 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // The pictures nothing points at any more.
 //
 // Replacing a photograph uploads a new file under a new timestamped name and
-// leaves the old one exactly where it was. Nothing has ever deleted one, so
-// every picture ever uploaded is still in the bucket: paid for, and still
+// leaves the old one where it was, so the bucket fills with versions nobody
+// can reach. Clearing those out is worth doing: they are paid for, and still
 // reachable by anybody holding the address.
 //
-// Deleting on replacement would be wrong. A replacement is not live until it
-// is published, and ten previous versions are kept so a change can be put
-// back. A file is only safe to remove once nothing refers to it at all.
+// This screen has now been wrong twice, in opposite directions, and the second
+// time cost real photographs.
 //
-// The first version of this counted correctly and deleted nothing, which is
-// the worst way to fail: the button reported thirteen, she pressed it, and
-// thirteen came back. Two reasons, both in the listing.
+// First it counted correctly and deleted nothing: it listed the bucket without
+// walking folders, and asking storage to remove a folder name succeeds and
+// removes nothing. It reported thirteen, the button was pressed, and thirteen
+// came back.
 //
-// A bucket listing returns folders and placeholders alongside files. A folder
-// has no id, and asking storage to remove a folder name succeeds and removes
-// nothing, so the count never moved. And it only ever listed the top level, so
-// anything inside a folder was neither counted nor removable.
+// Fixing that made it delete - while it still decided what was "in use" by
+// reading a single table, platform_config. site-images is a shared bucket:
+// brand logos, course photographs, blog pictures, company logos, property
+// photographs and candidate portraits all live in it, referenced from their
+// own tables, none of which this looked at. So nearly every picture on the
+// platform counted as unused, and the delete was permanent.
 //
-// It now walks the folders, keeps only real files, addresses them by their
-// full path, and reports how many were actually removed rather than assuming.
-
+// The lesson is about which way to fail. A sweep that keeps a file it could
+// have deleted wastes a few pence. A sweep that deletes a file somebody is
+// using destroys something they cannot get back. So the rule now is that a
+// picture is in use until proven otherwise, and the proof has to be complete:
+//
+//   - referenced_storage_paths() asks the database which columns exist and
+//     scans every text and jsonb column in the schema. A new table with an
+//     image column is covered the day it is created.
+//   - If that function is missing or errors, nothing is deletable at all. An
+//     unanswerable question is never read as "nothing is in use" again.
 export const dynamic = 'force-dynamic'
 
 const BUCKET = 'site-images'
@@ -60,63 +69,63 @@ async function listFiles(
   return files
 }
 
+// referencesWithin() used to live here. It walked the JSON in platform_config
+// looking for anything that mentioned the bucket - a reasonable thing to do,
+// and the reason this screen only ever knew about one table out of dozens. The
+// scan happens in the database now, where the list of tables is not a guess.
+
 /**
- * Everything a stored picture could still be named by.
+ * Every storage path anything in the database still points at.
  *
- * Both the full path and the bare filename, because a stored URL carries the
- * path while older content sometimes carries only the name, and a picture
- * missed by this check is a picture deleted off a live page.
+ * Returns null when the answer cannot be trusted, which is different from an
+ * empty set and must never be confused with it: null means "we do not know",
+ * and nothing may be deleted on the strength of not knowing.
  */
-function referencesWithin(value: unknown, found: Set<string>): void {
-  if (typeof value === 'string') {
-    if (value.includes(BUCKET)) {
-      const after = value.split(`${BUCKET}/`).pop()!.split('?')[0]
-      if (after) { found.add(after); found.add(after.split('/').pop()!) }
-    }
-    return
+async function stillReferenced(admin: ReturnType<typeof createAdminClient>): Promise<Set<string> | null> {
+  const { data, error } = await admin.rpc('referenced_storage_paths', { p_bucket: BUCKET })
+  if (error) {
+    console.error('[pictures] reference scan unavailable:', error.message)
+    return null
   }
-  if (Array.isArray(value)) { for (const item of value) referencesWithin(item, found); return }
-  if (value && typeof value === 'object') { for (const item of Object.values(value)) referencesWithin(item, found) }
-}
+  if (!Array.isArray(data)) return null
 
-async function stillReferenced(admin: ReturnType<typeof createAdminClient>): Promise<Set<string>> {
   const referenced = new Set<string>()
-  const { data } = await admin.from('platform_config').select('key,value')
-
-  for (const row of (data || []) as any[]) {
-    const raw = typeof row.value === 'string' ? row.value : JSON.stringify(row.value ?? '')
-    if (!raw.includes(BUCKET)) continue
-
-    try { referencesWithin(typeof row.value === 'string' ? JSON.parse(row.value) : row.value, referenced) }
-    catch { /* handled by the raw scan below */ }
-
-    // A value that will not parse must not read as referring to nothing. This
-    // is cruder and can only over-count, which is the right direction:
-    // over-counting leaves a file lying about, under-counting deletes a
-    // photograph that is still on a page.
-    for (const match of raw.matchAll(/[A-Za-z0-9._-]*website-[0-9]+-[A-Za-z0-9._-]+/g)) {
-      referenced.add(match[0]); referenced.add(match[0].split('/').pop()!)
-    }
+  for (const row of data) {
+    // The function returns a set of text, which supabase-js hands back either
+    // as bare strings or as one-key objects depending on version.
+    const value = typeof row === 'string' ? row : String((row as any)?.referenced_storage_paths ?? '')
+    const path = value.split('?')[0].trim()
+    if (!path) continue
+    referenced.add(path)
+    referenced.add(path.split('/').pop()!)
   }
   return referenced
 }
 
 async function unusedFiles(admin: ReturnType<typeof createAdminClient>) {
   const [files, referenced] = await Promise.all([listFiles(admin), stillReferenced(admin)])
+  // Unknown references mean nothing is unused. Failing the other way is what
+  // deleted the photographs.
+  if (!referenced) return { files, unused: [] as StoredFile[], known: false }
   const unused = files.filter(file => !referenced.has(file.path) && !referenced.has(file.path.split('/').pop()!))
-  return { files, unused }
+  return { files, unused, known: true }
 }
 
 export async function GET() {
   const actor = await adminRequestUser()
   if (!actor) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
-  const { files, unused } = await unusedFiles(createAdminClient())
+  const { files, unused, known } = await unusedFiles(createAdminClient())
   return NextResponse.json({
     total: files.length,
     unused: unused.length,
     bytes: unused.reduce((sum, file) => sum + file.bytes, 0),
     names: unused.map(file => file.path).sort().reverse().slice(0, 200),
+    known,
+    ...(known ? {} : {
+      warning: 'Nothing can be deleted until the reference check is installed, so none of these are listed as unused. '
+        + 'Without it this screen cannot tell a spare copy from the photograph on your brand page.',
+    }),
   })
 }
 
@@ -132,7 +141,17 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   // Recomputed rather than taken from the browser. A permanent delete driven
   // by a list the client sends is a permanent delete anybody can aim.
-  const { unused } = await unusedFiles(admin)
+  const { unused, known } = await unusedFiles(admin)
+
+  // The check that would have saved the photographs. If we cannot establish
+  // what is in use, we delete nothing at all - rather than deleting everything
+  // we failed to find a reference for.
+  if (!known) {
+    return NextResponse.json({
+      error: 'Nothing was deleted. The check that works out which pictures are still in use is not installed, '
+        + 'and without it this screen cannot tell a spare copy from a photograph on a live page.',
+    }, { status: 503 })
+  }
   if (!unused.length) return NextResponse.json({ success: true, removed: 0 })
 
   const paths = unused.map(file => file.path)

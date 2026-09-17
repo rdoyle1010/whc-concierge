@@ -127,7 +127,7 @@ export default function MediaLibraryPage() {
   // replacement is not live until it is published, and the version history
   // exists so a change can be put back, so a file is only safe to remove once
   // nothing refers to it at all.
-  const [unused, setUnused] = useState<{ unused: number; total: number; bytes: number } | null>(null)
+  const [unused, setUnused] = useState<{ unused: number; total: number; bytes: number; known?: boolean; warning?: string } | null>(null)
 
   async function countUnused() {
     const res = await fetch('/api/admin/unused-pictures', { cache: 'no-store' })
@@ -137,6 +137,10 @@ export default function MediaLibraryPage() {
 
   async function deleteUnused() {
     if (!unused?.unused) return
+    // Never offered when the server could not establish what is in use. It
+    // refuses there too; this only avoids asking a question whose answer would
+    // be thrown away.
+    if (unused.known === false) { setNotice({ type: 'error', text: unused.warning || 'The reference check is not installed, so nothing can be deleted safely.' }); return }
     if (!confirm(`Permanently delete ${unused.unused} picture${unused.unused === 1 ? '' : 's'} that no page uses? This cannot be undone.`)) return
     setBusy('cleanup'); setNotice(null)
     const res = await fetch('/api/admin/unused-pictures', {
