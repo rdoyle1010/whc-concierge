@@ -106,21 +106,43 @@ async function unusedFiles(admin: ReturnType<typeof createAdminClient>) {
   const [files, referenced] = await Promise.all([listFiles(admin), stillReferenced(admin)])
   // Unknown references mean nothing is unused. Failing the other way is what
   // deleted the photographs.
-  if (!referenced) return { files, unused: [] as StoredFile[], known: false }
+  if (!referenced) return { files, unused: [] as StoredFile[], missing: [] as string[], known: false }
+
   const unused = files.filter(file => !referenced.has(file.path) && !referenced.has(file.path.split('/').pop()!))
-  return { files, unused, known: true }
+
+  // The same two lists, read the other way round: a page points at a picture
+  // that is not in the bucket.
+  //
+  // This is the report that would have caught the sweep the first morning,
+  // instead of it being noticed days later from a screenful of broken icons.
+  // It is also the recovery list - every one of these is a picture that needs
+  // uploading again, named, rather than hunted for by clicking around.
+  //
+  // Only real paths count. The scan picks up anything shaped like a path in a
+  // text column, so an example URL in a help string would otherwise read as a
+  // missing photograph for ever.
+  const present = new Set(files.map(file => file.path))
+  const presentNames = new Set(files.map(file => file.path.split('/').pop()!))
+  const missing = [...referenced]
+    .filter(path => path.includes('/') || /\.[a-z0-9]{2,5}$/i.test(path))
+    .filter(path => !present.has(path) && !presentNames.has(path.split('/').pop()!))
+    .sort()
+
+  return { files, unused, missing, known: true }
 }
 
 export async function GET() {
   const actor = await adminRequestUser()
   if (!actor) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
-  const { files, unused, known } = await unusedFiles(createAdminClient())
+  const { files, unused, missing, known } = await unusedFiles(createAdminClient())
   return NextResponse.json({
     total: files.length,
     unused: unused.length,
     bytes: unused.reduce((sum, file) => sum + file.bytes, 0),
     names: unused.map(file => file.path).sort().reverse().slice(0, 200),
+    missing: missing.length,
+    missingNames: missing.slice(0, 200),
     known,
     ...(known ? {} : {
       warning: 'Nothing can be deleted until the reference check is installed, so none of these are listed as unused. '

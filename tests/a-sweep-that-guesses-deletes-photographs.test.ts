@@ -52,8 +52,12 @@ test('not knowing is never read as "nothing is in use"', () => {
   const route = body(ROUTE)
   assert.match(route, /Promise<Set<string> \| null>/,
     'the reference scan must be able to say it does not know')
-  assert.match(route, /if \(!referenced\) return \{ files, unused: \[\] as StoredFile\[\], known: false \}/,
-    'an unknown answer must produce nothing to delete')
+  // The branch, not the exact literal it returns. Pinning the whole object
+  // meant adding a field to it broke a test about failing safely.
+  const unknownBranch = route.match(/if \(!referenced\) return \{[^}]*\}/)
+  assert.ok(unknownBranch, 'the unknown case must have its own branch')
+  assert.match(unknownBranch[0], /unused: \[\]/, 'an unknown answer must produce nothing to delete')
+  assert.match(unknownBranch[0], /known: false/, 'and must say that it does not know')
   assert.match(route, /if \(!known\) \{[\s\S]{0,400}?status: 503/,
     'and the delete itself must refuse rather than proceed')
 })
@@ -99,4 +103,24 @@ test('only this one place deletes in bulk, and it is the guarded one', () => {
   }
   assert.deepEqual(sweeps.sort(), [ROUTE, 'src/app/api/account/delete/route.ts'].sort(),
     `a bulk storage delete outside the guarded sweep:\n${sweeps.join('\n')}`)
+})
+
+test('a picture a page points at and storage does not have is reported', () => {
+  // The inverse of the sweep, from the same two lists. Had this existed, the
+  // deletion would have been a list of names on the first morning instead of a
+  // screenful of broken icons noticed days later - and it is now the recovery
+  // list, since what was deleted has to be uploaded again by hand.
+  const route = body(ROUTE)
+  assert.match(route, /const present = new Set\(files\.map/)
+  assert.match(route, /missing: missing\.length/)
+  assert.match(route, /missingNames/)
+
+  // Not everything the scan finds is a photograph. It reads any text column,
+  // so an example URL in a help string would otherwise be reported as a
+  // missing picture for ever.
+  assert.match(route, /path\.includes\('\/'\) \|\| \/\\\.\[a-z0-9\]\{2,5\}\$\/i\.test\(path\)/)
+
+  const screen = body('src/app/admin/images/page.tsx')
+  assert.match(screen, /missing from storage/, 'and it has to be on the screen, not only in the response')
+  assert.match(screen, /missingNames \|\| \[\]/, 'named, so she knows what to upload again')
 })
