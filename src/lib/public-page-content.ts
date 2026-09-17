@@ -51,25 +51,38 @@ export const PAGE_PATHS: Record<PublicPageSlug, string> = {
   'agency-cover': '/agency', contact: '/contact',
 }
 
-export type PageSections = { heroImage: boolean; blocks: boolean }
+/**
+ * What a page actually renders, and therefore what it may be asked about.
+ *
+ * `blocks` is a count rather than a flag. It was a boolean, and a boolean can
+ * only say "some", so a page that rendered one section still offered three
+ * editors - which is precisely the complaint recorded against Pricing below:
+ * boxes that take wording and a photograph and put them nowhere. A number
+ * cannot drift from the truth as quietly.
+ */
+export type PageSections = { heroImage: boolean; blocks: number }
 
 export const PAGE_SECTIONS: Record<PublicPageSlug, PageSections> = {
-  properties: { heroImage: true, blocks: true },
-  agency: { heroImage: true, blocks: true },
-  residency: { heroImage: true, blocks: true },
+  properties: { heroImage: true, blocks: 3 },
+  agency: { heroImage: true, blocks: 3 },
+  residency: { heroImage: true, blocks: 3 },
   // Pricing has offered three section editors since it was built and has
   // never rendered one of them. Not something this change broke: it was live,
   // and it is exactly the complaint that started all of this. Recorded here
   // rather than fixed by adding three sections nobody designed, so the boxes
   // stop being offered until somebody decides the page wants them.
-  pricing: { heroImage: true, blocks: false },
-  'coming-soon': { heroImage: true, blocks: true },
-  about: { heroImage: false, blocks: false },
-  advertise: { heroImage: false, blocks: false },
-  'how-to-use': { heroImage: false, blocks: false },
-  academy: { heroImage: false, blocks: false },
-  'agency-cover': { heroImage: false, blocks: false },
-  contact: { heroImage: false, blocks: false },
+  pricing: { heroImage: true, blocks: 0 },
+  'coming-soon': { heroImage: true, blocks: 3 },
+  // The founder section is the first block. It was hardcoded prose and a
+  // hardcoded file path - /images/founder-rebecca.jpg, which has never existed
+  // in this repository - so the About page showed a grey monogram and there was
+  // no upload slot anywhere on the platform that could fix it.
+  about: { heroImage: false, blocks: 1 },
+  advertise: { heroImage: false, blocks: 0 },
+  'how-to-use': { heroImage: false, blocks: 0 },
+  academy: { heroImage: false, blocks: 0 },
+  'agency-cover': { heroImage: false, blocks: 0 },
+  contact: { heroImage: false, blocks: 0 },
 }
 export type PublicPageSlug = typeof PUBLIC_PAGE_SLUGS[number]
 

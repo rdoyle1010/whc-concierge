@@ -81,10 +81,22 @@ test('the Pictures screen offers a picture only where one is shown', () => {
   // find it.
   const source = readFileSync('src/app/admin/images/page.tsx', 'utf8')
   assert.match(source, /if \(sections\.heroImage\)/)
-  assert.match(source, /if \(sections\.blocks\)/)
+
+  // Sliced to the count, not gated on a flag. A boolean can only say "some",
+  // so a page rendering one section still offered three slots - a photograph
+  // uploaded into two of them would go somewhere nobody can see it.
+  assert.match(source, /page\.blocks\.slice\(0, sections\.blocks\)/)
 
   const withPictures = PUBLIC_PAGE_SLUGS.filter(slug => PAGE_SECTIONS[slug].heroImage)
   assert.equal(withPictures.length, 5, 'five pages carry photographs; the rest are wording only')
+
+  // Every count has to be a real number of sections, not a boolean that
+  // happened to survive the change.
+  for (const slug of PUBLIC_PAGE_SLUGS) {
+    const count = PAGE_SECTIONS[slug].blocks
+    assert.ok(Number.isInteger(count) && count >= 0 && count <= 3,
+      `${slug} offers ${count} sections, and the schema stores three`)
+  }
 })
 
 test('a rejected save says which field', () => {

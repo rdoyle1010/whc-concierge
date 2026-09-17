@@ -61,12 +61,15 @@ function pageSlots(content: PublicPagesContent): Slot[] {
     if (sections.heroImage) {
       slots.push({ store: 'pages', field: `pages.${slug}.hero.image.url`, group: pageNames[slug], label: 'Hero image', url: page.hero.image.url, href: pagePaths[slug] })
     }
-    if (sections.blocks) {
-      page.blocks.forEach((block, index) => slots.push({
-        store: 'pages', field: `pages.${slug}.blocks.${index}.image.url`, group: pageNames[slug],
-        label: `Section ${index + 1}${block.visible ? '' : ' (hidden)'}`, url: block.image.url, href: pagePaths[slug],
-      }))
-    }
+    // Only the sections this page renders. Offering a slot for a section that
+    // is never drawn puts a photograph somewhere nobody can see it.
+    page.blocks.slice(0, sections.blocks).forEach((block, index) => slots.push({
+      store: 'pages', field: `pages.${slug}.blocks.${index}.image.url`, group: pageNames[slug],
+      // Named by its heading where it has one. "Section 1" tells somebody
+      // holding a photograph nothing about where it is going to appear.
+      label: `${block.heading?.trim() || `Section ${index + 1}`}${block.visible ? '' : ' (hidden)'}`,
+      url: block.image.url, href: pagePaths[slug],
+    }))
   }
   return slots
 }

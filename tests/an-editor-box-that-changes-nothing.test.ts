@@ -80,7 +80,25 @@ test('a page is only offered an image or sections when it renders them', () => {
 test('the editor only draws the controls a page has', () => {
   const editor = readFileSync('src/app/admin/website/pages/page.tsx', 'utf8')
   assert.match(editor, /PAGE_SECTIONS\[selected\]\.heroImage/)
-  assert.match(editor, /PAGE_SECTIONS\[selected\]\.blocks && page\.blocks\.map/)
+  // The whole point of this file: a box that takes wording and a photograph
+  // and puts them nowhere. A flag could only say "some sections", so About -
+  // which renders exactly one - would have offered three.
+  assert.match(editor, /page\.blocks\.slice\(0, PAGE_SECTIONS\[selected\]\.blocks\)/)
+})
+
+test('the About founder section is editable, and offered once', () => {
+  // It was hardcoded prose and a hardcoded path to a file that never existed,
+  // so the page showed a grey monogram and no screen on the platform had an
+  // upload slot that could fix it.
+  assert.equal(PAGE_SECTIONS.about.blocks, 1, 'About renders one section, so it offers one')
+
+  const page = readFileSync('src/app/about/page.tsx', 'utf8')
+  assert.match(page, /const founder = cms\.blocks\[0\]/)
+  assert.match(page, /<FounderImage url=\{founder\.image\.url\}/, 'the portrait comes from the block')
+  assert.doesNotMatch(page, /founder-rebecca\.jpg/, 'and never from a hardcoded file again')
+
+  const image = readFileSync('src/components/FounderImage.tsx', 'utf8')
+  assert.match(image, /if \(!url \|\| errored\)/, 'no picture yet must draw the monogram, not a broken image')
 })
 
 test('the five new pages start as what the site already said', () => {

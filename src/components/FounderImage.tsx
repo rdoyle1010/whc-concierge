@@ -4,23 +4,37 @@ import { useState } from 'react'
 
 // The About page portrait.
 //
-// /images/founder-rebecca.jpg has never existed in this repository. The page
-// requested it, the browser returned a 404, and this component swallowed it
-// and drew a monogram - so the failure was invisible and the About page of a
-// luxury brand has always shown a grey box with two letters in it.
+// This used to point at /images/founder-rebecca.jpg, a file that has never
+// existed in this repository. The browser returned a 404, the component
+// swallowed it and drew a monogram, and so the About page of a luxury brand
+// showed a grey box with two letters in it - invisibly, for months.
 //
-// The fallback stays, because a missing photograph should not leave a broken
-// image icon on the page. What changed is that it now says so in the console,
-// so the next person to look knows the file is missing rather than assuming
-// the monogram was the design.
-export default function FounderImage() {
+// Worse than the missing file: there was nowhere to put one. The path was
+// hardcoded, so no admin screen offered an upload slot for it. The picture now
+// comes from the About page's first content block, which means it appears in
+// Pictures like every other photograph on the site.
+//
+// The monogram stays as the fallback. A brand with no portrait yet should look
+// deliberate rather than broken, and a 404 should never leave a torn image icon
+// on the page.
+export default function FounderImage({
+  url = '',
+  alt = '',
+  focalX = 50,
+  focalY = 50,
+}: {
+  url?: string
+  alt?: string
+  focalX?: number
+  focalY?: number
+}) {
   const [errored, setErrored] = useState(false)
 
-  if (errored) {
+  if (!url || errored) {
     return (
       <div
         className="w-full max-w-[380px] aspect-[4/5] flex items-center justify-center mx-auto bg-surface border border-border"
-        aria-label="Founder portrait placeholder"
+        aria-label={alt || 'Founder portrait placeholder'}
       >
         <span className="text-[64px] font-serif text-accent">RD</span>
       </div>
@@ -29,10 +43,11 @@ export default function FounderImage() {
 
   return (
     <img
-      src="/images/founder-rebecca.jpg"
-      alt="Rebecca Doyle, founder of Talent House Collective"
-      onError={() => { console.error('[about] founder portrait missing: /images/founder-rebecca.jpg'); setErrored(true) }}
-      className="w-full max-w-[380px] mx-auto"
+      src={url}
+      alt={alt || 'Founder portrait'}
+      onError={() => { console.error('[about] founder portrait failed to load:', url); setErrored(true) }}
+      className="w-full max-w-[380px] mx-auto aspect-[4/5] object-cover"
+      style={{ objectPosition: `${focalX}% ${focalY}%` }}
     />
   )
 }

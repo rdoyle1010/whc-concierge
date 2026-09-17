@@ -7,6 +7,8 @@ import FounderImage from '@/components/FounderImage'
 import { getPublicPageContent } from '@/lib/public-page-content-server'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
 
+const LINKEDIN = 'https://www.linkedin.com/in/rebecca-doyle-whc/'
+
 export const metadata: Metadata = {
   title: { absolute: 'About Talent House Collective | Spa & Wellness Careers' },
   description: 'Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
@@ -22,6 +24,7 @@ export default async function AboutPage() {
   // page is the founder's story and the principles, which are prose rather
   // than fields and are better edited here than through three boxes.
   const cms = await getPublicPageContent('about')
+  const founder = cms.blocks[0]
 
   const values = [
     [Award, 'Quality over quantity', 'We vet every profile and verify every property. No spam, no time-wasters, no padding the numbers.'],
@@ -50,18 +53,30 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        <section className="py-16 md:py-20 px-6 bg-parchment border-b border-border">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 md:gap-14 items-center">
-            <FounderImage />
-            <div>
-              <p className="public-eyebrow mb-3">Founder</p>
-              <h2 className="text-[30px] md:text-[38px] font-semibold tracking-[-0.035em] text-ink mb-6">Founded by Rebecca Doyle</h2>
-              <p className="text-[15px] leading-8 text-secondary mb-5">Rebecca built her career inside the luxury spa and wellness sector - watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.</p>
-              <p className="text-[15px] leading-8 text-secondary mb-8">Talent House Collective is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Made for the people who make luxury wellness what it is.</p>
-              <a href="https://www.linkedin.com/in/rebecca-doyle-whc/" target="_blank" rel="noopener noreferrer" className="btn-primary inline-block">Connect on LinkedIn →</a>
+        {/* The founder section, editable at last.
+            The words and the portrait were both hardcoded - the picture as a
+            path to a file that has never existed in this repository, which is
+            why this has always shown a grey monogram and why there was no
+            upload slot anywhere that could fix it. It is the first block of the
+            About page now, so the picture appears in Pictures and the wording
+            in Public pages, like every other section on the site. */}
+        {founder.visible && (
+          <section className="py-16 md:py-20 px-6 bg-parchment border-b border-border">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 md:gap-14 items-center">
+              <FounderImage url={founder.image.url} alt={founder.image.alt} focalX={founder.image.focalX} focalY={founder.image.focalY} />
+              <div>
+                {founder.eyebrow && <p className="public-eyebrow mb-3">{founder.eyebrow}</p>}
+                {founder.heading && <h2 className="text-[30px] md:text-[38px] font-semibold tracking-[-0.035em] text-ink mb-6">{founder.heading}</h2>}
+                {/* Blank lines are paragraphs. One box is easier to write in
+                    than three, and prose typed as one wall reads as one. */}
+                {founder.text.split(/\n\s*\n/).map(para => para.trim()).filter(Boolean).map((para, index) => (
+                  <p key={index} className="text-[15px] leading-8 text-secondary mb-5">{para}</p>
+                ))}
+                <a href={LINKEDIN} target="_blank" rel="noopener noreferrer" className="btn-primary mt-3 inline-block">Connect on LinkedIn →</a>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section className="bg-surface py-16 md:py-20 px-6">
           <div className="max-w-5xl mx-auto">

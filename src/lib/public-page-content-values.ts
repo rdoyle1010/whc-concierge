@@ -180,7 +180,20 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
         image: image('', ''),
       },
       blocks: [
-        block('', '', ''),
+        // The founder section. The words are what the page already said, so
+        // publishing changes nothing until she edits it - and the picture is
+        // empty, because the one it used to ask for never existed.
+        block(
+          'Founder',
+          'Founded by Rebecca Doyle',
+          'Rebecca built her career inside the luxury spa and wellness sector - watching firsthand how poorly the industry was served by mainstream recruitment. '
+          + 'Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.'
+          + '\n\n'
+          + 'Talent House Collective is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. '
+          + 'Made for the people who make luxury wellness what it is.',
+          '',
+          'Rebecca Doyle, founder of Talent House Collective',
+        ),
         block('', '', ''),
         block('', '', ''),
       ],
