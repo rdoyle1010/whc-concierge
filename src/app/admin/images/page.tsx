@@ -127,7 +127,7 @@ export default function MediaLibraryPage() {
   // replacement is not live until it is published, and the version history
   // exists so a change can be put back, so a file is only safe to remove once
   // nothing refers to it at all.
-  const [unused, setUnused] = useState<{ unused: number; total: number; bytes: number; known?: boolean; warning?: string } | null>(null)
+  const [unused, setUnused] = useState<{ unused: number; total: number; bytes: number; known?: boolean; warning?: string; missing?: number; missingNames?: string[] } | null>(null)
 
   async function countUnused() {
     const res = await fetch('/api/admin/unused-pictures', { cache: 'no-store' })
@@ -276,8 +276,33 @@ export default function MediaLibraryPage() {
           {unused && unused.unused === 0 && unused.total > 0 && (
             <span className="text-[11px] text-muted">All {unused.total} stored pictures are in use.</span>
           )}
+          {unused?.known === false && (
+            <span className="text-[11px] text-amber-700 max-w-xs text-right">{unused.warning}</span>
+          )}
         </div>
       </div>
+
+      {/* Pictures a page points at that are not in the bucket.
+          The inverse of the sweep above, from the same two lists, and the
+          report that would have caught the sweep deleting things on the first
+          morning rather than days later from a screen of broken icons. It is
+          also the list of what to upload again. */}
+      {unused && (unused.missing || 0) > 0 && (
+        <div role="alert" className="mt-5 border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-[13px] font-semibold text-amber-900">
+            {unused.missing} picture{unused.missing === 1 ? '' : 's'} {unused.missing === 1 ? 'is' : 'are'} missing from storage
+          </p>
+          <p className="mt-1 text-[12px] leading-6 text-amber-800">
+            A page still points at {unused.missing === 1 ? 'this file' : 'these files'} and {unused.missing === 1 ? 'it is' : 'they are'} no longer there,
+            so {unused.missing === 1 ? 'it shows' : 'they show'} as a broken image. Upload {unused.missing === 1 ? 'it' : 'them'} again to fix {unused.missing === 1 ? 'it' : 'them'}.
+          </p>
+          <ul className="mt-3 space-y-1">
+            {(unused.missingNames || []).map(name => (
+              <li key={name} className="font-mono text-[11px] text-amber-900 break-all">{name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {notice && <div role="status" className={`mt-5 border px-4 py-3 text-[13px] ${notice.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-600'}`}>{notice.text}</div>}
       {loadError && <div role="alert" className="mt-5 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">{loadError}</div>}
