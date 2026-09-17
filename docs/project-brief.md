@@ -356,8 +356,8 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-240 API routes, 174 pages, 135 migrations, 169 test files. 1,232 tests and
-46 production-readiness checks, all green.
+243 API routes, 177 pages, 137 migrations, 185 test files. 1,351 tests and
+50 production-readiness checks, all green.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
