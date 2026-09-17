@@ -17,18 +17,30 @@ const ROUTE = 'src/app/api/admin/unused-pictures/route.ts'
 const SCREEN = 'src/app/admin/images/page.tsx'
 
 test('a picture is only unused when nothing at all refers to it', () => {
+  // The guarantee in the comment at the top of this file, which was right all
+  // along. What changed is that the mechanism these lines used to pin turned
+  // out to be the thing breaking it.
+  //
+  // This required the sweep to read platform_config and scan it for filenames.
+  // It did exactly that - and only that - while site-images also holds brand
+  // logos, course photographs, blog pictures, company logos, property
+  // photographs and candidate portraits, each referenced from its own table.
+  // So "nothing at all refers to it" was decided by looking at one table out of
+  // dozens, this test passed, and the sweep deleted almost every picture on the
+  // platform.
+  //
+  // Do not put the platform_config scan back. The question is asked of the
+  // database now, which is the only thing that knows what columns exist.
   const route = readFileSync(ROUTE, 'utf8')
 
-  // Everything that could bring a picture back has to be read, not just what
-  // is live. Deleting something the version history points at turns "revert"
-  // into a page of broken images.
-  assert.match(route, /platform_config'\)\.select\('key,value'\)/,
-    'every stored key must be searched, not only the published one')
-  assert.match(route, /function referencesWithin/, 'and searched all the way down, not one level')
+  assert.match(route, /rpc\('referenced_storage_paths'/,
+    'the reference scan must cover every table, not a list somebody maintains')
+  assert.doesNotMatch(route, /from\('platform_config'\)/,
+    'one table cannot answer this, and believing it could cost real photographs')
 
-  // A key that will not parse must not be read as referring to nothing.
-  assert.match(route, /website-\[0-9\]\+-\[A-Za-z0-9\._-\]\+/,
-    'unparseable content still has to be scanned for filenames, because under-counting deletes a live photograph')
+  const migration = readFileSync('supabase/migrations/20260917090000_a_picture_is_in_use_until_proven_otherwise.sql', 'utf8')
+  assert.match(migration, /information_schema\.columns/, 'the columns are discovered, not listed')
+  assert.match(migration, /jsonb/, 'pictures stored inside JSON count too')
 })
 
 test('the delete is confirmed, and aimed by the server', () => {
@@ -39,8 +51,12 @@ test('the delete is confirmed, and aimed by the server', () => {
   // delete driven by a list the browser sends is a permanent delete anybody
   // can aim.
   const post = route.slice(route.indexOf('export async function POST'))
-  assert.match(post, /const \{ unused \} = await unusedFiles\(admin\)/)
+  assert.match(post, /await unusedFiles\(admin\)/)
   assert.doesNotMatch(post, /body\.names|body\.files/, 'the client must not choose what gets deleted')
+
+  // And it refuses outright when it cannot establish what is in use, rather
+  // than treating "I could not find a reference" as "there is no reference".
+  assert.match(post, /if \(!known\)/)
 })
 
 test('nothing is deleted on its own', () => {
@@ -97,8 +113,12 @@ test('it reports what was removed, not what was asked for', () => {
 test('a picture is matched by its path and by its name', () => {
   // A stored URL carries the path, older content sometimes carries only the
   // filename, and a reference missed here is a photograph deleted off a live
-  // page.
+  // page. Still true; it just happens where the scan now lives.
   const route = readFileSync(ROUTE, 'utf8')
-  assert.match(route, /found\.add\(after\); found\.add\(after\.split\('\/'\)\.pop\(\)!\)/)
+  assert.match(route, /referenced\.add\(path\)\s*\n\s*referenced\.add\(path\.split\('\/'\)\.pop\(\)!\)/)
   assert.match(route, /!referenced\.has\(file\.path\) && !referenced\.has\(file\.path\.split/)
+
+  // A query string is not part of the filename, and treating it as one means
+  // the reference never matches and the file looks unused.
+  assert.match(route, /split\('\?'\)\[0\]/)
 })
