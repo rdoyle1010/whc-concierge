@@ -81,7 +81,14 @@ async function listFiles(
  * empty set and must never be confused with it: null means "we do not know",
  * and nothing may be deleted on the strength of not knowing.
  */
-async function stillReferenced(admin: ReturnType<typeof createAdminClient>): Promise<Set<string> | null> {
+type References = {
+  /** Paths and bare filenames, for deciding whether a stored file is used. */
+  match: Set<string>
+  /** Only the real stored paths, for telling somebody what is missing. */
+  paths: Set<string>
+}
+
+async function stillReferenced(admin: ReturnType<typeof createAdminClient>): Promise<References | null> {
   const { data, error } = await admin.rpc('referenced_storage_paths', { p_bucket: BUCKET })
   if (error) {
     console.error('[pictures] reference scan unavailable:', error.message)
@@ -89,17 +96,30 @@ async function stillReferenced(admin: ReturnType<typeof createAdminClient>): Pro
   }
   if (!Array.isArray(data)) return null
 
-  const referenced = new Set<string>()
+  // Two sets, because they answer two different questions.
+  //
+  // Matching wants to be generous: a stored URL carries the path, older content
+  // sometimes carries only the filename, and a reference missed there deletes a
+  // photograph off a live page. So `match` holds both forms.
+  //
+  // The missing-pictures report wants to be exact, and the first version of it
+  // used the same generous set. So every missing file was listed twice - once
+  // as academy/clarins-...jpeg and again as clarins-...jpeg - and profile
+  // photographs produced entries like "photo.png", which is not a path anybody
+  // can act on. It reported eighty-four when the truth was roughly half that.
+  const match = new Set<string>()
+  const paths = new Set<string>()
   for (const row of data) {
     // The function returns a set of text, which supabase-js hands back either
     // as bare strings or as one-key objects depending on version.
     const value = typeof row === 'string' ? row : String((row as any)?.referenced_storage_paths ?? '')
     const path = value.split('?')[0].trim()
     if (!path) continue
-    referenced.add(path)
-    referenced.add(path.split('/').pop()!)
+    paths.add(path)
+    match.add(path)
+    match.add(path.split('/').pop()!)
   }
-  return referenced
+  return { match, paths }
 }
 
 async function unusedFiles(admin: ReturnType<typeof createAdminClient>) {
@@ -108,7 +128,7 @@ async function unusedFiles(admin: ReturnType<typeof createAdminClient>) {
   // deleted the photographs.
   if (!referenced) return { files, unused: [] as StoredFile[], missing: [] as string[], known: false }
 
-  const unused = files.filter(file => !referenced.has(file.path) && !referenced.has(file.path.split('/').pop()!))
+  const unused = files.filter(file => !referenced.match.has(file.path) && !referenced.match.has(file.path.split('/').pop()!))
 
   // The same two lists, read the other way round: a page points at a picture
   // that is not in the bucket.
@@ -123,7 +143,7 @@ async function unusedFiles(admin: ReturnType<typeof createAdminClient>) {
   // missing photograph for ever.
   const present = new Set(files.map(file => file.path))
   const presentNames = new Set(files.map(file => file.path.split('/').pop()!))
-  const missing = [...referenced]
+  const missing = [...referenced.paths]
     .filter(path => path.includes('/') || /\.[a-z0-9]{2,5}$/i.test(path))
     .filter(path => !present.has(path) && !presentNames.has(path.split('/').pop()!))
     .sort()
