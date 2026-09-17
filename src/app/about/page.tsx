@@ -24,6 +24,13 @@ export default async function AboutPage() {
   // page is the founder's story and the principles, which are prose rather
   // than fields and are better edited here than through three boxes.
   const cms = await getPublicPageContent('about')
+
+  // Untouched sections are filled from the defaults when the content is read,
+  // so this is the founder wording whether or not anybody has edited it.
+  // The founder section. An untouched block is filled from the defaults when
+  // the content is read, so this is the right wording whether or not anybody
+  // has edited it - and the empty blocks saved against About from before this
+  // section was editable no longer blank the page.
   const founder = cms.blocks[0]
 
   const values = [

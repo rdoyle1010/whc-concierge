@@ -166,16 +166,50 @@ function fillGaps(stored: any, defaults: any): any {
   return stored === undefined || stored === null ? defaults : stored
 }
 
+/**
+ * A section nobody has ever written gets the wording the page shipped with.
+ *
+ * Changing a default does not change a page that has already been published:
+ * the stored content wins. About had three empty blocks saved against it from
+ * before its founder section was editable, so making that section editable
+ * emptied it - the live page went from two paragraphs to a lone LinkedIn
+ * button.
+ *
+ * Strictly untouched only: no eyebrow, no heading, no wording. A block she has
+ * put a single word in is hers, and nothing here second-guesses it. The way to
+ * remove a section deliberately is the Show section tickbox, which is what that
+ * control is for.
+ *
+ * Images are never substituted. An empty picture means none has been uploaded,
+ * which is a different statement from empty wording.
+ */
+function fillUntouchedBlocks(content: PublicPagesContent): PublicPagesContent {
+  for (const slug of PUBLIC_PAGE_SLUGS) {
+    const page = content.pages[slug]
+    const defaults = DEFAULT_PUBLIC_PAGES_CONTENT.pages[slug]
+    page.blocks.forEach((block, index) => {
+      const fallback = defaults.blocks[index]
+      if (!fallback) return
+      const untouched = !block.eyebrow.trim() && !block.heading.trim() && !block.text.trim()
+      if (!untouched) return
+      block.eyebrow = fallback.eyebrow
+      block.heading = fallback.heading
+      block.text = fallback.text
+    })
+  }
+  return content
+}
+
 export function parsePublicPagesContent(value: unknown): PublicPagesContent {
   const raw = typeof value === 'string' ? (() => { try { return JSON.parse(value) } catch { return null } })() : value
 
   const parsed = PublicPagesContentSchema.safeParse(raw)
-  if (parsed.success) return normaliseLegacySiteLinks(parsed.data)
+  if (parsed.success) return fillUntouchedBlocks(normaliseLegacySiteLinks(parsed.data))
 
   // Second attempt, with the gaps filled from the defaults. A version saved
   // before a field existed is not corrupt, it is just older than the schema.
   const repaired = PublicPagesContentSchema.safeParse(fillGaps(raw, DEFAULT_PUBLIC_PAGES_CONTENT))
-  if (repaired.success) return normaliseLegacySiteLinks(repaired.data)
+  if (repaired.success) return fillUntouchedBlocks(normaliseLegacySiteLinks(repaired.data))
 
   // Genuinely unreadable. Now the defaults are the right answer.
   console.error('[public pages] stored content could not be read even after filling gaps')
