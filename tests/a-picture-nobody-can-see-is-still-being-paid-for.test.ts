@@ -115,8 +115,12 @@ test('a picture is matched by its path and by its name', () => {
   // filename, and a reference missed here is a photograph deleted off a live
   // page. Still true; it just happens where the scan now lives.
   const route = readFileSync(ROUTE, 'utf8')
-  assert.match(route, /referenced\.add\(path\)\s*\n\s*referenced\.add\(path\.split\('\/'\)\.pop\(\)!\)/)
-  assert.match(route, /!referenced\.has\(file\.path\) && !referenced\.has\(file\.path\.split/)
+  // Both forms go into the set used for matching. That set is deliberately
+  // generous and is now separate from the list of real paths shown to a human,
+  // because reporting from the generous one listed every missing file twice.
+  assert.match(route, /match\.add\(path\)/)
+  assert.match(route, /match\.add\(path\.split\('\/'\)\.pop\(\)!\)/)
+  assert.match(route, /!referenced\.match\.has\(file\.path\) && !referenced\.match\.has\(file\.path\.split/)
 
   // A query string is not part of the filename, and treating it as one means
   // the reference never matches and the file looks unused.

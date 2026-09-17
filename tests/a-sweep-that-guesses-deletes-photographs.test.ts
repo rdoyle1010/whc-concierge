@@ -50,8 +50,12 @@ test('not knowing is never read as "nothing is in use"', () => {
   // The heart of it. An empty set of references and an unanswerable question
   // look identical in a Set, and one of them means "delete everything".
   const route = body(ROUTE)
-  assert.match(route, /Promise<Set<string> \| null>/,
+  // That it CAN say it does not know, not what the type is called. This named
+  // Set<string> and so broke when the scan started returning two sets - a test
+  // about failing safely, failing because of a type name.
+  assert.match(route, /async function stillReferenced[^{]*\| null>/,
     'the reference scan must be able to say it does not know')
+  assert.match(route, /return null/, 'and must actually say it on error')
   // The branch, not the exact literal it returns. Pinning the whole object
   // meant adding a field to it broke a test about failing safely.
   const unknownBranch = route.match(/if \(!referenced\) return \{[^}]*\}/)
@@ -112,6 +116,21 @@ test('a picture a page points at and storage does not have is reported', () => {
   // list, since what was deleted has to be uploaded again by hand.
   const route = body(ROUTE)
   assert.match(route, /const present = new Set\(files\.map/)
+
+  // From the real paths, never from the matching set.
+  //
+  // Matching is deliberately generous - it holds each path AND its bare
+  // filename, because a reference missed there deletes a live photograph. The
+  // first version of this report read that same generous set, so every missing
+  // file appeared twice, once as academy/clarins-...jpeg and again as
+  // clarins-...jpeg, and profile photographs produced rows reading "photo.png".
+  // It reported eighty-four when the truth was about half that: a recovery list
+  // that overstates the damage and cannot be worked through.
+  assert.match(route, /\[\.\.\.referenced\.paths\]/,
+    'the missing list must come from real stored paths, not the matching aliases')
+  assert.match(route, /paths\.add\(path\)/)
+  assert.match(route, /match\.add\(path\.split\('\/'\)\.pop\(\)!\)/,
+    'and matching must still forgive a bare filename')
   assert.match(route, /missing: missing\.length/)
   assert.match(route, /missingNames/)
 
@@ -123,4 +142,37 @@ test('a picture a page points at and storage does not have is reported', () => {
   const screen = body('src/app/admin/images/page.tsx')
   assert.match(screen, /missing from storage/, 'and it has to be on the screen, not only in the response')
   assert.match(screen, /missingNames \|\| \[\]/, 'named, so she knows what to upload again')
+})
+
+test('the missing list names each picture once', () => {
+  // Worked against the shape of the real thing: paths as they are stored, with
+  // the folders they actually use on this platform.
+  const stored = [
+    'academy/clarins-masterclass-1787862331620-WhatsApp-Image.jpeg',
+    'logos/3e521401-1254-4784-b2b4-4ce281e678c2-1789573274829.jpg',
+    '0ccea3b5-03c0-415b-981a-5bcf470e2396/profile/photo.png',
+    'good-to-know/spa-well/1789502087464-Your-Spa---Wellness---1.png',
+  ]
+
+  // What the route builds, in miniature: matching is generous, the report is
+  // exact. If the report ever reads the generous set again, the count doubles
+  // and rows like "photo.png" come back.
+  const match = new Set<string>()
+  const paths = new Set<string>()
+  for (const path of stored) {
+    paths.add(path)
+    match.add(path)
+    match.add(path.split('/').pop()!)
+  }
+
+  const present = new Set<string>()   // storage is empty: all four are missing
+  const missing = [...paths].filter(path => !present.has(path)).sort()
+
+  assert.equal(missing.length, stored.length, 'four missing files, four rows')
+  assert.deepEqual(missing, [...stored].sort())
+  assert.ok(!missing.includes('photo.png'),
+    'a bare filename is a matching alias, not a picture anybody can go and find')
+
+  // And the generous set is exactly what would have produced the wrong answer.
+  assert.equal(match.size, 8, 'matching holds both forms, which is why it must not be the report')
 })
