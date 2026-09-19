@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { AlertTriangle, Award, BookOpen, ChevronDown, ChevronUp, Download, GraduationCap, Image as ImageIcon, Lock, PencilLine, Plus, Save, SlidersHorizontal, Trash2, Upload, UserPlus, X } from 'lucide-react'
+import { AlertTriangle, Award, BookOpen, ChevronDown, ChevronUp, Download, GraduationCap, Image as ImageIcon, Lock, Mail, PencilLine, Plus, Save, Search, SlidersHorizontal, Trash2, Upload, UserPlus, X } from 'lucide-react'
 
 const CATEGORIES = ['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care']
 
@@ -15,6 +15,19 @@ function blankCourse() {
     quiz: [{ q: '', options: ['', '', '', ''] }],
     answer_key: [0],
   }
+}
+
+function daysSince(value: string | null | undefined) {
+  if (!value) return 0
+  const then = new Date(value).getTime()
+  if (!Number.isFinite(then)) return 0
+  return Math.max(0, Math.floor((Date.now() - then) / 86400000))
+}
+
+function shortDate(value: string | null | undefined) {
+  if (!value) return ''
+  const when = new Date(value)
+  return Number.isFinite(when.getTime()) ? when.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
 }
 
 export default function AdminAcademyPage() {
@@ -34,6 +47,14 @@ export default function AdminAcademyPage() {
   const [settingsSlug, setSettingsSlug] = useState<string | null>(null)
   const [settings, setSettings] = useState<any | null>(null)
   const [uploadingSettingsImage, setUploadingSettingsImage] = useState(false)
+  // The learner list is the answer to "who is doing this course and how far
+  // have they got", so it gets the three controls that question actually
+  // needs: find a person, narrow to one course or one state, and reorder.
+  const [learnerQuery, setLearnerQuery] = useState('')
+  const [learnerCourse, setLearnerCourse] = useState('')
+  const [learnerStatus, setLearnerStatus] = useState('')
+  const [learnerSort, setLearnerSort] = useState('recent')
+  const [learnerLookupError, setLearnerLookupError] = useState('')
 
   async function load() {
     setLoading(true)
@@ -44,6 +65,7 @@ export default function AdminAcademyPage() {
       setRows(json.enrollments || [])
       setCourses(json.courses || [])
       setCandidates(json.candidates || [])
+      setLearnerLookupError(json.learner_lookup_error || '')
     } catch (caught: any) {
       setError(caught.message)
     } finally {
@@ -52,6 +74,34 @@ export default function AdminAcademyPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Only paid and comped enrolments are learners. A row without paid_at is an
+  // abandoned checkout, not a person studying.
+  const learners = useMemo(() => rows.filter(row => row.paid_at), [rows])
+  const counts = useMemo(() => ({
+    certified: learners.filter(row => row.completed_at).length,
+    started: learners.filter(row => !row.completed_at && row.lessons_done > 0).length,
+    idle: learners.filter(row => !row.completed_at && !row.lessons_done).length,
+  }), [learners])
+
+  const visibleLearners = useMemo(() => {
+    const needle = learnerQuery.trim().toLowerCase()
+    const filtered = learners.filter(row => {
+      if (learnerCourse && row.course_slug !== learnerCourse) return false
+      if (learnerStatus === 'certified' && !row.completed_at) return false
+      if (learnerStatus === 'progress' && (row.completed_at || !row.lessons_done)) return false
+      if (learnerStatus === 'idle' && (row.completed_at || row.lessons_done)) return false
+      if (!needle) return true
+      return `${row.candidate_name} ${row.candidate_email} ${row.course_title}`.toLowerCase().includes(needle)
+    })
+    // Sorted on a copy. Sorting `learners` in place would reorder the memo
+    // every other component reads from.
+    return [...filtered].sort((a, b) => {
+      if (learnerSort === 'name') return String(a.candidate_name).localeCompare(String(b.candidate_name), 'en-GB')
+      if (learnerSort === 'stuck') return (a.percent - b.percent) || (daysSince(b.paid_at) - daysSince(a.paid_at))
+      return new Date(b.paid_at || b.created_at).getTime() - new Date(a.paid_at || a.created_at).getTime()
+    })
+  }, [learners, learnerQuery, learnerCourse, learnerStatus, learnerSort])
 
   async function act(payload: Record<string, any>, busyKey: string, doneMessage: string, closeEditor = false) {
     setError(''); setNotice(''); setBusyId(busyKey)
@@ -355,8 +405,105 @@ export default function AdminAcademyPage() {
           </div>
         })}</div>
 
-        <h2 className="text-[16px] font-medium text-ink mb-3">Learners ({rows.filter(row => row.paid_at).length})</h2>
-        {rows.filter(row => row.paid_at).length === 0 ? <div className="dashboard-card text-center py-12 text-muted"><GraduationCap size={40} className="mx-auto mb-3 opacity-30" /><p>No enrolments yet.</p></div> : <div className="dashboard-card overflow-x-auto"><table className="w-full text-left text-[13px]"><thead><tr className="text-[11px] uppercase tracking-wide text-muted border-b border-border"><th className="py-2 pr-4">Therapist</th><th className="py-2 pr-4">Course</th><th className="py-2 pr-4">Paid</th><th className="py-2 pr-4">Progress</th><th className="py-2 pr-4">Status</th><th className="py-2" /></tr></thead><tbody>{rows.filter(row => row.paid_at).map(row => <tr key={row.id} className="border-b border-border/60"><td className="py-2.5 pr-4 font-medium text-ink capitalize">{row.candidate_name}</td><td className="py-2.5 pr-4">{row.course_title}</td><td className="py-2.5 pr-4 whitespace-nowrap">£{((row.amount_paid || 0) / 100).toFixed(2)}{row.amount_paid === 0 ? ' (comp)' : ''}</td><td className="py-2.5 pr-4">{row.lessons_done}/{row.lessons_total}{row.quiz_score != null ? ` · quiz ${row.quiz_score}%` : ''}</td><td className="py-2.5 pr-4">{row.completed_at ? <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-700"><Award size={11} /> Certified</span> : <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">In progress</span>}</td><td className="py-2.5 text-right">{row.completed_at ? <button onClick={() => { const reason = window.prompt('Reason shown to the therapist (optional):') ?? ''; act({ action: 'revoke', id: row.id, reason }, row.id, 'Certificate withdrawn.') }} className="text-[11px] font-medium text-red-500">Revoke</button> : <button onClick={() => act({ action: 'award', id: row.id }, row.id, 'Certificate awarded.')} className="text-[11px] font-medium text-green-700">Award certificate</button>}</td></tr>)}</tbody></table></div>}
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-[16px] font-medium text-ink">Learners ({learners.length})</h2>
+            <p className="text-[12px] text-secondary mt-0.5">{counts.certified} certified · {counts.started} part-way through · {counts.idle} enrolled but not opened</p>
+          </div>
+        </div>
+
+        {learnerLookupError && (
+          <div className="mb-3 flex items-start gap-2 border border-amber-300 bg-amber-50 px-4 py-3 text-[12px] leading-5 text-amber-800">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            <span>Names could not be read for this list, so learners below are shown without one. This is a database error, not missing data: {learnerLookupError}</span>
+          </div>
+        )}
+
+        {learners.length === 0 ? <div className="dashboard-card text-center py-12 text-muted"><GraduationCap size={40} className="mx-auto mb-3 opacity-30" /><p>No enrolments yet.</p></div> : <>
+          <div className="mb-3 flex flex-wrap gap-2">
+            <label className="relative flex-1 min-w-[220px]">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input value={learnerQuery} onChange={event => setLearnerQuery(event.target.value)} placeholder="Search by name, email or course" aria-label="Search learners" className="input-field w-full pl-9 text-[13px]" />
+            </label>
+            <select value={learnerCourse} onChange={event => setLearnerCourse(event.target.value)} aria-label="Filter by course" className="input-field text-[13px] w-auto">
+              <option value="">Every course</option>
+              {courses.map((course: any) => <option key={course.slug} value={course.slug}>{course.title} ({course.enrolments})</option>)}
+            </select>
+            <select value={learnerStatus} onChange={event => setLearnerStatus(event.target.value)} aria-label="Filter by status" className="input-field text-[13px] w-auto">
+              <option value="">Everyone</option>
+              <option value="idle">Not opened yet</option>
+              <option value="progress">Part-way through</option>
+              <option value="certified">Certified</option>
+            </select>
+            <select value={learnerSort} onChange={event => setLearnerSort(event.target.value)} aria-label="Sort learners" className="input-field text-[13px] w-auto">
+              <option value="recent">Most recent first</option>
+              <option value="stuck">Least progress first</option>
+              <option value="name">Name A-Z</option>
+            </select>
+          </div>
+
+          {visibleLearners.length === 0 ? <div className="dashboard-card text-center py-10 text-[13px] text-muted">No learner matches that.</div> : <div className="dashboard-card overflow-x-auto">
+          <p className="mb-3 text-[11px] text-muted">Showing {visibleLearners.length} of {learners.length}.</p>
+          <table className="w-full text-left text-[13px]">
+            <thead><tr className="text-[11px] uppercase tracking-wide text-muted border-b border-border">
+              <th className="py-2 pr-4">Learner</th>
+              <th className="py-2 pr-4">Course</th>
+              <th className="py-2 pr-4 min-w-[210px]">How far they have got</th>
+              <th className="py-2 pr-4">Status</th>
+              <th className="py-2 pr-4">Enrolled</th>
+              <th className="py-2" />
+            </tr></thead>
+            <tbody>{visibleLearners.map(row => {
+              const days = daysSince(row.paid_at)
+              // Enrolled a fortnight ago and never opened it. Worth a nudge,
+              // and the only thing on this screen she can act on today.
+              const cold = !row.completed_at && !row.lessons_done && days >= 14
+              return <tr key={row.id} className="border-b border-border/60 align-top">
+                <td className="py-3 pr-4">
+                  <p className={`font-medium ${row.candidate_named ? 'text-ink' : 'text-muted italic'}`}>{row.candidate_name}</p>
+                  {row.candidate_email
+                    ? <a href={`mailto:${row.candidate_email}`} className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-secondary hover:text-ink"><Mail size={10} /> {row.candidate_email}</a>
+                    : <span className="mt-0.5 block text-[11px] text-muted">No email on file</span>}
+                </td>
+                <td className="py-3 pr-4">{row.course_title}{row.course_archived && <span className="ml-1 text-[10px] uppercase tracking-wide text-muted">archived</span>}</td>
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-[#ede8df]">
+                      <div className={`h-full rounded-full ${row.completed_at ? 'bg-green-600' : row.percent ? 'bg-[#222321]' : 'bg-transparent'}`} style={{ width: `${row.completed_at ? 100 : row.percent}%` }} />
+                    </div>
+                    <span className="whitespace-nowrap text-[12px] font-medium text-ink">{row.lessons_done} of {row.lessons_total} module{row.lessons_total === 1 ? '' : 's'}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-secondary">
+                    {row.completed_at
+                      ? `Assessment passed${row.quiz_score != null ? ` at ${row.quiz_score}%` : ''}`
+                      : row.next_lesson
+                        ? `Up next: ${row.next_lesson}`
+                        : row.quiz_score != null ? `Modules done, assessment at ${row.quiz_score}%` : 'All modules done, assessment not attempted'}
+                  </p>
+                </td>
+                <td className="py-3 pr-4">
+                  {row.completed_at
+                    ? <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-700"><Award size={11} /> Certified</span>
+                    : cold
+                      ? <span className="inline-block whitespace-nowrap text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-600">Not opened</span>
+                      : row.lessons_done
+                        ? <span className="inline-block whitespace-nowrap text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">In progress</span>
+                        : <span className="inline-block whitespace-nowrap text-xs font-medium px-2.5 py-1 rounded-full bg-[#ede8df] text-[#57544c]">Just enrolled</span>}
+                </td>
+                <td className="py-3 pr-4 whitespace-nowrap">
+                  <p className="text-[12px] text-ink">{shortDate(row.paid_at)}</p>
+                  <p className="text-[11px] text-muted">{days === 0 ? 'today' : `${days} day${days === 1 ? '' : 's'} ago`} · £{((row.amount_paid || 0) / 100).toFixed(2)}{row.amount_paid === 0 ? ' (comp)' : ''}</p>
+                </td>
+                <td className="py-3 text-right whitespace-nowrap">
+                  {row.completed_at
+                    ? <button type="button" onClick={() => { const reason = window.prompt('Reason shown to the therapist (optional):') ?? ''; act({ action: 'revoke', id: row.id, reason }, row.id, 'Certificate withdrawn.') }} className="text-[11px] font-medium text-red-500">Revoke</button>
+                    : <button type="button" onClick={() => act({ action: 'award', id: row.id }, row.id, 'Certificate awarded.')} className="text-[11px] font-medium text-green-700">Award certificate</button>}
+                </td>
+              </tr>
+            })}</tbody>
+          </table>
+        </div>}
+        </>}
       </>}
     </DashboardShell>
   )

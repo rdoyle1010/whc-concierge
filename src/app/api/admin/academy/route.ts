@@ -22,6 +22,7 @@ import {
   validateContent,
 } from '@/lib/academy-course-content'
 import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
+import { isRealLearnerName, learnerIdsToLookUp, learnerName, lessonProgress } from '@/lib/academy-learners'
 
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
 
@@ -120,19 +121,77 @@ export async function GET(req: NextRequest) {
     const catalogue = await getAcademyCatalog(true)
     const { data: enrolments, error: enrolError } = await admin.from('course_enrollments').select('*').order('created_at', { ascending: false })
     if (enrolError) throw enrolError
-    const candidateIds = Array.from(new Set((enrolments || []).map((enrolment: any) => enrolment.candidate_id)))
-    const { data: candidates } = candidateIds.length
-      ? await admin.from('candidate_profiles').select('id, full_name, user_id').in('id', candidateIds)
-      : { data: [] as any[] }
-    const candidateMap = new Map((candidates || []).map((candidate: any) => [candidate.id, candidate]))
+
+    // Who is actually taking each course.
+    //
+    // Every learner on this screen was called "Therapist". That was not a
+    // missing name, it was a lookup failing quietly and then being spelled as
+    // a person: the error from this read was discarded, and any row it could
+    // not resolve fell through to a word that reads like a job title, so a
+    // broken query and a genuinely nameless account looked identical.
+    //
+    // Two things produced it. candidate_id became nullable when erasure
+    // started detaching records instead of destroying them, and a single null
+    // in an .in() list makes PostgREST reject the whole query - one deleted
+    // account and nobody has a name. And the read was never chunked, so a
+    // long enough list would blow the URL and fail the same silent way.
+    // Both are handled below, and a failure is now reported rather than worn.
+    const candidateIds = learnerIdsToLookUp(enrolments || [])
+    const candidateMap = new Map<string, any>()
+    let learnerLookupError = ''
+    for (let from = 0; from < candidateIds.length; from += 150) {
+      const { data, error } = await admin
+        .from('candidate_profiles')
+        .select('id, full_name, user_id, work_email')
+        .in('id', candidateIds.slice(from, from + 150))
+      if (error) { learnerLookupError = error.message; break }
+      for (const candidate of data || []) candidateMap.set(candidate.id, candidate)
+    }
+
+    // candidate_profiles has no email column, so the address a learner signs
+    // in with lives in auth.users. There is no bulk get-by-id, and one call
+    // per learner would make this screen crawl, so the account list is swept
+    // once in pages of 200 and stopped as soon as every learner is matched.
+    const learnerEmails = new Map<string, string>()
+    const wantedUserIds = new Map<string, string>()
+    for (const candidate of candidateMap.values()) {
+      if (candidate.user_id) wantedUserIds.set(candidate.user_id, candidate.id)
+    }
+    if (wantedUserIds.size) {
+      try {
+        for (let page = 1; page <= 25 && learnerEmails.size < wantedUserIds.size; page++) {
+          const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+          if (error || !data?.users?.length) break
+          for (const account of data.users as any[]) {
+            const candidateId = wantedUserIds.get(account.id)
+            if (candidateId && account.email) learnerEmails.set(candidateId, account.email)
+          }
+          if (data.users.length < 200) break
+        }
+      } catch { /* an address is a convenience. Losing it must not lose the learner. */ }
+    }
+
     const courseMap = new Map(catalogue.map(course => [course.slug, course]))
-    const rows = (enrolments || []).map((enrolment: any) => ({
-      ...enrolment,
-      candidate_name: (candidateMap.get(enrolment.candidate_id) as any)?.full_name || 'Therapist',
-      course_title: courseMap.get(enrolment.course_slug)?.title || enrolment.course_slug,
-      lessons_total: courseMap.get(enrolment.course_slug)?.lessons.length ?? 0,
-      lessons_done: Object.keys(enrolment.progress || {}).length,
-    }))
+    const rows = (enrolments || []).map((enrolment: any) => {
+      const course = courseMap.get(enrolment.course_slug)
+      const candidate = enrolment.candidate_id ? candidateMap.get(enrolment.candidate_id) : null
+      // The first lesson they have not ticked off is the single most useful
+      // thing on the row: it says where somebody stopped, not only how much
+      // of the course is left.
+      const progress = lessonProgress(enrolment.progress, course?.lessons.length ?? 0)
+      return {
+        ...enrolment,
+        candidate_name: learnerName(enrolment.candidate_id, candidate),
+        candidate_named: isRealLearnerName(candidate),
+        candidate_email: (enrolment.candidate_id ? learnerEmails.get(enrolment.candidate_id) : '') || candidate?.work_email || '',
+        course_title: course?.title || enrolment.course_slug,
+        course_archived: course ? course.is_active === false : false,
+        lessons_total: progress.total,
+        lessons_done: progress.done,
+        percent: progress.percent,
+        next_lesson: progress.nextIndex >= 0 ? `${progress.nextIndex + 1}. ${course?.lessons[progress.nextIndex]?.title || ''}`.trim() : '',
+      }
+    })
     // Every course talent can see - the code catalogue merged with any
     // academy_courses overrides - with the same {revenue, enrolments,
     // completions} stat shape the agency dashboard reports.
@@ -162,7 +221,14 @@ export async function GET(req: NextRequest) {
       }
     })
     const { data: approvedCandidates } = await admin.from('candidate_profiles').select('id, full_name').eq('approval_status', 'approved').order('full_name')
-    return NextResponse.json({ enrollments: rows, courses, candidates: approvedCandidates || [] })
+    // Said out loud, on the screen, rather than left to be inferred from a
+    // table of identical names.
+    return NextResponse.json({
+      enrollments: rows,
+      courses,
+      candidates: approvedCandidates || [],
+      learner_lookup_error: learnerLookupError || null,
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -353,7 +419,11 @@ export async function POST(req: NextRequest) {
 
     const { data: enrolment } = await admin.from('course_enrollments').select('*').eq('id', String(body.id || '')).maybeSingle()
     if (!enrolment) return NextResponse.json({ error: 'Enrolment not found' }, { status: 404 })
-    const { data: candidate } = await admin.from('candidate_profiles').select('id, user_id, full_name').eq('id', enrolment.candidate_id).maybeSingle()
+    // candidate_id is nullable since erasure began detaching records, and
+    // .eq('id', null) is a 400 from PostgREST rather than an empty result.
+    const { data: candidate } = enrolment.candidate_id
+      ? await admin.from('candidate_profiles').select('id, user_id, full_name').eq('id', enrolment.candidate_id).maybeSingle()
+      : { data: null as any }
     const course = await getAcademyCourseBySlug(enrolment.course_slug, true)
 
     if (action === 'award') {
