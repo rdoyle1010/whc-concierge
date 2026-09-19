@@ -186,6 +186,13 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
   const items: NavItem[] = role === 'talent' && accountFocus !== 'consultant' && hasConsultancy
     ? [...baseItems.slice(0, 5), consultancyItem, ...baseItems.slice(5)]
     : baseItems
+  // An admin browser is marked once, so visitor counting can leave it out.
+  // Fire and forget: the marker is a nicety and must never hold up a screen.
+  useEffect(() => {
+    if (role !== 'admin') return
+    fetch('/api/admin/counting-me', { method: 'PUT' }).catch(() => { /* silent by design */ })
+  }, [role])
+
   const isPublicAgencyRoute = pathname === '/agency'
   const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
   const showPostHireActions = role === 'employer' && pathname === '/employer/applications'
