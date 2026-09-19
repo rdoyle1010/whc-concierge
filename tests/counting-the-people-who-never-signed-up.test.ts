@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { deviceFrom, looksLikeBot, visitorHash } from '../src/app/api/track-visit/route'
+import { countablePath } from '../src/lib/visit-counting'
 
 const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8')
 const body = (file: string) =>
@@ -84,13 +85,22 @@ test('a blocked or broken beacon is silence, not an error', () => {
 // Admin pages and API calls are not visitor interest, and a magic link's page
 // is not either.
 test('the count is of the public website', () => {
-  const route = body('src/app/api/track-visit/route.ts')
-  assert.match(route, /path\.startsWith\('\/admin'\)/)
-  assert.match(route, /path\.startsWith\('\/api\/'\)/)
+  // The rule, not where it is written. It moved into src/lib/visit-counting.ts
+  // so the beacon and the screen could agree on what a visit is, and this test
+  // asked for the old file's source rather than the behaviour.
+  assert.equal(countablePath('/jobs'), true)
+  assert.equal(countablePath('/blog/a-spa-director-writes'), true)
+  assert.equal(countablePath('/admin/visitors'), false, 'her own working screens are not traffic')
+  assert.equal(countablePath('/api/track-visit'), false)
+  assert.equal(countablePath('/auth/callback'), false, 'a magic link is not a page somebody chose to read')
+  assert.equal(countablePath('https://elsewhere.example/jobs'), false)
+
   // And of people. A crawler filter that exists but is never called is a
   // filter that counts Googlebot as a hotel director.
+  const route = body('src/app/api/track-visit/route.ts')
   const handler = route.slice(route.indexOf('export async function POST'))
   assert.match(handler, /if \(looksLikeBot\(agent\)\) return noContent\(\)/)
+  assert.match(handler, /countablePath\(path\)/)
 })
 
 // The table arrives with a migration she has to run. Until it does, the

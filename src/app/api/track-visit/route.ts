@@ -3,6 +3,7 @@ import { createHash } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { londonToday } from '@/lib/agency-time'
+import { countableHost, countablePath, isOwnHost, STAFF_COOKIE, staffCookieSkips } from '@/lib/visit-counting'
 
 // Counting the people who never sign up.
 //
@@ -21,18 +22,6 @@ const MAX_PATH = 300
 
 function noContent() {
   return new NextResponse(null, { status: 204 })
-}
-
-/** Paths nobody needs counted, and paths that would leak something. */
-function countable(path: string): boolean {
-  if (!path.startsWith('/')) return false
-  if (path.startsWith('/api/')) return false
-  if (path.startsWith('/admin')) return false
-  // A reset link or a magic link carries its token in the query string. The
-  // path alone is stored, never the query, but these pages are not visitor
-  // interest either.
-  if (path.startsWith('/auth/')) return false
-  return true
 }
 
 export function visitorHash(parts: { ip: string; agent: string; day: string; salt: string }): string {
@@ -60,7 +49,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null)
     const raw = typeof body?.path === 'string' ? body.path.split('?')[0].split('#')[0].trim() : ''
     const path = raw.slice(0, MAX_PATH)
-    if (!path || !countable(path)) return noContent()
+    if (!path || !countablePath(path)) return noContent()
+
+    // Deploy previews, branch builds and a laptop running next dev all hold
+    // the same service-role key and all wrote to the same table. A Netlify
+    // preview hex string turned up in "where they came from", which is how we
+    // know builds were being counted as people looking at the website.
+    if (!countableHost(req.headers.get('host'))) return noContent()
+
+    // The person who builds the platform is not a visitor. Anybody who opens
+    // an admin page is marked, and stays marked until they deliberately opt
+    // back in, because testing your own website every day was inflating every
+    // number on the screen that was meant to describe strangers.
+    if (staffCookieSkips(req.cookies.get(STAFF_COOKIE)?.value)) return noContent()
 
     const agent = req.headers.get('user-agent') || ''
     if (looksLikeBot(agent)) return noContent()
@@ -88,7 +89,9 @@ export async function POST(req: NextRequest) {
       try {
         const url = new URL(body.referrer)
         referrerHost = url.host.toLowerCase().slice(0, 120) || null
-        if (referrerHost && referrerHost.includes('talenthousecollective')) referrerHost = null
+        // Our own hosts are not a source. That covers the live domain, the
+        // old one that 301s here, and every preview build.
+        if (referrerHost && isOwnHost(referrerHost)) referrerHost = null
       } catch {
         referrerHost = null
       }
