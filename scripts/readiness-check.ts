@@ -862,6 +862,35 @@ check('the platform has one name', () => {
   assert.deepEqual(offenders, [])
 })
 
+// The framework serves every page and every API route on this platform, and
+// its image optimiser takes a URL from anybody who asks. Version 16.3.1 sat in
+// the range with an unauthenticated remote code execution hole in exactly that
+// optimiser, through a crafted AVIF file, and it sat there for a fortnight
+// because nothing on this platform ever looked.
+//
+// A floating range would be worse than a stale pin, not better: the framework
+// is pinned exactly here, as Supabase, React and Stripe are, so an upgrade is
+// a commit somebody read rather than whatever resolved on the deploy machine
+// that morning. This check holds the floor, and it has to be raised by hand
+// when the next advisory lands.
+check('the framework is pinned, and above the version with the image RCE', () => {
+  const pkg = JSON.parse(read('package.json'))
+  const next = pkg.dependencies?.next || ''
+  assert.match(next, /^\d+\.\d+\.\d+$/, `next must be pinned exactly, found "${next}"`)
+  const [major, minor, patch] = next.split('.').map(Number)
+  const atLeast = major > 16 || (major === 16 && (minor > 3 || (minor === 3 && patch >= 8)))
+  assert.ok(atLeast, `next ${next} is at or below the image-optimiser RCE range (16.0.0 - 16.3.5)`)
+
+  // sharp decodes the images that optimiser hands it. Below 0.35.4 it carries
+  // the libheif holes, and it is reached by any upload anybody can make.
+  const sharp = pkg.dependencies?.sharp || ''
+  const sharpParts = sharp.replace(/^[\^~]/, '').split('.').map(Number)
+  assert.ok(
+    sharpParts[0] > 0 || sharpParts[1] > 35 || (sharpParts[1] === 35 && sharpParts[2] >= 4),
+    `sharp ${sharp} carries the libheif vulnerabilities`,
+  )
+})
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }
