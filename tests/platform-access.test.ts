@@ -96,8 +96,15 @@ test('the closed panel speaks to whoever the middleware sent it', () => {
   for (const audience of ['talent', 'employer', 'both']) {
     assert.match(panel, new RegExp(`${audience}: \\{`), `${audience} needs its own wording`)
   }
-  // Staff bounced out of the admin area have no use for a waiting list.
-  assert.match(panel, /admin-sign-in/, 'someone sent here from /admin needs the staff route')
+  // Staff bounced out of the admin area have no use for a waiting list. The
+  // address is not the point and pinning it here is what let the two admin
+  // sign-in pages drift apart: this asserts the panel sends them to the same
+  // door the proxy does, whatever that door is called.
+  const proxy = read('src/proxy.ts')
+  const door = proxy.match(/loginUrl\.pathname = '(\/admin[^']*)'/)?.[1]
+  assert.ok(door, 'the proxy must name one admin door')
+  assert.ok(panel.includes(`href="${door}"`),
+    `someone sent here from /admin needs the staff route, and it must be ${door}`)
 })
 
 test('the panel sells rather than apologises', () => {

@@ -162,7 +162,7 @@ function Panel({ audience }: { audience?: Audience }) {
           {wasHeadingToAdmin && (
             <p className="mt-4 text-[12px] leading-5 text-muted">
               Looking for the staff area?{' '}
-              <Link href="/admin-sign-in" className="font-semibold text-ink underline">Sign in here</Link>.
+              <Link href="/admin/login" className="font-semibold text-ink underline">Sign in here</Link>.
             </p>
           )}
         </div>
