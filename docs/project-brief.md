@@ -17,6 +17,8 @@ professionals with luxury hotel and spa employers.
 
 Live at **talenthousecollective.co.uk**. Launched 11 September 2026.
 
+*Brief last checked against the platform: 6 October 2026.*
+
 It is not a job board, and treating it as one is the mistake the market has
 already corrected us on. See "What professionals actually told us" below.
 
@@ -24,15 +26,28 @@ already corrected us on. See "What professionals actually told us" below.
 
 | | |
 |---|---|
-| Talent on the register | 14 |
+| Talent on the register | 14 as at 17 Sep, not re-counted since |
 | Properties | 1 (Rebecca's own) |
-| Completed profiles | 0 |
-| Live roles | 0 |
-| Revenue | £0 |
+| Completed profiles | 0 as at 17 Sep |
+| Live roles | 0 as at 17 Sep |
+| Academy enrolments | 16 on one course as at 19 Sep, a mix of paid and comped |
+| Revenue | unconfirmed, and no longer safe to state as £0 |
 
-That is the whole picture and it is the point. This is a cold-start,
-two-sided marketplace three days after launch, and every recommendation has to
-be honest about that scale. Advice that assumes traffic, a register, or a
+**These figures are stale and the row above says so on purpose.** They were
+counted on 17 September and nothing has re-counted them since; the Academy row
+comes from a screenshot of the admin learners table on 19 September. The
+revenue line used to read £0 and that can no longer be asserted: enrolments
+exist, and the visitor log shows people returning from Stripe checkout. Nobody
+has read the actual figure out of the database.
+
+A brief that quotes a number without a date is the failure this file warns
+about in its own opening lines, so until somebody opens the admin dashboard
+and reads the real figures, treat every number here as a date-stamped memory
+rather than the current state.
+
+What has not changed is the shape of the problem. This is a cold-start,
+two-sided marketplace a few weeks after launch, and every recommendation has
+to be honest about that scale. Advice that assumes traffic, a register, or a
 budget is advice for a different business.
 
 ## The revenue lines
