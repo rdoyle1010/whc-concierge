@@ -35,10 +35,34 @@ test('the brief carries the feedback that changed the product', () => {
 
 // An assistant that thinks there are a thousand users gives advice for a
 // business that does not exist.
+// This used to assert the exact figures: 14 on the register, 0 completed
+// profiles, £0 revenue. That is a snapshot, not a guarantee, and it had the
+// failure mode built in: the numbers move, the test goes red, somebody edits
+// the test to match, and the brief is never the thing that gets checked.
+//
+// What the file actually promises, in its own opening lines, is that it does
+// not describe last month. So that is what is asserted here: the state table
+// exists, it still says plainly how small this is, and no figure in it is
+// quoted bare. Every row carries a date or says outright that it is
+// unconfirmed, because an undated number in a document written to be pasted
+// into another assistant is a number that will be believed as current.
 test('the brief is honest about the size of the thing', () => {
-  assert.match(brief, /\| Talent on the register \| 14 \|/)
-  assert.match(brief, /\| Completed profiles \| 0 \|/)
-  assert.match(brief, /\| Revenue \| £0 \|/)
+  const table = brief.match(/## Where it is now[\s\S]*?\n\n(\|[\s\S]*?)\n\n/)?.[1]
+  assert.ok(table, 'the brief must carry a state table')
+
+  const rows = table.split('\n').filter(line => line.startsWith('|') && !/^\|[\s|-]*\|$/.test(line))
+  assert.ok(rows.length >= 4, `a state table of ${rows.length} rows is not the picture`)
+
+  for (const row of rows) {
+    const value = row.split('|')[2] || ''
+    if (!/\d/.test(value)) continue
+    assert.match(value, /as at|unconfirmed|Rebecca/i,
+      `a bare figure outdates silently and will be believed: ${row.trim()}`)
+  }
+
+  // And the scale still has to be stated in words, not left to the table.
+  assert.match(brief, /cold-start/i)
+  assert.match(brief, /advice for a different business/i)
 })
 
 // The rules that get broken first when somebody else is writing the copy.
