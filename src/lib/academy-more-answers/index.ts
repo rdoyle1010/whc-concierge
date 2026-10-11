@@ -30,6 +30,10 @@ import imageSkincare from './image-skincare-masterclass'
 import medik8 from './medik8-masterclass'
 import murad from './murad-masterclass'
 import carolJoyLondon from './carol-joy-london-masterclass'
+import skinRocks from './skin-rocks-masterclass'
+import sothys from './sothys-masterclass'
+import evolveOrganicBeauty from './evolve-organic-beauty-masterclass'
+import myBlend from './myblend-masterclass'
 import cancerCare from './cancer-care-awareness'
 import menopause from './menopause-aware-spa'
 import pregnancy from './pregnancy-postnatal-spa'
@@ -66,6 +70,10 @@ export const MORE_ANSWERS: Record<string, number[]> = {
   'medik8-masterclass': medik8,
   'murad-masterclass': murad,
   'carol-joy-london-masterclass': carolJoyLondon,
+  'skin-rocks-masterclass': skinRocks,
+  'sothys-masterclass': sothys,
+  'evolve-organic-beauty-masterclass': evolveOrganicBeauty,
+  'myblend-masterclass': myBlend,
   'cancer-care-awareness': cancerCare,
   'menopause-aware-spa': menopause,
   'pregnancy-postnatal-spa': pregnancy,
