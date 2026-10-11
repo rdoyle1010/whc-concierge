@@ -12,6 +12,10 @@ import { content as c3 } from './biologique-recherche-masterclass.content'
 import { content as c4 } from './cancer-care-awareness.content'
 import { content as c5 } from './clarins-masterclass.content'
 import { content as c33 } from './carol-joy-london-masterclass.content'
+import { content as c34 } from './skin-rocks-masterclass.content'
+import { content as c35 } from './sothys-masterclass.content'
+import { content as c36 } from './evolve-organic-beauty-masterclass.content'
+import { content as c37 } from './myblend-masterclass.content'
 import { content as c6 } from './comfort-zone-masterclass.content'
 import { content as c7 } from './decleor-masterclass.content'
 import { content as c8 } from './dermalogica-masterclass.content'
@@ -47,6 +51,10 @@ export const MORE_CONTENT: Record<string, CourseContent> = {
   'biologique-recherche-masterclass': c3,
   'cancer-care-awareness': c4,
   'carol-joy-london-masterclass': c33,
+  'skin-rocks-masterclass': c34,
+  'sothys-masterclass': c35,
+  'evolve-organic-beauty-masterclass': c36,
+  'myblend-masterclass': c37,
   'clarins-masterclass': c5,
   'comfort-zone-masterclass': c6,
   'decleor-masterclass': c7,

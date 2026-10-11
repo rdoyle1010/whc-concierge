@@ -31,6 +31,7 @@ already corrected us on. See "What professionals actually told us" below.
 | Completed profiles | 0 as at 17 Sep |
 | Live roles | 0 as at 17 Sep |
 | Academy enrolments | 16 on one course as at 19 Sep, a mix of paid and comped |
+| Product-house masterclasses | 33 as at 11 Oct: Skin Rocks, Sothys, Evolve Organic Beauty and MyBlend added. Each brand masterclass is also a sample brand pack in SpaSuite, marked not yet reviewed by the brand |
 | Revenue | unconfirmed, and no longer safe to state as £0 |
 
 **These figures are stale and the row above says so on purpose.** They were
