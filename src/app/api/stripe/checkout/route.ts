@@ -3,19 +3,10 @@ import { getStripe } from '@/lib/stripe'
 import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE, AGENCY_PLUS_MONTHLY_PRICE } from '@/lib/constants'
 import { BUNDLE_PRICE, coursePrice, publicCoursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
-import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
 import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
 import { createServerClient } from '@supabase/ssr'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { cookies } from 'next/headers'
-
-function secureUrl(value: unknown) {
-  try {
-    const url = new URL(String(value || '').trim())
-    return url.protocol === 'https:' ? url.toString().slice(0, 500) : ''
-  } catch {
-    return ''
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,6 +33,13 @@ export async function POST(req: NextRequest) {
     // ── PUBLIC Academy purchase - no account needed. The guest pays £15 by
     // email; the webhook creates their learner account and emails access. ──
     if (type === 'course_public') {
+      // Anyone can start one, and each is a real Stripe session: the shared limit
+      // stops a script making thousands.
+      const limited = await enforceRateLimit(req, 'course-public-checkout', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
+      if (limited) {
+        return NextResponse.json({ error: 'Too many checkouts from this connection. Please try again shortly.' },
+          { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+      }
       const { courseSlug, email } = body
       const course = await getAcademyCourseBySlug(String(courseSlug || ''), false)
       if (!course) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
@@ -73,51 +71,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // Sponsored adverts are available to brands without a Talent House member
-    // account. Payment starts the subscription; the advert remains pending
-    // until Talent House approves the creative in Admin → Sponsored Ads.
+    // Sponsored adverts start at /api/stripe/sponsored-ad-checkout, which checks
+    // the terms, prices from the commercial settings and is rate limited. A copy
+    // of it here skipped all three, and no page used it.
     if (type === 'sponsored_ad') {
-      const placement = body.placement
-      const brandName = String(body.brandName || '').trim().slice(0, 120)
-      const contactEmail = String(body.contactEmail || '').trim().toLowerCase().slice(0, 254)
-      const tagline = String(body.tagline || '').trim().slice(0, 220)
-      const websiteUrl = secureUrl(body.websiteUrl)
-      const logoUrl = secureUrl(body.logoUrl)
-      if (!isAdPlacement(placement)) return NextResponse.json({ error: 'Choose an advert location.' }, { status: 400 })
-      if (!brandName || !tagline || !websiteUrl || !logoUrl || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-        return NextResponse.json({ error: 'Complete the brand, email, tagline and secure https:// website/logo links.' }, { status: 400 })
-      }
-      const config = AD_PLACEMENTS[placement]
-      const metadata = {
-        type: 'sponsored_ad',
-        placement,
-        brand_name: brandName,
-        contact_email: contactEmail,
-        tagline,
-        website_url: websiteUrl,
-        logo_url: logoUrl,
-        monthly_pence: String(config.monthlyPence),
-      }
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        customer_email: contactEmail,
-        line_items: [{
-          price_data: {
-            currency: 'gbp',
-            product_data: { name: `Talent House Sponsored Advert - ${config.label}`, description: config.description },
-            unit_amount: config.monthlyPence,
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        }],
-        mode: 'subscription',
-        allow_promotion_codes: true,
-        success_url: `${origin}/advertise?paid=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/advertise?cancelled=true`,
-        metadata,
-        subscription_data: { metadata },
-      })
-      return NextResponse.json({ url: session.url })
+      return NextResponse.json({ error: 'Start a sponsored advert from the Advertise page.' }, { status: 400 })
     }
 
     // Everything below requires a signed-in user.

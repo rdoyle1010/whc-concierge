@@ -372,8 +372,16 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-243 API routes, 177 pages, 137 migrations, 185 test files. 1,351 tests and
-50 production-readiness checks, all green.
+244 API routes, 177 pages, 137 migrations. 1,377 tests and 51
+production-readiness checks, all green as at 12 Oct.
+
+Legal entity: Wellness House Collective Limited, company 16720845, ICO
+registration ZC235847 (expires 31 August 2027). Every form a visitor can submit
+without an account (contact, Academy for Teams, sign-up, newsletter, brand
+enquiries, profile build, guest course checkout) sits behind the shared
+database rate limit and a hidden honeypot field; the four AI writing tools are
+limited per account. There is no CAPTCHA: add Cloudflare Turnstile only if spam
+gets through these.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
