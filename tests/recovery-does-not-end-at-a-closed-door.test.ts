@@ -28,10 +28,10 @@ test('a reset sends an administrator to the door that will open', () => {
 })
 
 test('an administrator can start a reset from the page they sign in on', () => {
-  // There was no way to reset from /admin/login at all, so somebody locked out
+  // There was no way to reset from the staff sign-in page at all, so somebody locked out
   // had to find /forgot-password unaided, and that page then returned them to
   // /login, which refuses them.
-  const adminLogin = read('src/app/admin/login/page.tsx')
+  const adminLogin = read('src/app/admin-sign-in/page.tsx')
   assert.match(adminLogin, /\/forgot-password\?role=admin/, 'the admin sign-in page must offer a reset')
 
   const forgot = read('src/app/forgot-password/page.tsx')
@@ -45,5 +45,8 @@ test('the login route still refuses admins, which is why all of the above matter
   // above would be asserting something with no reason behind it. Pin the
   // premise so the next person can see why the routing exists.
   const login = read('src/app/api/auth/login/route.ts')
-  assert.match(login, /Administrators sign in at talenthousecollective\.co\.uk\/admin, not here\./)
+  // And it must name a door she can open. Naming '/admin' sent her into the
+  // layout guard, which returned her to this very page: the instruction closed
+  // the loop it was written to open.
+  assert.match(login, /Administrators sign in at talenthousecollective\.co\.uk\/admin-sign-in, not here\./)
 })

@@ -44,10 +44,6 @@ export default function robots(): MetadataRoute.Robots {
         '/verify/',
         '/certificates/',
         '/coming-soon',
-        // The old admin address. It redirects to /admin/login, which the
-        // '/admin/' rule already covers, but a crawler should not be asked to
-        // follow a hop to find that out.
-        '/admin-sign-in',
         // The signed-in tools are deliberately NOT listed here. Disallow stops
         // the crawl, and a page it cannot fetch is a page whose noindex it
         // never reads - so anything already in the index stays there. Those

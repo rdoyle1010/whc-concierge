@@ -29,11 +29,20 @@ test('admin sign-in is never gated', () => {
   ]) {
     assert.doesNotMatch(read(link), /doorsClosedFor/, `${link} would lock the owner out`)
   }
-  assert.equal(
-    existsSync(new URL('../src/app/admin-sign-in/layout.tsx', import.meta.url)),
-    false,
-    'a layout here would gate admin sign-in the same way it gates /login',
-  )
+  // A layout beside the door is allowed, because the page is a client
+  // component and cannot carry its own metadata, and the staff sign-in screen
+  // has no business in a search result. What it may not do is anything else.
+  // Banning the file outright was the old rule; it was blunt enough to forbid
+  // a noindex tag, and blunt rules get worked around rather than kept.
+  const beside = new URL('../src/app/admin-sign-in/layout.tsx', import.meta.url)
+  if (existsSync(beside)) {
+    const layout = readFileSync(beside, 'utf8')
+    for (const shutsTheDoor of [/doorsClosedFor/, /redirect\(/, /getUser\(/, /auth\./]) {
+      assert.doesNotMatch(layout, shutsTheDoor,
+        'the layout beside admin sign-in may set metadata and nothing else')
+    }
+    assert.match(layout, /index: false/, 'if it exists at all, it is there to keep the door out of search')
+  }
 })
 
 // A property or professional already signed in keeps working while the doors

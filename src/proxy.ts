@@ -3,13 +3,22 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
-// '/admin/login' sits inside the '/admin' prefix, so it was protected by the
-// rule below and bounced a signed-out administrator to '/login?redirect=...'.
-// That page has a Talent / Hotel toggle and no admin option, so it refused the
-// account it had just been handed and told the person to "use the Admin sign
-// in" - the page they had been redirected away from. A closed loop, and the
-// reason an administrator concluded her account was broken.
-const AUTH_PAGES = ['/login', '/register', '/admin/login']
+// The staff door is '/admin-sign-in', and the hyphen is load-bearing: it does
+// not match the '/admin' prefix above, so it is not protected by the rule
+// below and never redirects a signed-out administrator away from itself.
+//
+// A sign-in page was once put at '/admin/login' instead, and listing it here
+// was supposed to make that safe. It did not, and could not. This exemption
+// covers the proxy only, while src/app/admin/layout.tsx guards the same paths
+// again on the server and knows nothing about this list. So the form was
+// never reached: the layout sent her to '/login', which refuses admin
+// accounts and tells her to go to '/admin', which arrives back at the layout.
+// A closed loop, and the reason the owner could not get into her own
+// platform. Two guards, one exemption, and the gap between them.
+//
+// It stays listed as belt and braces. The door being outside '/admin' is what
+// actually keeps it open.
+const AUTH_PAGES = ['/login', '/register', '/admin-sign-in']
 
 // Two-step verification on the API, not only on the pages.
 //
@@ -131,7 +140,7 @@ export async function proxy(request: NextRequest) {
     if (matchesRoutePrefix(pathname, '/talent')) loginUrl.searchParams.set('role', 'talent')
     // Administrators have their own door. Sending them to the member sign-in
     // page hands their account to a form that is built to reject it.
-    if (matchesRoutePrefix(pathname, '/admin')) loginUrl.pathname = '/admin/login'
+    if (matchesRoutePrefix(pathname, '/admin')) loginUrl.pathname = '/admin-sign-in'
     return NextResponse.redirect(loginUrl)
   }
 

@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
 export default async function HomeDraftPreview() {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/admin/login?redirect=/preview/home')
+  if (!user) redirect('/admin-sign-in?redirect=/preview/home')
 
   const admin = createAdminClient()
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
