@@ -372,7 +372,7 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-244 API routes, 177 pages, 137 migrations. 1,377 tests and 51
+244 API routes, 177 pages, 137 migrations, 189 test files. 1,377 tests and 51
 production-readiness checks, all green as at 12 Oct.
 
 Legal entity: Wellness House Collective Limited, company 16720845, ICO
