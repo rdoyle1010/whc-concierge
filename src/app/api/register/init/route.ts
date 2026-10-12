@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createRegistrationProof, type RegistrationRole } from '@/lib/registration'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
-import { getClientIp, rateLimit } from '@/lib/rate-limit'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
 import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
 import { claimCode, normaliseCode } from '@/lib/ambassador-codes'
@@ -15,7 +15,6 @@ import { sendTransactionalEmail } from '@/lib/send-email'
 
 export const runtime = 'nodejs'
 
-const limiter = rateLimit('register-init', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
 
 // Best-effort referral credit: look up the referrer by their code, record the
 // referral and mark the new candidate as referred. Never fails registration.
@@ -59,11 +58,20 @@ function friendlySignupError(message?: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const { success } = limiter.check(getClientIp(req))
-  if (!success) return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
+  // The shared limit: the in-memory one reset with every new serverless container.
+  const limited = await enforceRateLimit(req, 'register-init', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
+  if (limited) {
+    return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+  }
 
   try {
     const body = await req.json()
+    // The honeypot: hidden from people, so a filled one is a bot. It is refused
+    // plainly, since a bot that gets a fake success simply keeps going.
+    if (String(body?.company ?? '').trim()) {
+      return NextResponse.json({ error: 'We could not create your account. Please check your details and try again.' }, { status: 400 })
+    }
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
     const password = typeof body.password === 'string' ? body.password : ''
     const role: RegistrationRole | null = body.role === 'talent' || body.role === 'employer' ? body.role : null

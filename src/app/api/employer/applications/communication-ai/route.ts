@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { HOUSE_RULES } from '@/lib/house-style'
@@ -34,6 +35,12 @@ export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
+  // Each call is a paid AI request: a limit per account, not per address.
+  const limited = await enforceRateLimit(req as unknown as Request, 'communication-ai', { windowMs: 60 * 60 * 1000, maxRequests: 40, key: user.id })
+  if (limited) {
+    return NextResponse.json({ error: 'That is a lot of AI help in one hour. Give it a little while.' },
+      { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+  }
 
   try {
     const { applicationId, type } = await req.json()

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import Honeypot from '@/components/Honeypot'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -34,6 +35,7 @@ function Form() {
   const [form, setForm] = useState({ property: '', name: '', email: '', password: '' })
   const [agreed, setAgreed] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [honeypot, setHoneypot] = useState('')
   const [error, setError] = useState('')
 
   const update = (field: string, value: string) => {
@@ -54,6 +56,7 @@ function Form() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        company: honeypot,
         email: form.email,
         password: form.password,
         role: 'employer',
@@ -132,6 +135,7 @@ function Form() {
       )}
 
       <div className="mt-7 space-y-4">
+        <Honeypot value={honeypot} onChange={setHoneypot} />
         {[
           { key: 'property', label: 'Property or company name', type: 'text', autoComplete: 'organization' },
           { key: 'name', label: 'Your name', type: 'text', autoComplete: 'name' },

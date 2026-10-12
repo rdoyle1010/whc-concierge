@@ -69,13 +69,12 @@ export default function AcademyBrowser({ initialCourses }: { initialCourses: Cou
     setTeamBusy(true)
     try {
       const message = `Property: ${teamForm.property}\nTeam size: ${teamForm.teamSize || 'not given'}\n\n${teamForm.message || 'Interested in Academy for Teams.'}`
-      const { error: insertError } = await (await import('@/lib/supabase/client')).createClient().from('contact_queries').insert({
-        name: teamForm.name, email: teamForm.email,
-        subject: `Academy for Teams - ${teamForm.property}`,
-        type: 'academy_teams', message, status: 'open',
-      })
-      if (insertError) { setTeamError('Could not send the enquiry - please try again.'); return }
-      fetch('/api/contact-notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: teamForm.name, email: teamForm.email, subject: `Academy for Teams - ${teamForm.property}`, message }) }).catch(() => {})
+      const subject = `Academy for Teams - ${teamForm.property}`.slice(0, 200)
+      const response = await fetch('/api/contact-notify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: teamForm.name, email: teamForm.email, subject, message: message.slice(0, 2000), kind: 'academy_teams' }),
+      }).catch(() => null)
+      if (!response || !response.ok) { setTeamError('Could not send the enquiry - please try again.'); return }
       setTeamSent(true)
     } finally { setTeamBusy(false) }
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Honeypot from '@/components/Honeypot'
 // The defaults come from the values file, not from public-page-content.
 // That module builds the zod schemas these types are inferred from, so
 // importing a default through it pulled the whole of zod into this page:
@@ -37,6 +38,8 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  // Hidden from people; a bot that fills every field gives itself away.
+  const [honeypot, setHoneypot] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError(''); setFieldErrors({})
@@ -55,16 +58,16 @@ export default function ContactPage() {
       result.error.issues.forEach(i => { errs[i.path[0] as string] = i.message })
       setFieldErrors(errs); setLoading(false); return
     }
-    const { createClient } = await import('@/lib/supabase/client')
-    const { error: insertError } = await createClient().from('contact_queries').insert({
-      name: form.name, email: form.email,
-      subject: form.subject || null,
-      type: form.type || 'general',
-      message: form.message,
-      status: 'open',
-    })
-    if (insertError) { setError(insertError.message); setLoading(false); return }
-    fetch('/api/contact-notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }).catch(() => {})
+    // Saved and sent by the server, behind the shared rate limit; the browser
+    // no longer writes to contact_queries itself.
+    const response = await fetch('/api/contact-notify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...form, company: honeypot }),
+    }).catch(() => null)
+    if (!response || !response.ok) {
+      const json = await response?.json().catch(() => null)
+      setError(json?.error || 'Your message could not be sent. Please try again, or email us.'); setLoading(false); return
+    }
     setSent(true); setLoading(false)
   }
 
@@ -112,6 +115,7 @@ export default function ContactPage() {
                     })}
                   </div>
                   <form onSubmit={handleSubmit} className="space-y-5">
+                    <Honeypot value={honeypot} onChange={setHoneypot} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field label="Name" error={fieldErrors.name}><input type="text" required aria-label="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={`input-field ${fieldErrors.name ? 'border-red-300' : ''}`} /></Field>
                       <Field label="Email" error={fieldErrors.email} help="We'll only use this to reply."><input type="email" required aria-label="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={`input-field ${fieldErrors.email ? 'border-red-300' : ''}`} /></Field>

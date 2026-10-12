@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Honeypot from '@/components/Honeypot'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
@@ -16,6 +17,7 @@ export default function EmployerRegisterPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const [honeypot, setHoneypot] = useState('')
   const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState('')
   // Where they were going before they were asked to make an account. This
@@ -50,6 +52,7 @@ export default function EmployerRegisterPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        company: honeypot,
         email: form.email,
         password: form.password,
         role: 'employer',
@@ -162,7 +165,7 @@ export default function EmployerRegisterPage() {
             <section aria-labelledby="emp-section-account" className="mt-10">
               <p id="emp-section-account" className="border-t border-border pt-4 text-[10px] uppercase tracking-[0.18em] font-semibold text-muted">The account</p>
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-email">Email *</label><input id="emp-email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" /></div>
+                <div className="sm:col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-email">Email *</label><Honeypot value={honeypot} onChange={setHoneypot} /><input id="emp-email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" /></div>
                 <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-password">Password *</label><input id="emp-password" type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" autoComplete="new-password" /></div>
                 <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-confirm">Confirm *</label><input id="emp-confirm" type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" autoComplete="new-password" /></div>
                 <div className="sm:col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-work-email">Work Email (for verification)</label><input id="emp-work-email" type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /><p className="mt-1.5 text-[11px] text-muted">An email at your property&apos;s own domain speeds up approval.</p></div>

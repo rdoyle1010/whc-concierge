@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Honeypot from '@/components/Honeypot'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PanelBackdrop from '@/components/PanelBackdrop'
@@ -22,6 +23,7 @@ export default function TalentRegisterPage() {
   const supabase = createClient()
   const site = usePublicSiteContent()
   const [loading, setLoading] = useState(false)
+  const [honeypot, setHoneypot] = useState('')
   const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [error, setError] = useState('')
@@ -90,6 +92,7 @@ export default function TalentRegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          company: honeypot,
           email,
           password,
           role: 'talent',
@@ -212,6 +215,7 @@ export default function TalentRegisterPage() {
               </div>
               <div>
                 <label htmlFor="reg-email" className="block text-[12px] font-semibold text-[#57544c] uppercase tracking-[0.1em] mb-1.5">Email</label>
+                <Honeypot value={honeypot} onChange={setHoneypot} />
                 <input id="reg-email" type="email" value={email} onChange={(e) => { setError(''); setEmail(e.target.value) }} className="input-field" autoComplete="email" />
               </div>
               <div>
