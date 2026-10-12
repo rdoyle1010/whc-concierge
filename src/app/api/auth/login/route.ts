@@ -123,12 +123,16 @@ export async function POST(request: NextRequest) {
             ? 'Talent'
             : 'administrator'
         const where = accountRole === 'admin'
-          ? 'Administrators sign in at talenthousecollective.co.uk/admin, not here.'
+          // Not '/admin'. That path is guarded by src/app/admin/layout.tsx,
+          // which bounces a signed-out administrator straight back to this
+          // page - so this very sentence used to close the loop it was
+          // written to open.
+          ? 'Administrators sign in at talenthousecollective.co.uk/admin-sign-in, not here.'
           : `Please use the ${correctArea} side of this page.`
         return NextResponse.json({
           error: `This is ${accountRole === 'admin' ? 'an' : 'a'} ${correctArea} account. ${where}`,
           accountRole,
-          adminSignIn: accountRole === 'admin' ? '/admin' : undefined,
+          adminSignIn: accountRole === 'admin' ? '/admin-sign-in' : undefined,
         }, { status: 403 })
       }
     }

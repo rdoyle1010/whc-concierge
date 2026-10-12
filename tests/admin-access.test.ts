@@ -13,11 +13,30 @@ const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.ur
 // account and told her to "use the Admin sign in": the page she had just been
 // redirected away from. There was no way in at all, and it read from outside
 // like a broken account.
+// This test was green while the page was completely unreachable, and that is
+// worth more than the test was.
+//
+// It asserted the door appeared in the proxy's AUTH_PAGES list and called
+// that "reachable". It is not the same claim. src/app/admin/layout.tsx guards
+// every path beneath /admin on the server, independently of the proxy, and
+// knows nothing about AUTH_PAGES. When a sign-in page was put at
+// /admin/login, the layout turned signed-out visitors away before the form
+// rendered, and this file said it was fine for a fortnight.
+//
+// Reachability is now asserted the only way it can be: the door is outside
+// the guarded prefix, and no layout above it sends a signed-out visitor away.
 test('the admin sign-in page is reachable when signed out', () => {
   const proxy = read('src/proxy.ts')
-  assert.match(proxy, /'\/admin\/login'/, 'the admin sign-in page must be listed as an auth page')
-  const authPages = proxy.slice(proxy.indexOf('const AUTH_PAGES'), proxy.indexOf('\n', proxy.indexOf('const AUTH_PAGES')))
-  assert.ok(authPages.includes('/admin/login'), `AUTH_PAGES must contain the admin door: ${authPages}`)
+  const door = proxy.match(/matchesRoutePrefix\(pathname, '\/admin'\)\) loginUrl\.pathname = '(\/[a-z0-9/-]+)'/)?.[1]
+  assert.ok(door, 'the proxy must name one admin door')
+
+  // The hyphen is load-bearing: '/admin-sign-in' does not match the '/admin'
+  // prefix, '/admin/login' does, and that is the whole difference between a
+  // door and a wall.
+  assert.doesNotMatch(door, /^\/admin\//, `${door} is under the guard and cannot hold the form`)
+  assert.match(read('src/app/admin/layout.tsx'), new RegExp(`redirect\\('${door}'\\)`),
+    'the admin guard must send a signed-out visitor to the door')
+
   // An auth page cannot also be protected, whichever prefix it sits under -
   // otherwise the two rules disagree and the protected one wins.
   assert.match(
@@ -34,8 +53,8 @@ test('a signed-out visit to an admin page lands on the admin door', () => {
   const redirect = proxy.slice(proxy.indexOf('if (isProtected && !user)'))
   assert.match(
     redirect.slice(0, 900),
-    /matchesRoutePrefix\(pathname, '\/admin'\)\) loginUrl\.pathname = '\/admin\/login'/,
-    'admin paths must redirect to the admin sign-in page',
+    /matchesRoutePrefix\(pathname, '\/admin'\)\) loginUrl\.pathname = '\/admin-sign-in'/,
+    'admin paths must redirect to the admin sign-in page, which sits outside the guard',
   )
 })
 
