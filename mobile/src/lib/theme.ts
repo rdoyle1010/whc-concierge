@@ -1,24 +1,23 @@
 import { Platform } from 'react-native'
 
-// The website's warm charcoal tokens, so the app and the site read as one
-// product. Every value here is a colour the website already ships; nothing is
-// invented. 'line' and 'lineStrong' share a value because the site has a
-// single border tone (#e0dad2) rather than a light/strong pair.
+// The website's live tokens: ivory, stone and charcoal, and no metal
+// (the site's own commit 2e4ac48e). Every value here is one the website ships.
+// Severity follows the site's ink/edge/wash triples rather than gold.
 export const palette = {
-  ink: '#1C1B1A',
-  inkStrong: '#0F0E0D',
-  text: '#57534E',
-  muted: '#6E6A66',
-  quiet: '#8C8781',
-  line: '#E0DAD2',
-  lineStrong: '#E0DAD2',
+  ink: '#222321',
+  inkStrong: '#161814',
+  text: '#57544C',
+  muted: '#6E6A60',
+  quiet: '#7E7A70',
+  line: '#DCD4C8',
+  lineStrong: '#C7BDAE',
   paper: '#FFFFFF',
-  stone: '#F7F5F2',
-  stoneDeep: '#F3F0EB',
-  sage: '#57534E',
-  sageSoft: '#E9E4DD',
-  danger: '#A33A3A',
-  dangerSoft: '#FBF4F3',
+  stone: '#F6F3ED',
+  stoneDeep: '#EDE8DF',
+  sage: '#57544C',
+  sageSoft: '#E3DCD1',
+  danger: '#8A1C14',
+  dangerSoft: '#FBE9E7',
 }
 
 export const type = {

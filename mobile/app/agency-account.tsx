@@ -124,7 +124,7 @@ export default function AgencyAccountScreen(){
       </View>
       <View style={styles.switchRow}>
         <View style={{flex:1}}><Text style={styles.switchEyebrow}>URGENT COVER</Text><Text style={styles.switchTitle}>Same-day shift texts</Text><Text style={styles.help}>Allow Talent House to text you when a property urgently needs cover that fits your Agency settings.</Text></View>
-        <Switch value={sms} onValueChange={setSms} trackColor={{false:palette.lineStrong,true:'#8c8781'}} thumbColor={sms?palette.ink:palette.paper}/>
+        <Switch value={sms} onValueChange={setSms} trackColor={{false:palette.lineStrong,true:'#7e7a70'}} thumbColor={sms?palette.ink:palette.paper}/>
       </View>
       <Pressable disabled={!!busy} onPress={save} style={[styles.secondary,!!busy&&styles.disabled]}><Text style={styles.secondaryText}>{busy==='save'?'Saving details…':'Save Agency details'}</Text></Pressable>
     </View>
@@ -184,18 +184,18 @@ const styles=StyleSheet.create({
   eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.1,marginBottom:9,fontWeight:'700',fontFamily:type.sans},
   title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif,maxWidth:350},
   intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,fontFamily:type.sans},
-  errorCard:{backgroundColor:palette.dangerSoft,borderWidth:1,borderColor:'#E8D7D4',padding:14,borderRadius:radius.large,marginBottom:14},
+  errorCard:{backgroundColor:palette.dangerSoft,borderWidth:1,borderColor:'#D99089',padding:14,borderRadius:radius.large,marginBottom:14},
   errorTitle:{color:palette.danger,fontSize:14,fontWeight:'700',fontFamily:type.sans},
   error:{color:palette.danger,fontSize:10.5,lineHeight:17,marginTop:4,fontFamily:type.sans},
   statusCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,borderRadius:radius.large,marginBottom:8},
   statusCardActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
   statusTop:{flexDirection:'row',gap:12,alignItems:'flex-start'},
   statusEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
-  statusEyebrowActive:{color:'#e0dad2'},
+  statusEyebrowActive:{color:'#dcd4c8'},
   statusTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:5},
   statusTitleActive:{color:palette.paper},
   statusCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
-  statusCopyActive:{color:'#e0dad2'},
+  statusCopyActive:{color:'#dcd4c8'},
   statusBadge:{backgroundColor:palette.stoneDeep,paddingHorizontal:8,paddingVertical:5,borderRadius:999},
   statusBadgeActive:{backgroundColor:palette.paper},
   statusBadgeText:{color:palette.quiet,fontSize:7,fontWeight:'800',letterSpacing:.8,fontFamily:type.sans},
@@ -205,7 +205,7 @@ const styles=StyleSheet.create({
   miniValue:{color:palette.inkStrong,fontSize:16,fontWeight:'700',fontFamily:type.sans},
   miniValueDark:{color:palette.paper},
   miniLabel:{color:palette.quiet,fontSize:8.5,marginTop:3,fontFamily:type.sans},
-  miniLabelDark:{color:'#e0dad2'},
+  miniLabelDark:{color:'#dcd4c8'},
   sectionHeader:{marginTop:28,marginBottom:10},
   sectionEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.5,fontWeight:'700',fontFamily:type.sans},
   sectionTitle:{color:palette.inkStrong,fontSize:22,lineHeight:27,fontWeight:'400',fontFamily:type.serif,marginTop:4},
@@ -247,9 +247,9 @@ const styles=StyleSheet.create({
   planChoiceActive:{backgroundColor:palette.ink,borderColor:palette.ink},
   planChoiceText:{color:palette.muted,fontSize:8.5,fontWeight:'700',fontFamily:type.sans},
   planChoiceTextActive:{color:palette.paper},
-  warning:{backgroundColor:'#FBF7F0',borderWidth:1,borderColor:'#E9DFCC',padding:13,borderRadius:radius.medium,marginTop:10},
-  warningEyebrow:{color:'#7B6034',fontSize:7.5,letterSpacing:1.1,fontWeight:'800',fontFamily:type.sans},
-  warningText:{color:'#7B6034',fontSize:9.5,lineHeight:15,marginTop:4,fontFamily:type.sans},
+  warning:{backgroundColor:'#FDF1DF',borderWidth:1,borderColor:'#D9AB63',padding:13,borderRadius:radius.medium,marginTop:10},
+  warningEyebrow:{color:'#7A4A00',fontSize:7.5,letterSpacing:1.1,fontWeight:'800',fontFamily:type.sans},
+  warningText:{color:'#7A4A00',fontSize:9.5,lineHeight:15,marginTop:4,fontFamily:type.sans},
   primary:{backgroundColor:palette.ink,paddingVertical:14,alignItems:'center',marginTop:14,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   secureNote:{color:palette.quiet,fontSize:8.5,textAlign:'center',marginTop:7,fontFamily:type.sans},
