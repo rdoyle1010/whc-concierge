@@ -143,7 +143,7 @@ export default function AgencyUrgentScreen() {
     }
   }
 
-  if (loading) return <View style={styles.center}><ActivityIndicator color="#1c1b1a" /></View>
+  if (loading) return <View style={styles.center}><ActivityIndicator color="#222321" /></View>
 
   if (confirmation) return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Agency</Text></Pressable>
@@ -192,13 +192,13 @@ export default function AgencyUrgentScreen() {
 
     <Text style={styles.sectionTitle}>Maximum rate</Text>
     <Text style={styles.help}>Optional. Leave it empty to see everyone available, whatever they charge.</Text>
-    <View style={styles.rateRow}><Text style={styles.currency}>£</Text><TextInput value={maxRate} onChangeText={setMaxRate} keyboardType="number-pad" placeholder="No cap" placeholderTextColor="#8c8781" style={styles.input} /><Text style={styles.perHour}>/hr</Text></View>
+    <View style={styles.rateRow}><Text style={styles.currency}>£</Text><TextInput value={maxRate} onChangeText={setMaxRate} keyboardType="number-pad" placeholder="No cap" placeholderTextColor="#7e7a70" style={styles.input} /><Text style={styles.perHour}>/hr</Text></View>
 
     <Text style={styles.sectionTitle}>Treatment or role</Text>
-    <TextInput value={shiftType} onChangeText={setShiftType} placeholder="e.g. Massage, Facials, Spa host" placeholderTextColor="#8c8781" style={styles.input} />
+    <TextInput value={shiftType} onChangeText={setShiftType} placeholder="e.g. Massage, Facials, Spa host" placeholderTextColor="#7e7a70" style={styles.input} />
 
     <Text style={styles.sectionTitle}>Notes for the professional</Text>
-    <TextInput value={notes} onChangeText={setNotes} multiline placeholder="e.g. 10am start, ESPA treatments, parking on site" placeholderTextColor="#8c8781" style={[styles.input, styles.notes]} />
+    <TextInput value={notes} onChangeText={setNotes} multiline placeholder="e.g. 10am start, ESPA treatments, parking on site" placeholderTextColor="#7e7a70" style={[styles.input, styles.notes]} />
 
     {error ? <Text style={styles.error}>{error}</Text> : null}
     <Pressable disabled={busy || !preferred} onPress={send} style={[styles.primary, (busy || !preferred) && styles.disabled]}><Text style={styles.primaryText}>{busy ? 'Finding the nearest available...' : 'Send it out'}</Text></Pressable>
@@ -210,41 +210,41 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: '#fff' },
   page: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 110 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
-  back: { color: '#6e6a66', fontSize: 14, marginBottom: 26 },
-  eyebrow: { color: '#6e6a66', fontSize: 8, letterSpacing: 2, marginBottom: 8 },
-  title: { color: '#1c1b1a', fontSize: 29, lineHeight: 34, fontWeight: '500' },
-  intro: { color: '#6e6a66', fontSize: 13, lineHeight: 20, marginTop: 8 },
-  help: { color: '#6e6a66', fontSize: 10.5, lineHeight: 16, marginTop: 8 },
-  warning: { backgroundColor: '#f6f2f2', borderLeftWidth: 3, borderLeftColor: '#9a2f2f', padding: 13, marginTop: 16 },
-  warningTitle: { color: '#5c2a2a', fontSize: 12, fontWeight: '800' },
-  warningCopy: { color: '#7a5555', fontSize: 10.5, lineHeight: 16, marginTop: 4 },
-  sectionTitle: { color: '#1c1b1a', fontSize: 15, fontWeight: '700', marginTop: 26 },
+  back: { color: '#6e6a60', fontSize: 14, marginBottom: 26 },
+  eyebrow: { color: '#6e6a60', fontSize: 8, letterSpacing: 2, marginBottom: 8 },
+  title: { color: '#222321', fontSize: 29, lineHeight: 34, fontWeight: '500' },
+  intro: { color: '#6e6a60', fontSize: 13, lineHeight: 20, marginTop: 8 },
+  help: { color: '#6e6a60', fontSize: 10.5, lineHeight: 16, marginTop: 8 },
+  warning: { backgroundColor: '#fbe9e7', borderLeftWidth: 3, borderLeftColor: '#8a1c14', padding: 13, marginTop: 16 },
+  warningTitle: { color: '#8a1c14', fontSize: 12, fontWeight: '800' },
+  warningCopy: { color: '#8a1c14', fontSize: 10.5, lineHeight: 16, marginTop: 4 },
+  sectionTitle: { color: '#222321', fontSize: 15, fontWeight: '700', marginTop: 26 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 11 },
-  chip: { borderWidth: 1, borderColor: '#e0dad2', paddingHorizontal: 11, paddingVertical: 9, backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#1c1b1a', borderColor: '#1c1b1a' },
-  chipText: { color: '#6e6a66', fontSize: 10, fontWeight: '700' },
+  chip: { borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 11, paddingVertical: 9, backgroundColor: '#fff' },
+  chipActive: { backgroundColor: '#222321', borderColor: '#222321' },
+  chipText: { color: '#6e6a60', fontSize: 10, fontWeight: '700' },
   chipTextActive: { color: '#fff' },
   row: { flexDirection: 'row', gap: 10, marginTop: 11, alignItems: 'flex-start' },
-  label: { color: '#1c1b1a', fontSize: 9, fontWeight: '700', marginBottom: 5 },
-  select: { borderWidth: 1, borderColor: '#e0dad2', paddingHorizontal: 11, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' },
-  selectOpen: { borderColor: '#1c1b1a' },
-  selectText: { color: '#1c1b1a', fontSize: 13, fontWeight: '700' },
-  chevron: { color: '#6e6a66', fontSize: 8 },
-  timePanel: { borderWidth: 1, borderColor: '#e0dad2', backgroundColor: '#fff', flexDirection: 'row', flexWrap: 'wrap', gap: 4, padding: 6, marginTop: 4, maxHeight: 180, overflow: 'hidden' },
-  timeOption: { width: '23%', paddingVertical: 7, alignItems: 'center', backgroundColor: '#f3f0eb' },
-  timeOptionText: { color: '#1c1b1a', fontSize: 9, fontWeight: '600' },
+  label: { color: '#222321', fontSize: 9, fontWeight: '700', marginBottom: 5 },
+  select: { borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 11, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' },
+  selectOpen: { borderColor: '#222321' },
+  selectText: { color: '#222321', fontSize: 13, fontWeight: '700' },
+  chevron: { color: '#6e6a60', fontSize: 8 },
+  timePanel: { borderWidth: 1, borderColor: '#dcd4c8', backgroundColor: '#fff', flexDirection: 'row', flexWrap: 'wrap', gap: 4, padding: 6, marginTop: 4, maxHeight: 180, overflow: 'hidden' },
+  timeOption: { width: '23%', paddingVertical: 7, alignItems: 'center', backgroundColor: '#ede8df' },
+  timeOptionText: { color: '#222321', fontSize: 9, fontWeight: '600' },
   rateRow: { flexDirection: 'row', alignItems: 'center', marginTop: 11 },
-  currency: { color: '#1c1b1a', fontSize: 17, marginRight: 6 },
-  perHour: { color: '#6e6a66', fontSize: 11, marginLeft: 7 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#e0dad2', paddingHorizontal: 12, paddingVertical: 12, color: '#1c1b1a', fontSize: 13, backgroundColor: '#fff', marginTop: 11 },
+  currency: { color: '#222321', fontSize: 17, marginRight: 6 },
+  perHour: { color: '#6e6a60', fontSize: 11, marginLeft: 7 },
+  input: { flex: 1, borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 12, paddingVertical: 12, color: '#222321', fontSize: 13, backgroundColor: '#fff', marginTop: 11 },
   notes: { minHeight: 78, textAlignVertical: 'top' },
-  primary: { backgroundColor: '#1c1b1a', paddingVertical: 15, alignItems: 'center', marginTop: 22 },
+  primary: { backgroundColor: '#222321', paddingVertical: 15, alignItems: 'center', marginTop: 22 },
   primaryText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  secondary: { borderWidth: 1, borderColor: '#e0dad2', paddingVertical: 14, alignItems: 'center', marginTop: 11 },
-  secondaryText: { color: '#1c1b1a', fontSize: 11, fontWeight: '700' },
+  secondary: { borderWidth: 1, borderColor: '#dcd4c8', paddingVertical: 14, alignItems: 'center', marginTop: 11 },
+  secondaryText: { color: '#222321', fontSize: 11, fontWeight: '700' },
   disabled: { opacity: 0.45 },
-  confirmBox: { backgroundColor: '#f3f0eb', padding: 18, marginTop: 18 },
-  confirmCopy: { color: '#3a3835', fontSize: 12.5, lineHeight: 20 },
-  footnote: { color: '#8c8781', fontSize: 10, lineHeight: 16, marginTop: 12 },
-  error: { color: '#9b2c2c', fontSize: 11, lineHeight: 17, marginTop: 16 },
+  confirmBox: { backgroundColor: '#ede8df', padding: 18, marginTop: 18 },
+  confirmCopy: { color: '#3a3832', fontSize: 12.5, lineHeight: 20 },
+  footnote: { color: '#7e7a70', fontSize: 10, lineHeight: 16, marginTop: 12 },
+  error: { color: '#8a1c14', fontSize: 11, lineHeight: 17, marginTop: 16 },
 })
