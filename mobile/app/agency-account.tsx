@@ -124,7 +124,7 @@ export default function AgencyAccountScreen(){
       </View>
       <View style={styles.switchRow}>
         <View style={{flex:1}}><Text style={styles.switchEyebrow}>URGENT COVER</Text><Text style={styles.switchTitle}>Same-day shift texts</Text><Text style={styles.help}>Allow Talent House to text you when a property urgently needs cover that fits your Agency settings.</Text></View>
-        <Switch value={sms} onValueChange={setSms} trackColor={{false:palette.lineStrong,true:'#A8B9C3'}} thumbColor={sms?palette.ink:palette.paper}/>
+        <Switch value={sms} onValueChange={setSms} trackColor={{false:palette.lineStrong,true:'#8c8781'}} thumbColor={sms?palette.ink:palette.paper}/>
       </View>
       <Pressable disabled={!!busy} onPress={save} style={[styles.secondary,!!busy&&styles.disabled]}><Text style={styles.secondaryText}>{busy==='save'?'Saving details…':'Save Agency details'}</Text></Pressable>
     </View>
@@ -191,11 +191,11 @@ const styles=StyleSheet.create({
   statusCardActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
   statusTop:{flexDirection:'row',gap:12,alignItems:'flex-start'},
   statusEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
-  statusEyebrowActive:{color:'#CAD4D8'},
+  statusEyebrowActive:{color:'#e0dad2'},
   statusTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:5},
   statusTitleActive:{color:palette.paper},
   statusCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
-  statusCopyActive:{color:'#DCE4E7'},
+  statusCopyActive:{color:'#e0dad2'},
   statusBadge:{backgroundColor:palette.stoneDeep,paddingHorizontal:8,paddingVertical:5,borderRadius:999},
   statusBadgeActive:{backgroundColor:palette.paper},
   statusBadgeText:{color:palette.quiet,fontSize:7,fontWeight:'800',letterSpacing:.8,fontFamily:type.sans},
@@ -205,7 +205,7 @@ const styles=StyleSheet.create({
   miniValue:{color:palette.inkStrong,fontSize:16,fontWeight:'700',fontFamily:type.sans},
   miniValueDark:{color:palette.paper},
   miniLabel:{color:palette.quiet,fontSize:8.5,marginTop:3,fontFamily:type.sans},
-  miniLabelDark:{color:'#CBD5D9'},
+  miniLabelDark:{color:'#e0dad2'},
   sectionHeader:{marginTop:28,marginBottom:10},
   sectionEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.5,fontWeight:'700',fontFamily:type.sans},
   sectionTitle:{color:palette.inkStrong,fontSize:22,lineHeight:27,fontWeight:'400',fontFamily:type.serif,marginTop:4},

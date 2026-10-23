@@ -1,18 +1,22 @@
 import { Platform } from 'react-native'
 
+// The website's warm charcoal tokens, so the app and the site read as one
+// product. Every value here is a colour the website already ships; nothing is
+// invented. 'line' and 'lineStrong' share a value because the site has a
+// single border tone (#e0dad2) rather than a light/strong pair.
 export const palette = {
-  ink: '#0B2F4D',
-  inkStrong: '#10283B',
-  text: '#263746',
-  muted: '#65717A',
-  quiet: '#7F8A91',
-  line: '#DFE5E8',
-  lineStrong: '#CBD4D9',
+  ink: '#1C1B1A',
+  inkStrong: '#0F0E0D',
+  text: '#57534E',
+  muted: '#6E6A66',
+  quiet: '#8C8781',
+  line: '#E0DAD2',
+  lineStrong: '#E0DAD2',
   paper: '#FFFFFF',
-  stone: '#F7F9FA',
-  stoneDeep: '#F0F3F5',
-  sage: '#6F7F88',
-  sageSoft: '#F3F6F7',
+  stone: '#F7F5F2',
+  stoneDeep: '#F3F0EB',
+  sage: '#57534E',
+  sageSoft: '#E9E4DD',
   danger: '#A33A3A',
   dangerSoft: '#FBF4F3',
 }

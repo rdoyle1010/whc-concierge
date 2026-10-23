@@ -175,7 +175,7 @@ export default function ResidencySetupScreen(){
           <View style={styles.rateCol}><Field label="Weekly rate £"><TextInput value={weeklyRate} onChangeText={setWeeklyRate} keyboardType="numeric" placeholder="2000" placeholderTextColor={palette.quiet} style={styles.input}/></Field></View>
         </View>
         <Field label="Monthly rate £"><TextInput value={monthlyRate} onChangeText={setMonthlyRate} keyboardType="numeric" placeholder="7500" placeholderTextColor={palette.quiet} style={styles.input}/></Field>
-        <View style={styles.switchRow}><View style={{flex:1,paddingRight:12}}><Text style={styles.switchEyebrow}>OFFER FLEXIBILITY</Text><Text style={styles.switchTitle}>Rates negotiable</Text><Text style={styles.switchCopy}>Employers can still send structured offers and you can counter before anything is agreed.</Text></View><Switch value={negotiable} onValueChange={setNegotiable} trackColor={{false:palette.lineStrong,true:'#A8B9C3'}} thumbColor={negotiable?palette.ink:palette.paper}/></View>
+        <View style={styles.switchRow}><View style={{flex:1,paddingRight:12}}><Text style={styles.switchEyebrow}>OFFER FLEXIBILITY</Text><Text style={styles.switchTitle}>Rates negotiable</Text><Text style={styles.switchCopy}>Employers can still send structured offers and you can counter before anything is agreed.</Text></View><Switch value={negotiable} onValueChange={setNegotiable} trackColor={{false:palette.lineStrong,true:'#8c8781'}} thumbColor={negotiable?palette.ink:palette.paper}/></View>
       </View>
 
       <Pressable disabled={busy} onPress={save} style={[styles.primary,busy&&styles.disabled]}><Text style={styles.primaryText}>{busy?'Saving specialist profile…':listing?'Save Residency changes':'Create Residency listing'}</Text></Pressable>
@@ -217,17 +217,17 @@ const styles=StyleSheet.create({
   membershipCardActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
   membershipTop:{flexDirection:'row',gap:12,alignItems:'flex-start'},
   membershipEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
-  membershipEyebrowActive:{color:'#CBD5D9'},
+  membershipEyebrowActive:{color:'#e0dad2'},
   membershipTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:5},
   membershipTitleActive:{color:palette.paper},
   membershipCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
-  membershipCopyActive:{color:'#DCE4E7'},
+  membershipCopyActive:{color:'#e0dad2'},
   priceBadge:{alignItems:'flex-end'},
   priceBadgeActive:{},
   price:{color:palette.inkStrong,fontSize:19,fontWeight:'700',fontFamily:type.sans},
   priceActive:{color:palette.paper},
   pricePeriod:{color:palette.quiet,fontSize:8.5,fontFamily:type.sans},
-  pricePeriodActive:{color:'#CBD5D9'},
+  pricePeriodActive:{color:'#e0dad2'},
   membershipButton:{backgroundColor:palette.ink,paddingVertical:13,alignItems:'center',marginTop:15,borderRadius:radius.medium},
   membershipButtonText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   refreshButton:{paddingVertical:10,alignItems:'center',marginTop:3},

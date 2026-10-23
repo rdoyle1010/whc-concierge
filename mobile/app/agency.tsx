@@ -295,9 +295,9 @@ const styles = StyleSheet.create({
   error:{color:palette.danger,fontSize:11,lineHeight:17,marginBottom:16},
 
   findTalentCard:{backgroundColor:palette.inkStrong,padding:20,marginBottom:30,borderRadius:radius.large},
-  findTalentEyebrow:{color:'#C8D1D2',fontSize:8,letterSpacing:1.7,fontWeight:'700'},
+  findTalentEyebrow:{color:'#e0dad2',fontSize:8,letterSpacing:1.7,fontWeight:'700'},
   findTalentTitle:{color:palette.paper,fontFamily:type.serif,fontSize:24,lineHeight:29,fontWeight:'400',marginTop:8},
-  findTalentCopy:{color:'#D8DEDF',fontSize:11,lineHeight:18,marginTop:8},
+  findTalentCopy:{color:'#e0dad2',fontSize:11,lineHeight:18,marginTop:8},
   linkRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:17,paddingTop:14,borderTopWidth:1,borderTopColor:'rgba(255,255,255,.16)'},
   findTalentLink:{color:palette.paper,fontSize:11,fontWeight:'700'},
   findTalentArrow:{color:palette.paper,fontSize:16},
