@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   // tokens, and enforces two-step verification on both - this route was
   // cookie-only, which left the app's Applications tab unable to load.
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const pageParam = Number(req.nextUrl.searchParams.get('page'))
   const perPageParam = Number(req.nextUrl.searchParams.get('per_page'))

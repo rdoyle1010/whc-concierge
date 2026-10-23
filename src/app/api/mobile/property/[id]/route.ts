@@ -33,8 +33,8 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
         rating: Number(row.rating),
         comment: row.text || '',
         created_at: row.created_at,
-        source: row.booking_id ? 'Completed WHC Agency shift' : 'WHC placement',
-        reviewer_name: reviewer?.full_name || 'WHC professional',
+        source: row.booking_id ? 'Completed Talent House Agency shift' : 'Talent House placement',
+        reviewer_name: reviewer?.full_name || 'Talent House professional',
         reviewer_role: reviewer?.role_level || null,
       }
     })
@@ -42,7 +42,7 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const { id } = await params
   const admin = createAdminClient()
   const { data: property, error } = await admin.from('employer_profiles').select('*').eq('id', id).eq('approval_status', 'approved').maybeSingle()

@@ -18,7 +18,7 @@ export default function EmployerShortlistPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       setProfile(prof)
 
       const res = await fetch('/api/shortlist')
@@ -90,7 +90,7 @@ export default function EmployerShortlistPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center overflow-hidden shrink-0">
-                            {c.profile_image_url ? <img src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
+                            {c.profile_image_url ? <img loading="lazy" decoding="async" src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
                             : <span className="text-[14px] font-semibold text-muted">{c.full_name?.[0]}</span>}
                           </div>
                           <div>
@@ -121,7 +121,7 @@ export default function EmployerShortlistPage() {
                       {c.services_offered?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 ml-[52px]">
                           {c.services_offered.slice(0, 4).map((sk: string) => (
-                            <span key={sk} className="text-[10px] bg-[#f3f0eb] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
+                            <span key={sk} className="text-[10px] bg-[#ede8df] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
                           ))}
                         </div>
                       )}

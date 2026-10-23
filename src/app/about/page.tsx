@@ -4,15 +4,35 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Award, Shield, Users, Heart } from 'lucide-react'
 import FounderImage from '@/components/FounderImage'
+import { getPublicPageContent } from '@/lib/public-page-content-server'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+
+const LINKEDIN = 'https://www.linkedin.com/in/rebecca-doyle-whc/'
 
 export const metadata: Metadata = {
-  title: { absolute: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers' },
+  title: { absolute: 'About Talent House Collective | Spa & Wellness Careers' },
   description: 'Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/about' },
-  openGraph: { title: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' },
+  openGraph: {
+    ...OG_DEFAULTS, title: 'About Talent House Collective | Spa & Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.',
+  },
+  twitter: { card: 'summary_large_image', title: 'About Talent House Collective | Spa & Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' }
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  // The header wording, hers to change without a deploy. The rest of this
+  // page is the founder's story and the principles, which are prose rather
+  // than fields and are better edited here than through three boxes.
+  const cms = await getPublicPageContent('about')
+
+  // Untouched sections are filled from the defaults when the content is read,
+  // so this is the founder wording whether or not anybody has edited it.
+  // The founder section. An untouched block is filled from the defaults when
+  // the content is read, so this is the right wording whether or not anybody
+  // has edited it - and the empty blocks saved against About from before this
+  // section was editable no longer blank the page.
+  const founder = cms.blocks[0]
+
   const values = [
     [Award, 'Quality over quantity', 'We vet every profile and verify every property. No spam, no time-wasters, no padding the numbers.'],
     [Users, 'Industry expertise', 'Built by someone who has lived inside luxury wellness - not by generalists guessing at the sector.'],
@@ -26,9 +46,9 @@ export default function AboutPage() {
       <main id="main-content" className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="public-eyebrow mb-4">About</p>
-            <h1 className="public-title mb-5">Built for an industry that deserves better.</h1>
-            <p className="public-intro max-w-2xl mx-auto">Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.</p>
+            <p className="public-eyebrow mb-4">{cms.hero.eyebrow}</p>
+            <h1 className="public-title mb-5">{cms.hero.heading}</h1>
+            <p className="public-intro max-w-2xl mx-auto">{cms.hero.text}</p>
           </div>
         </section>
 
@@ -40,18 +60,30 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="py-16 md:py-20 px-6 bg-parchment border-b border-border">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 md:gap-14 items-center">
-            <FounderImage />
-            <div>
-              <p className="public-eyebrow mb-3">Founder</p>
-              <h2 className="text-[30px] md:text-[38px] font-semibold tracking-[-0.035em] text-ink mb-6">Founded by Rebecca Doyle</h2>
-              <p className="text-[15px] leading-8 text-secondary mb-5">Rebecca built her career inside the luxury spa and wellness sector - watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.</p>
-              <p className="text-[15px] leading-8 text-secondary mb-8">Talent House Collective is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Made for the people who make luxury wellness what it is.</p>
-              <a href="https://www.linkedin.com/in/rebecca-doyle-whc/" target="_blank" rel="noopener noreferrer" className="btn-primary inline-block">Connect on LinkedIn →</a>
+        {/* The founder section, editable at last.
+            The words and the portrait were both hardcoded - the picture as a
+            path to a file that has never existed in this repository, which is
+            why this has always shown a grey monogram and why there was no
+            upload slot anywhere that could fix it. It is the first block of the
+            About page now, so the picture appears in Pictures and the wording
+            in Public pages, like every other section on the site. */}
+        {founder.visible && (
+          <section className="py-16 md:py-20 px-6 bg-parchment border-b border-border">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 md:gap-14 items-center">
+              <FounderImage url={founder.image.url} alt={founder.image.alt} focalX={founder.image.focalX} focalY={founder.image.focalY} />
+              <div>
+                {founder.eyebrow && <p className="public-eyebrow mb-3">{founder.eyebrow}</p>}
+                {founder.heading && <h2 className="text-[30px] md:text-[38px] font-semibold tracking-[-0.035em] text-ink mb-6">{founder.heading}</h2>}
+                {/* Blank lines are paragraphs. One box is easier to write in
+                    than three, and prose typed as one wall reads as one. */}
+                {founder.text.split(/\n\s*\n/).map(para => para.trim()).filter(Boolean).map((para, index) => (
+                  <p key={index} className="text-[15px] leading-8 text-secondary mb-5">{para}</p>
+                ))}
+                <a href={LINKEDIN} target="_blank" rel="noopener noreferrer" className="btn-primary mt-3 inline-block">Connect on LinkedIn →</a>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section className="bg-surface py-16 md:py-20 px-6">
           <div className="max-w-5xl mx-auto">
@@ -59,7 +91,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {values.map(([Icon, title, copy]) => (
                 <div key={title} className="public-panel p-7">
-                  <div className="w-11 h-11 rounded-xl bg-[#f3f0eb] flex items-center justify-center mb-5"><Icon className="w-5 h-5 text-accent" /></div>
+                  <div className="w-11 h-11 rounded-xl bg-[#ede8df] flex items-center justify-center mb-5"><Icon className="w-5 h-5 text-accent" /></div>
                   <h3 className="text-[18px] font-semibold text-ink mb-2">{title}</h3>
                   <p className="text-[13px] text-secondary leading-7">{copy}</p>
                 </div>
@@ -68,14 +100,14 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="py-20 px-6 bg-[#1c1b1a] text-white">
+        <section className="py-20 px-6 bg-[#ede8df] text-ink">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-8">What we believe</p>
-            <div className="space-y-8 text-[22px] md:text-[28px] leading-[1.4] font-medium text-white/90">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-secondary font-semibold mb-8">What we believe</p>
+            <div className="space-y-8 text-[22px] md:text-[28px] leading-[1.4] font-medium text-body">
               <p>Recruitment should reward expertise, not advertising spend.</p>
-              <div className="w-12 h-px bg-[#57534e] mx-auto" />
+              <div className="w-12 h-px bg-[#57544c] mx-auto" />
               <p>Discretion is non-negotiable in luxury hospitality.</p>
-              <div className="w-12 h-px bg-[#57534e] mx-auto" />
+              <div className="w-12 h-px bg-[#57544c] mx-auto" />
               <p>If a platform doesn&apos;t understand the industry, it can&apos;t serve it.</p>
             </div>
           </div>
@@ -83,8 +115,8 @@ export default function AboutPage() {
 
         <section className="bg-parchment py-16 md:py-20 px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <p className="public-eyebrow mb-3">Join WHC</p>
-            <h2 className="text-[28px] md:text-[36px] font-semibold text-ink mb-8">Whether you&apos;re hiring or hired, WHC works for you.</h2>
+            <p className="public-eyebrow mb-3">Join Talent House</p>
+            <h2 className="text-[28px] md:text-[36px] font-semibold text-ink mb-8">Whether you&apos;re hiring or hired, Talent House works for you.</h2>
             <div className="flex flex-col sm:flex-row gap-3 justify-center"><Link href="/register/talent" className="btn-primary">Create a profile</Link><Link href="/register/employer" className="btn-secondary">Post a role</Link></div>
           </div>
         </section>

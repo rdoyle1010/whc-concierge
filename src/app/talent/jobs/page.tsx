@@ -1,5 +1,6 @@
 'use client'
 
+import { formatSalary } from '@/lib/money'
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
@@ -84,9 +85,10 @@ export default function TalentJobsPage() {
         const companyName = j.employer_profiles?.property_name || j.employer_profiles?.company_name
         let matchScore: number | null = null
         let matchLabel = 'Complete your profile'
-        let matchColour = '#57534e'
+        let matchColour = '#57544c'
         let matchBg = '#F3F4F6'
         let matchBreakdown: any = null
+        let matchEvidence: any = null
         let hardStop = false
         let hardStopReason: string | undefined
         let matchExplanation = ''
@@ -98,12 +100,13 @@ export default function TalentJobsPage() {
           matchColour = r.colour
           matchBg = r.bgColour
           matchBreakdown = r.breakdown
+          matchEvidence = r.evidence
           hardStop = r.hardStop
           hardStopReason = r.hardStopReason
           matchExplanation = r.matchExplanation
           distanceMiles = r.distanceMiles
         }
-        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg, matchBreakdown, hardStop, hardStopReason, matchExplanation, distanceMiles }
+        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg, matchBreakdown, matchEvidence, hardStop, hardStopReason, matchExplanation, distanceMiles }
       })
 
       setJobs(normalized)
@@ -194,7 +197,7 @@ export default function TalentJobsPage() {
         <div>
           <p className="dashboard-eyebrow">Jobs & matches</p>
           <h1 className="dashboard-title">Find your next role</h1>
-          <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#e0dad2] bg-white p-1 text-[12px] font-semibold"><span className="rounded-lg bg-[#1c1b1a] px-4 py-2 text-white">Browse list</span><a href="/roles/match" className="rounded-lg px-4 py-2 text-[#57534e] hover:text-[#1c1b1a]">Match deck</a></div>
+          <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#dcd4c8] bg-white p-1 text-[12px] font-semibold"><span className="rounded-lg bg-[#222321] px-4 py-2 text-white">Browse list</span><a href="/roles/match" className="rounded-lg px-4 py-2 text-[#57544c] hover:text-[#222321]">Match deck</a></div>
           <p className="dashboard-intro">Roles are ranked from your skills, experience, location and working preferences. Your match helps you decide, but you stay in control of whether to apply.</p>
         </div>
         <p className="text-[12px] text-muted whitespace-nowrap">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
@@ -234,13 +237,13 @@ export default function TalentJobsPage() {
 
               return (
                 <article key={job.id} className="card p-0 overflow-hidden">
-                  <div className="relative h-36 bg-[#f3f0eb] overflow-hidden">
+                  <div className="relative h-36 bg-[#ede8df] overflow-hidden">
                     {job.employer_profiles?.property_photos?.[0]
-                      ? <img src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" />
+                      ? <img loading="lazy" decoding="async" src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" />
                       : <div className="h-full w-full flex items-center justify-center"><Building2 size={30} className="text-muted/50" /></div>}
                     {job.employer_profiles?.logo_url && (
                       <div className="absolute bottom-3 left-5 h-12 w-12 overflow-hidden rounded-md border-2 border-white bg-white shadow-sm">
-                        <img src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" />
                       </div>
                     )}
                   </div>
@@ -263,7 +266,7 @@ export default function TalentJobsPage() {
                     <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
                       <span className="flex items-center gap-1"><MapPin size={11} />{job.location}{job.distanceMiles != null ? ` · ${job.distanceMiles.toFixed(1)} miles` : ''}</span>
                       <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
-                      {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
+                      {job.salary_min && job.salary_max && <span>{formatSalary(job.salary_min, job.salary_max, job.salary_currency)}</span>}
                     </div>
 
                     {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3 mb-4">{job.description}</p>}
@@ -296,7 +299,7 @@ export default function TalentJobsPage() {
 
                     {job.matchExplanation && <p className="text-[12px] text-secondary mb-3">{job.matchExplanation}</p>}
                     {job.matchBreakdown && job.matchScore != null && (
-                      <MatchBreakdown breakdown={job.matchBreakdown} score={job.matchScore} label={job.matchLabel} colour={job.matchColour} compact />
+                      <MatchBreakdown breakdown={job.matchBreakdown} evidence={job.matchEvidence} score={job.matchScore} label={job.matchLabel} colour={job.matchColour} compact />
                     )}
 
                     <div className="flex flex-wrap gap-2 mt-4">
@@ -313,7 +316,7 @@ export default function TalentJobsPage() {
                           {job.hardStop ? 'Requirement missing' : needsProfile ? 'Complete profile' : 'Not eligible'}
                         </button>
                       )}
-                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#f3f0eb] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave role' : 'Save role for later'}>
+                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#ede8df] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave role' : 'Save role for later'}>
                         <Bookmark size={14} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
                       </button>
                     </div>

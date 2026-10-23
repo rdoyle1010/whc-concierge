@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/academy'
-import { courseImage, lessonExtras } from '@/lib/academy-extras'
+import { coursePrice, PASS_MARK } from '@/lib/academy-pricing'
+import type { AcademyCourse } from '@/lib/academy-types-public'
 import { courseMeta } from '@/lib/academy-meta'
 import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisual'
-import { getCourseContent } from '@/lib/academy-content'
+import { loadCourseContent } from '@/lib/academy-content-lazy'
+import type { LessonExtras } from '@/lib/academy-extras'
 import type { CourseContent } from '@/lib/academy-types'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
@@ -17,14 +18,30 @@ import {
 
 type View = 'overview' | number | 'quiz'
 
-const MODULE_VISUALS = [
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=82&auto=format&fit=crop',
-]
+// The banner at the top of a module, and where its picture comes from.
+//
+// This was six stock photographs cycled by module index across all forty-six
+// courses, and nobody could change them from admin. Several were open-plan
+// offices, laptops and whiteboard meetings, which is a strange thing to put at
+// the top of a lesson about a facial. A brand masterclass showed a stranger at
+// a desk where the product should have been.
+//
+// The order now is: the module's own first uploaded picture, then the course
+// image an administrator set in Course settings, then no photograph at all.
+// The last case is deliberate. A plain charcoal band says nothing; a stock
+// photograph of the wrong industry says something untrue.
+type ModuleBanner = { url: string | null; title: string; caption: string }
+
+const GENERIC_BANNER = {
+  title: 'Think like a spa professional',
+  caption: 'Connect the principle to what a guest, therapist, manager or owner would actually experience.',
+}
+
+function moduleBanner(richLesson: { visuals?: any[] } | undefined, courseImage: string | undefined): ModuleBanner {
+  const own = (richLesson?.visuals || []).find((visual: any) => visual?.kind === 'image' && visual.url)
+  if (own) return { url: own.url, title: own.title || GENERIC_BANNER.title, caption: own.caption || own.alt || '' }
+  return { url: courseImage || null, ...GENERIC_BANNER }
+}
 
 function LearningFramework({ title }: { title: string }) {
   const steps = [
@@ -34,21 +51,21 @@ function LearningFramework({ title }: { title: string }) {
     ['Apply it', 'Use the scenario or management lab to translate the lesson into your own spa.'],
   ]
   return (
-    <div className="mb-6 rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-5">
+    <div className="mb-6 rounded-2xl border border-[#dcd4c8] bg-[#ede8df] p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1b1a]">WHC learning framework</p>
-          <p className="mt-1 text-[14px] font-semibold text-[#1c1b1a]">Do more than read {title.toLowerCase()}.</p>
-          <p className="mt-1 text-[12px] leading-5 text-[#57534e]">Work through the reason, the method, the judgement calls and the practical application.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#222321]">Talent House learning framework</p>
+          <p className="mt-1 text-[14px] font-semibold text-[#222321]">Do more than read {title.toLowerCase()}.</p>
+          <p className="mt-1 text-[12px] leading-5 text-[#57544c]">Work through the reason, the method, the judgement calls and the practical application.</p>
         </div>
-        <Target size={20} className="mt-1 shrink-0 text-[#1c1b1a]" />
+        <Target size={20} className="mt-1 shrink-0 text-[#222321]" />
       </div>
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {steps.map(([heading, copy], index) => (
-          <div key={heading} className="rounded-xl border border-[#e0dad2] bg-white p-3.5">
-            <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#1c1b1a] text-[10px] font-semibold text-white">{index + 1}</div>
-            <p className="text-[11px] font-semibold text-[#1c1b1a]">{heading}</p>
-            <p className="mt-1 text-[10px] leading-4 text-[#6e6a66]">{copy}</p>
+          <div key={heading} className="rounded-xl border border-[#dcd4c8] bg-white p-3.5">
+            <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#222321] text-[10px] font-semibold text-white">{index + 1}</div>
+            <p className="text-[11px] font-semibold text-[#222321]">{heading}</p>
+            <p className="mt-1 text-[10px] leading-4 text-[#6e6a60]">{copy}</p>
           </div>
         ))}
       </div>
@@ -64,12 +81,12 @@ function ManagedLessonContent({ content }: { content: string }) {
       {paragraphs.map((paragraph, index) => {
         const isLab = /lab|project|exercise|case|scenario/i.test(paragraph)
         return (
-          <section key={index} className={`rounded-xl border p-5 ${isLab ? 'border-[#57534e]/40 bg-[#f3f0eb]' : 'border-[#e0dad2] bg-white'}`}>
+          <section key={index} className={`rounded-xl border p-5 ${isLab ? 'border-[#57544c]/40 bg-[#ede8df]' : 'border-[#dcd4c8] bg-white'}`}>
             <div className="mb-2 flex items-center gap-2">
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${isLab ? 'bg-[#1c1b1a] text-white' : 'bg-[#1c1b1a] text-white'}`}>{index + 1}</span>
-              <h3 className="text-[15px] font-semibold text-[#1c1b1a]">{isLab ? 'Management lab' : headings[Math.min(index, headings.length - 1)]}</h3>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${isLab ? 'bg-[#222321] text-white' : 'bg-[#222321] text-white'}`}>{index + 1}</span>
+              <h3 className="text-[15px] font-semibold text-[#222321]">{isLab ? 'Management lab' : headings[Math.min(index, headings.length - 1)]}</h3>
             </div>
-            <p className="text-[13px] leading-7 text-[#57534e] whitespace-pre-line">{paragraph}</p>
+            <p className="text-[13px] leading-7 text-[#57544c] whitespace-pre-line">{paragraph}</p>
           </section>
         )
       })}
@@ -80,17 +97,40 @@ function ManagedLessonContent({ content }: { content: string }) {
 export default function CoursePlayerPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
-  const fallbackCourse = courseBySlug(slug)
-  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean; rich?: CourseContent | null }) | null>(fallbackCourse || null)
+  // No seed from the static catalogue.
+  //
+  // The comment below already worked this out for the lesson content and the
+  // seed was left behind: courseBySlug reaches into the same index, so reading
+  // one course still downloaded every lesson of all forty-eight. The course is
+  // fetched a few lines down, which is where it was always coming from.
+  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean; rich?: CourseContent | null }) | null>(null)
+  // The guest's view, the career benefit and the tips, for this course only.
+  // They used to be imported, which reached the module registering every course
+  // on the platform and its content.
+  const [extras, setExtras] = useState<(LessonExtras | null)[]>([])
   // Course content comes from code unless an admin has taken editorial control
   // of this course AND her version passes validation - in which case the
   // catalogue serves her content, including the rich layer below. A partial or
   // broken admin version never reaches here: the catalogue falls back to the
   // platform version, so this page can never render an empty course.
-  const rich = course?.rich || getCourseContent(slug)
+  // Fetched for this one course rather than imported. The static index pulls
+  // all forty-five courses into whatever bundles it, and this page is a client
+  // component: every lesson of every course was being downloaded to read one.
+  const [codeContent, setCodeContent] = useState<CourseContent | null>(null)
+  useEffect(() => {
+    let active = true
+    // An admin's own version is already in hand; there is nothing to fetch.
+    if (course?.rich) { setCodeContent(null); return }
+    loadCourseContent(slug).then(content => { if (active) setCodeContent(content) })
+    return () => { active = false }
+  }, [slug, course?.rich])
+  const rich = course?.rich || codeContent
 
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
+  // An administrator reads any course without owning it. Read-only: nothing
+  // she does here is written down.
+  const [previewing, setPreviewing] = useState(false)
   const [progress, setProgress] = useState<Record<string, boolean>>({})
   const [completedAt, setCompletedAt] = useState<string | null>(null)
   const [view, setView] = useState<View>('overview')
@@ -101,12 +141,12 @@ export default function CoursePlayerPage() {
   const [uploads, setUploads] = useState<{ id: string; title: string; description: string | null; file_name: string | null }[]>([])
 
   useEffect(() => {
-    if (!enrolled || !slug) return
+    if ((!enrolled && !previewing) || !slug) return
     fetch(`/api/academy/uploads?course=${encodeURIComponent(String(slug))}`)
       .then(res => res.ok ? res.json() : { resources: [] })
       .then(json => setUploads(json.resources || []))
       .catch(() => {})
-  }, [enrolled, slug])
+  }, [enrolled, previewing, slug])
 
   useEffect(() => {
     async function load() {
@@ -118,6 +158,7 @@ export default function CoursePlayerPage() {
         if (catalogueResponse.ok) {
           const catalogue = await catalogueResponse.json()
           if (catalogue.course) setCourse(catalogue.course)
+          if (Array.isArray(catalogue.extras)) setExtras(catalogue.extras)
         }
         if (res.ok) {
           const j = await res.json()
@@ -126,6 +167,8 @@ export default function CoursePlayerPage() {
             setEnrolled(true)
             setProgress(enr.progress || {})
             setCompletedAt(enr.completed_at || null)
+          } else if (j.is_admin) {
+            setPreviewing(true)
           }
         }
       } catch { /* treated as not enrolled */ }
@@ -167,7 +210,8 @@ export default function CoursePlayerPage() {
       const j = await res.json()
       if (!res.ok) { setError(j.error || 'Could not submit - please try again.'); return }
       setResult({ score: j.score, passed: j.passed, correct: j.correct, total: j.total })
-      if (j.passed) setCompletedAt(new Date().toISOString())
+      // A preview is graded but never completed: no certificate exists to show.
+      if (j.passed && !j.preview) setCompletedAt(new Date().toISOString())
     } catch {
       setError('Something went wrong - please try again.')
     } finally {
@@ -182,7 +226,7 @@ export default function CoursePlayerPage() {
 
   if (loading) return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
 
-  if (!enrolled) {
+  if (!enrolled && !previewing) {
     return (
       <DashboardShell role="talent">
         <div className="max-w-2xl dashboard-card text-center py-12">
@@ -211,11 +255,11 @@ export default function CoursePlayerPage() {
     <DashboardShell role="talent">
       <Link href="/talent/academy" className="text-[13px] text-muted hover:text-ink flex items-center gap-1 mb-4"><ArrowLeft size={14} /> Academy</Link>
 
-      <div className="relative rounded-2xl overflow-hidden mb-5 h-44 md:h-52">
-        <img src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="relative rounded-2xl overflow-hidden mb-5 h-44 md:h-52 bg-ink">
+        {course.image_url && <img decoding="async" src={course.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">WHC Academy · {course.category}</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">Talent House Academy · {course.category}</p>
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-white">{course.title}</h1>
         </div>
       </div>
@@ -223,8 +267,15 @@ export default function CoursePlayerPage() {
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
         <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">{courseMeta(String(slug)).level}</span>
         <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">{courseMeta(String(slug)).cpdHours} CPD hour{courseMeta(String(slug)).cpdHours === 1 ? '' : 's'}</span>
-        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f3f0eb] px-2.5 py-1 text-[10px] font-medium text-[#1c1b1a]">{skill}</span>)}
+        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#ede8df] px-2.5 py-1 text-[10px] font-medium text-[#222321]">{skill}</span>)}
       </div>
+      {previewing && (
+        <div className="mb-6 border border-[#dcd4c8] bg-[#ede8df] px-5 py-4">
+          <p className="text-[13px] font-semibold text-ink">Administrator preview</p>
+          <p className="mt-1 text-[12px] leading-6 text-secondary">You are reading this course exactly as a learner sees it, without owning it. Nothing here is recorded: no progress, no assessment attempt, no completion and no certificate. Sitting the assessment will mark your answers so you can check it, and change nothing.</p>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
           <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${pct}%` }} />
@@ -283,9 +334,9 @@ export default function CoursePlayerPage() {
                 <>
                   <p className="text-[14px] text-gray-700 leading-[1.8] mb-5">{course.tagline}. This programme is designed to be used as a working management course rather than a reading exercise.</p>
                   <div className="grid gap-3 md:grid-cols-3 mb-6">
-                    <div className="rounded-xl bg-surface p-4"><Target size={15} className="mb-2 text-[#1c1b1a]" /><p className="text-[11px] font-semibold text-ink">Understand the reason</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Each module connects the topic to guest experience, people, profit or operational risk.</p></div>
-                    <div className="rounded-xl bg-surface p-4"><Lightbulb size={15} className="mb-2 text-[#1c1b1a]" /><p className="text-[11px] font-semibold text-ink">Make the judgement</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Consider trade-offs, unintended consequences and the numbers behind the decision.</p></div>
-                    <div className="rounded-xl bg-surface p-4"><FileText size={15} className="mb-2 text-[#1c1b1a]" /><p className="text-[11px] font-semibold text-ink">Apply the learning</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Use the management labs and final assessment to turn theory into a plan you could use at work.</p></div>
+                    <div className="rounded-xl bg-surface p-4"><Target size={15} className="mb-2 text-[#222321]" /><p className="text-[11px] font-semibold text-ink">Understand the reason</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Each module connects the topic to guest experience, people, profit or operational risk.</p></div>
+                    <div className="rounded-xl bg-surface p-4"><Lightbulb size={15} className="mb-2 text-[#222321]" /><p className="text-[11px] font-semibold text-ink">Make the judgement</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Consider trade-offs, unintended consequences and the numbers behind the decision.</p></div>
+                    <div className="rounded-xl bg-surface p-4"><FileText size={15} className="mb-2 text-[#222321]" /><p className="text-[11px] font-semibold text-ink">Apply the learning</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Use the management labs and final assessment to turn theory into a plan you could use at work.</p></div>
                   </div>
                 </>
               )}
@@ -319,26 +370,31 @@ export default function CoursePlayerPage() {
             const i = view
             const lesson = course.lessons[i]
             const richLesson = rich?.lessons[i]
-            const extra = lessonExtras(slug, i)
+            const extra = extras[i] || null
             return (
               <div className="dashboard-card">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Module {i + 1} of {total}</p>
                 <h2 className="font-serif text-[22px] font-bold text-ink mb-4">{lesson.title}</h2>
 
-                <div className="relative mb-6 h-48 overflow-hidden rounded-2xl md:h-56">
-                  <img src={MODULE_VISUALS[i % MODULE_VISUALS.length]} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1c1b1a]/80 via-[#1c1b1a]/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e0dad2]">Think like a spa professional</p>
-                    <p className="mt-1 max-w-2xl text-[13px] leading-5 text-white/90">Connect the principle to what a guest, therapist, manager or owner would actually experience.</p>
-                  </div>
-                </div>
+                {(() => {
+                  const banner = moduleBanner(richLesson, (course as any).image_url)
+                  return (
+                    <div className="relative mb-6 h-48 overflow-hidden rounded-2xl bg-[#222321] md:h-56">
+                      {banner.url ? <img decoding="async" src={banner.url} alt="" className="absolute inset-0 h-full w-full object-cover" /> : null}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#222321]/80 via-[#222321]/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#dcd4c8]">{banner.title}</p>
+                        {banner.caption ? <p className="mt-1 max-w-2xl text-[13px] leading-5 text-white/90">{banner.caption}</p> : null}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <LearningFramework title={lesson.title} />
 
                 {richLesson?.whyThisMatters && (
-                  <div className="bg-[#1c1b1a] rounded-xl p-4 mb-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#e0dad2] font-semibold mb-1.5">Why this matters</p>
+                  <div className="bg-[#222321] rounded-xl p-4 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#dcd4c8] font-semibold mb-1.5">Why this matters</p>
                     <p className="text-[13.5px] text-white/90 leading-[1.75]">{richLesson.whyThisMatters}</p>
                   </div>
                 )}
@@ -357,7 +413,7 @@ export default function CoursePlayerPage() {
                 {richLesson && richLesson.sections.length > 0 ? (
                   <div className="space-y-5 mb-6">
                     {richLesson.sections.map((s, si) => (
-                      <section key={si} className="rounded-xl border border-[#e0dad2] bg-white p-5">
+                      <section key={si} className="rounded-xl border border-[#dcd4c8] bg-white p-5">
                         <h3 className="font-serif text-[16px] font-semibold text-ink mb-2">{s.heading}</h3>
                         <p className="text-[14px] text-gray-700 leading-[1.85] whitespace-pre-line">{s.body}</p>
                       </section>
@@ -367,19 +423,22 @@ export default function CoursePlayerPage() {
                   <ManagedLessonContent content={lesson.content} />
                 )}
 
-                {richLesson?.visuals && richLesson.visuals.length > 0 && (
-                  <div className="mb-6">{richLesson.visuals.map((visual, vi) => <LessonVisualBlock key={vi} visual={visual} />)}</div>
-                )}
-
+                {(() => {
+                  // The first picture is the banner above, so it is dropped
+                  // here rather than shown twice in one module.
+                  const bannerVisual = (richLesson?.visuals || []).find((visual: any) => visual?.kind === 'image' && visual.url)
+                  const rest = (richLesson?.visuals || []).filter(visual => visual !== bannerVisual)
+                  return rest.length > 0 ? <div className="mb-6">{rest.map((visual, vi) => <LessonVisualBlock key={vi} visual={visual} />)}</div> : null
+                })()}
                 {richLesson?.scenario && (
-                  <div className="rounded-xl border border-[#e0dad2] bg-[#f3f0eb] p-5 mb-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#1c1b1a] font-semibold mb-1.5">Scenario - think it through</p>
+                  <div className="rounded-xl border border-[#dcd4c8] bg-[#ede8df] p-5 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#222321] font-semibold mb-1.5">Scenario - think it through</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.scenario}</p>
                   </div>
                 )}
 
                 {richLesson?.activity && (
-                  <div className="rounded-xl border border-[#e0dad2] bg-[#f3f0eb] p-5 mb-4">
+                  <div className="rounded-xl border border-[#dcd4c8] bg-[#ede8df] p-5 mb-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-[#2e5b45] font-semibold mb-1.5">Practical activity - do this</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.activity}</p>
                   </div>
@@ -419,7 +478,7 @@ export default function CoursePlayerPage() {
 
                 {extra && (
                   <div className="space-y-3 mb-6">
-                    <div className="bg-[#f3f0eb] border border-accent/20 rounded-xl p-4">
+                    <div className="bg-[#ede8df] border border-accent/20 rounded-xl p-4">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent mb-1.5 inline-flex items-center gap-1.5"><Quote size={12} /> Through the guest&apos;s eyes</p>
                       <p className="text-[13px] text-gray-700 italic leading-[1.7]">{extra.guestView}</p>
                     </div>
@@ -439,9 +498,9 @@ export default function CoursePlayerPage() {
                 )}
 
                 {!richLesson && (
-                  <div className="mb-6 rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#1c1b1a]">Put this into practice</p>
-                    <p className="mt-2 text-[13px] leading-6 text-[#57534e]">Use your current or most recent spa as the example. What is happening now? What would you change? What could go wrong? Which number or guest outcome would tell you whether your decision worked? Write one action, one owner and one measure before moving on.</p>
+                  <div className="mb-6 rounded-2xl border border-[#dcd4c8] bg-[#ede8df] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#222321]">Put this into practice</p>
+                    <p className="mt-2 text-[13px] leading-6 text-[#57544c]">Use your current or most recent spa as the example. What is happening now? What would you change? What could go wrong? Which number or guest outcome would tell you whether your decision worked? Write one action, one owner and one measure before moving on.</p>
                   </div>
                 )}
 

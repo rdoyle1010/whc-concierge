@@ -3,29 +3,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 async function sendOfferResponseEmail(to: string, subject: string, bodyHtml: string) {
-  if (!RESEND_API_KEY || !to) return false
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html: bodyHtml }),
-    })
-    if (!response.ok) console.error('Offer response email failed:', response.status)
-    return response.ok
-  } catch (error: any) {
-    console.error('Offer response email failed:', error?.message)
-    return false
-  }
+  const result = await sendTransactionalEmail({ to, subject, html: bodyHtml, kind: 'offer' })
+  return result.ok
 }
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -38,7 +25,7 @@ export async function POST(req: NextRequest) {
     const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name').eq('user_id', user.id).maybeSingle()
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
     const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
-    if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     if (application.status !== 'offered') return NextResponse.json({ error: 'There is no active offer to respond to.' }, { status: 409 })
 
     const nextOfferStatus = action === 'accept' ? 'accepted' : 'declined'
@@ -51,7 +38,14 @@ export async function POST(req: NextRequest) {
     if (error || !offer) return NextResponse.json({ error: 'Could not update the offer.' }, { status: 409 })
 
     const nextApplicationStatus = action === 'accept' ? 'accepted' : 'rejected'
-    await admin.from('applications').update({ status: nextApplicationStatus, updated_at: new Date().toISOString() }).eq('id', application.id)
+    // The offer record moved a moment ago. If the application does not move
+    // with it, the professional has accepted a job the pipeline still shows as
+    // an open offer, and the property is waiting for an answer it already has.
+    const { error: applicationError } = await admin.from('applications')
+      .update({ status: nextApplicationStatus, updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (applicationError) {
+      return NextResponse.json({ error: 'Your answer was recorded against the offer but the application did not update. Please refresh, and tell us if it still looks wrong.' }, { status: 500 })
+    }
 
     const jobId = application.role_id || application.job_id
     const { data: job } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()
@@ -71,7 +65,7 @@ export async function POST(req: NextRequest) {
           await sendOfferResponseEmail(
             employerEmail,
             `Offer ${verb} - ${job.job_title}`,
-            `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1c1b1a"><h2 style="font-weight:600">Offer ${verb}</h2><p style="line-height:1.6"><strong>${(candidate.full_name || 'The candidate').replace(/</g,'&lt;')}</strong> has ${verb} your offer for <strong>${(job.job_title || 'the role').replace(/</g,'&lt;')}</strong>.${note ? `</p><div style="background:#f7f7f7;border:1px solid #e5e5e5;border-radius:12px;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${note.replace(/</g,'&lt;')}</div><p style="line-height:1.6">` : ' '}Sign in to take the next step.</p><p style="margin:28px 0"><a href="https://talenthousecollective.co.uk/employer/applications" style="background:#1c1b1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">Open applications</a></p><p style="color:#777;font-size:13px">Wellness House Collective</p></div>`,
+            `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#222321"><h2 style="font-weight:600">Offer ${verb}</h2><p style="line-height:1.6"><strong>${(candidate.full_name || 'The candidate').replace(/</g,'&lt;')}</strong> has ${verb} your offer for <strong>${(job.job_title || 'the role').replace(/</g,'&lt;')}</strong>.${note ? `</p><div style="background:#ede8df;border:1px solid #e5e5e5;border-radius:12px;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${note.replace(/</g,'&lt;')}</div><p style="line-height:1.6">` : ' '}Sign in to take the next step.</p><p style="margin:28px 0"><a href="https://talenthousecollective.co.uk/employer/applications" style="background:#222321;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">Open applications</a></p><p style="color:#777;font-size:13px">Talent House Collective</p></div>`,
           )
         }
       }

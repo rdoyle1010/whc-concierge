@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isValidShareCode, normaliseShareCode } from '@/lib/right-to-work'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -22,7 +23,7 @@ export async function GET() {
 
     const admin = createAdminClient()
     const { data: cand } = await admin.from('candidate_profiles')
-      .select('id, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, right_to_work_uk, right_to_work_ireland, right_to_work_status, right_to_work_document_url, right_to_work_expiry_date, right_to_work_verified_at, right_to_work_notes')
+      .select('id, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, right_to_work_uk, right_to_work_ireland, right_to_work_status, right_to_work_document_url, right_to_work_expiry_date, right_to_work_verified_at, right_to_work_notes, right_to_work_method, right_to_work_share_code, right_to_work_dob')
       .eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
     return NextResponse.json({ verification: cand })
@@ -71,8 +72,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Please confirm whether you have the right to work in the UK, Ireland, or both.' }, { status: 400 })
     }
 
+    // A share code is the professional's half of the check. Supplying it does
+    // not verify anything - an administrator still has to open the Home Office
+    // page and record what it said - so nothing here touches the verified
+    // status, and a resubmission puts the record back into review.
+    const method = ['share_code', 'passport', 'idsp'].includes(String(body.right_to_work_method))
+      ? String(body.right_to_work_method)
+      : 'share_code'
+    const shareCode = normaliseShareCode(String(body.right_to_work_share_code || ''))
+    const rightToWorkDob = body.right_to_work_dob ? String(body.right_to_work_dob).slice(0, 10) : null
+    if (method === 'share_code') {
+      if (!isValidShareCode(shareCode)) {
+        return NextResponse.json({ error: 'A share code is nine letters and numbers, from gov.uk/prove-right-to-work.' }, { status: 400 })
+      }
+      if (!rightToWorkDob || !/^\d{4}-\d{2}-\d{2}$/.test(rightToWorkDob) || Number.isNaN(Date.parse(rightToWorkDob)) || Date.parse(rightToWorkDob) >= Date.now()) {
+        return NextResponse.json({ error: 'Please give your date of birth - the Home Office needs it to show the result.' }, { status: 400 })
+      }
+    }
+
+    // The document is only required where a document is the method. A share
+    // code submission has nothing to upload, and demanding one here would
+    // reject a valid check that the form has already accepted.
     const rightToWorkUrl = body.right_to_work_document_url ? String(body.right_to_work_document_url) : cand.right_to_work_document_url
-    if (!rightToWorkUrl) return NextResponse.json({ error: 'Please upload evidence of your right to work.' }, { status: 400 })
+    if (method !== 'share_code' && !rightToWorkUrl) {
+      return NextResponse.json({ error: 'Please upload evidence of your right to work.' }, { status: 400 })
+    }
 
     const rightToWorkExpiry = body.right_to_work_expiry_date ? String(body.right_to_work_expiry_date) : null
     if (rightToWorkExpiry && !/^\d{4}-\d{2}-\d{2}$/.test(rightToWorkExpiry)) {
@@ -101,6 +125,14 @@ export async function POST(req: NextRequest) {
       right_to_work_ireland: rightToWorkIreland,
       right_to_work_status: 'pending',
       right_to_work_document_url: rightToWorkUrl,
+      right_to_work_method: method,
+      right_to_work_share_code: method === 'share_code' ? (shareCode || null) : null,
+      right_to_work_dob: method === 'share_code' ? rightToWorkDob : null,
+      // The status and verified date were already reset above: a resubmission
+      // returns the record to the queue rather than leaving a stale approval
+      // against a code nobody has looked at. The outcome has to go with them,
+      // or a new code inherits the last one's answer.
+      right_to_work_check_outcome: null,
       right_to_work_expiry_date: rightToWorkExpiry,
       right_to_work_verified_at: null,
       right_to_work_notes: null,

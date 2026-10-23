@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: account } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (account?.role !== 'employer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (account?.role !== 'employer') return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
-  const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
+  const { data: employer } = await admin.from('employer_profiles').select(`id, ${PREMIUM_COLUMNS}`).eq('user_id', user.id).maybeSingle()
   if (!employer) return NextResponse.json({ stats: {}, jobs: [], funnel: {}, topSkills: [] })
+  if (!isPremium(employer, 'employer_analytics')) {
+    return NextResponse.json(
+      { error: 'Analytics is a premium feature.', upgradeHref: '/employer/billing' },
+      { status: 402 },
+    )
+  }
 
   const { data: jobs, error: jobsError } = await admin.from('job_listings').select('*').eq('employer_id', employer.id).order('posted_date', { ascending: false })
   if (jobsError) return NextResponse.json({ error: 'Could not load job analytics.' }, { status: 500 })

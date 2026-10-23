@@ -57,6 +57,21 @@ export async function createNotification(
     requires_action: notificationRequiresAction(type, title, link),
   })
 
+  // A notification that did not save says so, here, once.
+  //
+  // This returns { error } and ninety-odd call sites ignore it - which is
+  // defensible at each one, because almost nothing should fail a hire or a
+  // payment because the bell icon did not light up. What is not defensible is
+  // that a failure left no trace anywhere: an offer notification that never
+  // arrived looked exactly like one nobody clicked.
+  //
+  // Logging it at the source covers every caller at once, and the callers that
+  // do want to react still can. The push and SMS below already do this; only
+  // the write itself was silent.
+  if (error) {
+    console.error('[Notification not saved]', { userId, type, title, reason: error.message })
+  }
+
   if (!error) {
     try {
       await sendMobilePush({ userId, title, message, link })

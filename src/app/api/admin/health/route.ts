@@ -10,7 +10,7 @@ async function requireAdmin() {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const now = new Date().toISOString()

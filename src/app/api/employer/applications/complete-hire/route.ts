@@ -5,32 +5,27 @@ import { createNotification } from '@/lib/notifications'
 import { sendRoleFilledEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
 import { trackEvent, recordSalary } from '@/lib/analytics'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 function escapeHtml(value: string) {
   return value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')
 }
 
 async function sendHireConfirmation(email: string, name: string, jobTitle: string, propertyName: string) {
-  if (!RESEND_API_KEY) return false
   const firstName = (name || 'there').split(' ')[0]
-  const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1b1a;"><div style="max-width:580px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#1c1b1a;padding:26px 34px;"><p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.8;">Congratulations</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:600;">Talent House Collective</h1></div><div style="padding:30px 34px;"><h2 style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">Congratulations, ${escapeHtml(firstName)}</h2><p style="line-height:1.7;color:#516371;">Your offer for <strong>${escapeHtml(jobTitle)}</strong> with <strong>${escapeHtml(propertyName)}</strong> has been accepted and the recruitment process on Talent House Collective is now complete.</p><p style="line-height:1.7;color:#516371;">Your employer will send any formal employment documents, contractual terms and onboarding information directly to you.</p><p style="line-height:1.7;color:#516371;">Your Talent House Collective account remains yours. You can access, update or request deletion of your personal information through Settings. Some recruitment records may be retained only where necessary for legitimate or legal purposes in line with our privacy notice.</p><p style="margin-top:26px;"><a href="https://talenthousecollective.co.uk/talent/settings" style="display:inline-block;background:#1c1b1a;color:#ffffff;text-decoration:none;padding:12px 18px;">Privacy & account settings</a></p><p style="margin-top:30px;font-size:12px;color:#6e6a66;">Wellness House Collective · Talent House Collective</p></div></div></body></html>`
-  const res = await fetch('https://api.resend.com/emails', {
-    method:'POST',
-    headers:{ Authorization:`Bearer ${RESEND_API_KEY}`, 'Content-Type':'application/json' },
-    body:JSON.stringify({ from:FROM_EMAIL, to:email, subject:`Congratulations - ${jobTitle} at ${propertyName}`, html }),
-  })
-  if (!res.ok) console.error('Hire confirmation email failed:', res.status, (await res.text().catch(()=>'' )).slice(0,300))
-  return res.ok
+  const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#222321;"><div style="max-width:580px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#222321;padding:26px 34px;"><p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;opacity:.8;">Congratulations</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:600;">Talent House Collective</h1></div><div style="padding:30px 34px;"><h2 style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">Congratulations, ${escapeHtml(firstName)}</h2><p style="line-height:1.7;color:#516371;">Your offer for <strong>${escapeHtml(jobTitle)}</strong> with <strong>${escapeHtml(propertyName)}</strong> has been accepted and the recruitment process on Talent House Collective is now complete.</p><p style="line-height:1.7;color:#516371;">Your employer will send any formal employment documents, contractual terms and onboarding information directly to you.</p><p style="line-height:1.7;color:#516371;">Your Talent House Collective account remains yours. You can access, update or request deletion of your personal information through Settings. Some recruitment records may be retained only where necessary for legitimate or legal purposes in line with our privacy notice.</p><p style="margin-top:26px;"><a href="https://talenthousecollective.co.uk/talent/settings" style="display:inline-block;background:#222321;color:#ffffff;text-decoration:none;padding:12px 18px;">Privacy & account settings</a></p><p style="margin-top:30px;font-size:12px;color:#6e6a60;">Talent House Collective · Talent House Collective</p></div></div></body></html>`
+  const result = await sendTransactionalEmail({ to: email, subject: `Congratulations - ${jobTitle} at ${propertyName}`, html, kind: 'offer' })
+  return result.ok
 }
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error:'Unauthorised' }, { status:401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status:401 })
 
   try {
+    const user = await getRequestUser(req)
+    if (!user) return NextResponse.json({ error:'Your session could not be verified. Please sign in again.' }, { status:401 })
+
     const { applicationId } = await req.json()
     if (!applicationId) return NextResponse.json({ error:'Application is required.' }, { status:400 })
 
@@ -56,7 +51,7 @@ export async function POST(req: NextRequest) {
       admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
       admin.from('application_offers').select('id,status,salary_amount,salary_period,start_date').eq('application_id', application.id).maybeSingle(),
     ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error:'Forbidden' }, { status:403 })
+    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status:403 })
     if (acceptedOffer?.status !== 'accepted') return NextResponse.json({ error:'The offer has not been accepted yet.' }, { status:409 })
 
     const now = new Date().toISOString()
@@ -105,7 +100,11 @@ export async function POST(req: NextRequest) {
     const otherRows = otherApplications || []
     const otherIds = otherRows.map(row => row.id)
     if (otherIds.length) {
-      await admin.from('applications').update({ status:'rejected', updated_at:now }).in('id', otherIds)
+      // Everyone else on a filled role. If this fails they are left in a live
+      // pipeline for a job that has gone, waiting on an answer nobody is
+      // coming back to give.
+      const { error: closeError } = await admin.from('applications').update({ status:'rejected', updated_at:now }).in('id', otherIds)
+      if (closeError) console.error('Could not close the other applications on a filled role:', closeError.message)
       const otherCandidateIds = Array.from(new Set(otherRows.map(row => row.candidate_id).filter(Boolean))) as string[]
       if (otherCandidateIds.length) {
         const { data: others } = await admin.from('candidate_profiles').select('id,user_id,full_name').in('id', otherCandidateIds)

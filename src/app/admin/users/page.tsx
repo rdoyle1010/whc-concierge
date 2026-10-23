@@ -21,12 +21,77 @@ export default function AdminUsersPage() {
   const [selectedType, setSelectedType] = useState<'candidate' | 'employer'>('candidate')
   const [rejectReason, setRejectReason] = useState('')
   const [showReject, setShowReject] = useState(false)
-  const [page, setPage] = useState(1)
+  // Talent and properties are two different jobs of work, so each column keeps
+  // its own place in the list. The page size is shared - it is a preference
+  // about the screen, not about either audience.
+  const [talentPage, setTalentPage] = useState(1)
+  const [hotelPage, setHotelPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
+  const resetPages = () => { setTalentPage(1); setHotelPage(1) }
   const [loadError, setLoadError] = useState('')
+  // What the platform actually sent this person, and whether it arrived.
+  const [emailLog, setEmailLog] = useState<{ rows: any[]; unavailable: boolean } | null>(null)
+  // "Is their email actually working?" - answered by sending one, not by
+  // deleting their account and making them sign up again to find out.
+  const [reachability, setReachability] = useState<{ busy: boolean; detail: string; ok: boolean | null }>({ busy: false, detail: '', ok: null })
+  // The handful of emails people actually ring up about. Interview
+  // invitations and offers are deliberately absent: those belong to one
+  // application at one moment, and resending an old one raises a real
+  // question about which offer is live.
+  const [resendTemplate, setResendTemplate] = useState('welcome')
 
   // The drawer stands down while the nested reject modal is open, so Escape
   // there closes only the modal and leaves the drawer behind it.
+  // Loaded when the drawer opens, because "did they get an email?" is the
+  // question being asked at exactly that moment.
+  useEffect(() => {
+    if (!selected) { setEmailLog(null); return }
+    let active = true
+    fetch('/api/admin/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'email_log',
+        email: selected.email || selected.work_email || selected.contact_email || '',
+        user_id: selected.user_id || null,
+      }),
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => { if (active) setEmailLog({ rows: json?.log || [], unavailable: Boolean(json?.unavailable) }) })
+      .catch(() => { if (active) setEmailLog({ rows: [], unavailable: false }) })
+    setReachability({ busy: false, detail: '', ok: null })
+    return () => { active = false }
+  }, [selected])
+
+  async function resend(template: string) {
+    if (!selected?.user_id) return
+    setReachability({ busy: true, detail: '', ok: null })
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resend', user_id: selected.user_id, template }),
+      })
+      const json = await res.json().catch(() => ({}))
+      setReachability({ busy: false, ok: Boolean(json?.success), detail: json?.detail || json?.error || 'No answer from the server.' })
+    } catch {
+      setReachability({ busy: false, ok: false, detail: 'Could not reach the server to send it.' })
+    }
+  }
+
+  async function checkReachable() {
+    if (!selected?.user_id) return
+    setReachability({ busy: true, detail: '', ok: null })
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reachability_check', user_id: selected.user_id }),
+      })
+      const json = await res.json().catch(() => ({}))
+      setReachability({ busy: false, ok: Boolean(json?.success), detail: json?.detail || json?.error || 'No answer from the server.' })
+    } catch {
+      setReachability({ busy: false, ok: false, detail: 'Could not reach the server to send it.' })
+    }
+  }
+
   const detailDialog = useDialog(() => setSelected(null), 'admin-user-detail-heading', { enabled: Boolean(selected) })
   const rejectDialog = useDialog(() => setShowReject(false), 'admin-user-reject-heading', { enabled: Boolean(showReject) })
 
@@ -35,13 +100,28 @@ export default function AdminUsersPage() {
     async function load() {
       const [c, e] = await Promise.all([
         supabase.from('candidate_profiles').select('*').order('created_at', { ascending: false }).limit(ADMIN_USER_LIMIT),
-        supabase.from('employer_profiles').select('*').order('created_at', { ascending: false }).limit(ADMIN_USER_LIMIT),
+        supabase.from('employer_profiles_private').select('*').order('created_at', { ascending: false }).limit(ADMIN_USER_LIMIT),
       ])
       if (!active) return
       if (c.error || e.error) setLoadError((c.error || e.error)?.message || 'Could not load users.')
       setCandidates(c.data || [])
       setEmployers(e.data || [])
       setLoading(false)
+
+      // A professional's address lives in auth.users, which the browser cannot
+      // read - so this list said "no email on profile" for everybody and it
+      // looked as though people had signed up without one. They had not.
+      const ids = (c.data || []).map((row: any) => row.user_id).filter(Boolean)
+      if (ids.length) {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'emails', user_ids: ids }),
+        }).catch(() => null)
+        const json = await res?.json().catch(() => null)
+        if (active && json?.emails) {
+          setCandidates(current => current.map((row: any) => ({ ...row, email: row.email || json.emails[row.user_id] || null })))
+        }
+      }
     }
     load()
     return () => { active = false }
@@ -53,11 +133,11 @@ export default function AdminUsersPage() {
     return filtered
   }
 
-  const combined = [
-    ...filterByStatus(candidates).map(item => ({ ...item, __type: 'candidate' as const })),
-    ...filterByStatus(employers).map(item => ({ ...item, __type: 'employer' as const })),
-  ].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-  const paged = combined.slice((page - 1) * perPage, page * perPage)
+  const byNewest = (a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  const talent = filterByStatus(candidates).sort(byNewest)
+  const hotels = filterByStatus(employers).sort(byNewest)
+  const pagedTalent = talent.slice((talentPage - 1) * perPage, talentPage * perPage)
+  const pagedHotels = hotels.slice((hotelPage - 1) * perPage, hotelPage * perPage)
 
   const approve = async (type: 'candidate' | 'employer', id: string) => {
     const res = await fetch('/api/admin/users', {
@@ -123,7 +203,7 @@ export default function AdminUsersPage() {
 
       <div className="flex space-x-1 mb-6">
         {(['pending', 'approved', 'rejected'] as const).map((t) => (
-          <button type="button" key={t} onClick={() => { setTab(t); setPage(1) }}
+          <button type="button" key={t} onClick={() => { setTab(t); resetPages() }}
             className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${tab === t ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>
             {t} {t === 'pending' && pendingCount > 0 && <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{pendingCount}</span>}
           </button>
@@ -132,49 +212,75 @@ export default function AdminUsersPage() {
 
       <div className="relative mb-6 max-w-md">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="input-field pl-10" />
+        <input
+          type="text" value={search} onChange={(e) => { setSearch(e.target.value); resetPages() }}
+          placeholder="Search by name, property or email"
+          aria-label="Search users by name, property or email"
+          className="input-field pl-10"
+        />
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" /></div>
       ) : (
-        <div className="space-y-2">
-          {paged.map((item) => item.__type === 'candidate' ? (
-            <div key={`candidate-${item.id}`} className="bg-white border border-border p-4 flex items-center justify-between hover:border-muted transition-colors cursor-pointer" onClick={() => { setSelected(item); setSelectedType('candidate') }}>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-surface flex items-center justify-center text-xs font-bold text-muted"><Users size={14} /></div>
-                <div>
-                  <p className="text-sm font-medium text-ink">{item.full_name} <span className="text-muted font-normal">- {item.role_level || 'Candidate'}</span></p>
-                  <p className="text-xs text-muted">{item.email || item.work_email || item.contact_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {item.cv_url && <span title="CV uploaded"><FileText size={14} className="text-muted" /></span>}
-                {item.work_email && <span className="text-xs text-muted">Verified email</span>}
-                <span className={`text-xs font-medium px-2 py-1 ${statusBadge(item.approval_status || 'pending')}`}>{item.approval_status || 'pending'}</span>
-              </div>
+        // Talent and properties side by side. Interleaved by date they were
+        // impossible to tell apart at a glance, and they are not the same
+        // decision: a property is a customer, a professional is the product.
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-6">
+          <section>
+            <div className="flex items-baseline gap-2 border-b border-border pb-2 mb-3">
+              <Users size={15} className="text-muted self-center" />
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink">Talent</h2>
+              <span className="text-[12px] text-muted">{talent.length}</span>
             </div>
-          ) : (
-            <div key={`employer-${item.id}`} className="bg-white border border-border p-4 flex items-center justify-between hover:border-muted transition-colors cursor-pointer" onClick={() => { setSelected(item); setSelectedType('employer') }}>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-surface flex items-center justify-center text-xs font-bold text-muted"><Building2 size={14} /></div>
-                <div>
-                  <p className="text-sm font-medium text-ink">{item.company_name} <span className="text-muted font-normal">- {item.company_type || 'Employer'}</span></p>
-                  <p className="text-xs text-muted">{item.contact_name} &middot; {item.email || item.contact_email || item.work_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
+            <div className="space-y-2">
+              {pagedTalent.map((item) => (
+                <div key={`candidate-${item.id}`} className="bg-white border border-border p-4 flex items-center justify-between gap-3 hover:border-muted transition-colors cursor-pointer" onClick={() => { setSelected(item); setSelectedType('candidate') }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{item.full_name} <span className="text-muted font-normal">- {item.role_level || 'Candidate'}</span></p>
+                    <p className="text-xs text-muted truncate">{item.email || item.work_email || item.contact_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString('en-GB')}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center space-x-3">
+                    {item.cv_url && <span title="CV uploaded"><FileText size={14} className="text-muted" /></span>}
+                    {item.work_email && <span className="hidden text-xs text-muted xl:inline">Verified email</span>}
+                    <span className={`text-xs font-medium px-2 py-1 ${statusBadge(item.approval_status || 'pending')}`}>{item.approval_status || 'pending'}</span>
+                  </div>
                 </div>
-              </div>
-              <span className={`text-xs font-medium px-2 py-1 ${statusBadge(item.approval_status || 'pending')}`}>{item.approval_status || 'pending'}</span>
+              ))}
+              {talent.length === 0 && <p className="text-center text-muted py-10 text-sm">No {tab} talent.</p>}
+              {talent.length > perPage && <Pagination page={talentPage} perPage={perPage} total={talent.length} onPageChange={setTalentPage} onPerPageChange={(n) => { setPerPage(n); resetPages() }} />}
             </div>
-          ))}
+          </section>
 
-          {combined.length === 0 && <p className="text-center text-muted py-12">No {tab} users found.</p>}
-          <Pagination page={page} perPage={perPage} total={combined.length} onPageChange={setPage} onPerPageChange={setPerPage} />
-          {combined.length >= ADMIN_USER_LIMIT && <p className="text-center text-[11px] text-muted pt-2">Showing the most recent records. Use search and status filters to narrow the list.</p>}
+          <section>
+            <div className="flex items-baseline gap-2 border-b border-border pb-2 mb-3">
+              <Building2 size={15} className="text-muted self-center" />
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink">Hotels &amp; employers</h2>
+              <span className="text-[12px] text-muted">{hotels.length}</span>
+            </div>
+            <div className="space-y-2">
+              {pagedHotels.map((item) => (
+                <div key={`employer-${item.id}`} className="bg-white border border-border p-4 flex items-center justify-between gap-3 hover:border-muted transition-colors cursor-pointer" onClick={() => { setSelected(item); setSelectedType('employer') }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{item.company_name} <span className="text-muted font-normal">- {item.company_type || 'Employer'}</span></p>
+                    <p className="text-xs text-muted truncate">{item.contact_name} &middot; {item.email || item.contact_email || item.work_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString('en-GB')}</p>
+                  </div>
+                  <span className={`shrink-0 text-xs font-medium px-2 py-1 ${statusBadge(item.approval_status || 'pending')}`}>{item.approval_status || 'pending'}</span>
+                </div>
+              ))}
+              {hotels.length === 0 && <p className="text-center text-muted py-10 text-sm">No {tab} hotels or employers.</p>}
+              {hotels.length > perPage && <Pagination page={hotelPage} perPage={perPage} total={hotels.length} onPageChange={setHotelPage} onPerPageChange={(n) => { setPerPage(n); resetPages() }} />}
+            </div>
+          </section>
+
+          {(talent.length >= ADMIN_USER_LIMIT || hotels.length >= ADMIN_USER_LIMIT) && (
+            <p className="lg:col-span-2 text-center text-[11px] text-muted">Showing the most recent records. Use search and the status tabs to narrow the list.</p>
+          )}
         </div>
       )}
 
       {selected && (
-        <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex justify-end" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-[#161814]/70 z-50 flex justify-end" onClick={() => setSelected(null)}>
           <div {...detailDialog.panelProps} className="bg-white w-full max-w-lg h-full overflow-y-auto animate-slide-in-right">
             <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 id="admin-user-detail-heading" className="text-lg font-bold text-ink">{selected.full_name || selected.company_name}</h3>
@@ -200,6 +306,46 @@ export default function AdminUsersPage() {
                 {selected.certificates_urls?.map((url: string, i: number) => <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-ink hover:underline"><FileText size={14} /><span>Certificate {i+1}</span><ExternalLink size={12} /></a>)}
                 {!selected.cv_url && !selected.insurance_document_url && !selected.certificates_urls?.length && <p className="text-muted">No documents uploaded</p>}
               </div></div>
+              <div>
+                <p className="text-xs text-muted uppercase tracking-wider mb-2">Emails we sent</p>
+                {selected.user_id && <div className="mb-4 rounded-xl border border-border bg-white p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={checkReachable} disabled={reachability.busy}
+                      className="btn-secondary text-[12px] disabled:opacity-50">
+                      {reachability.busy ? 'Sending…' : 'Check we can reach them'}
+                    </button>
+                    <span className="text-[11px] text-muted">or send again:</span>
+                    <select aria-label="Email to resend" value={resendTemplate} onChange={e => setResendTemplate(e.target.value)}
+                      className="input-field !py-1.5 !text-[12px] w-auto">
+                      <option value="welcome">Welcome</option>
+                      <option value="approval">Profile approved</option>
+                      <option value="sign_in_link">Sign-in link</option>
+                      <option value="marketing_confirmation">Marketing confirmation</option>
+                    </select>
+                    <button type="button" onClick={() => resend(resendTemplate)} disabled={reachability.busy}
+                      className="btn-primary text-[12px] disabled:opacity-50">Send</button>
+                  </div>
+                  {reachability.detail && <p className={`mt-2 text-[11.5px] leading-5 ${reachability.ok ? 'text-green-700' : 'text-red-600'}`}>{reachability.detail}</p>}
+                  <p className="mt-2 text-[10.5px] leading-4 text-muted">Interview invitations and offers are sent from the application, where the context is.</p>
+                </div>}
+                {!emailLog ? <p className="text-muted text-[12px]">Checking…</p>
+                  : emailLog.unavailable ? <p className="text-[12px] text-amber-700">The email log table has not been created yet - run the email_log migration and sends from then on will be recorded here.</p>
+                  : emailLog.rows.length === 0 ? <p className="text-[12px] text-muted">Nothing recorded. Anything sent before the email log existed will not appear here.</p>
+                  : (
+                    <div className="space-y-1.5">
+                      {emailLog.rows.map(entry => (
+                        <div key={entry.id} className="border border-border p-2.5">
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <p className="text-[12px] font-medium text-ink">{entry.subject || entry.kind}</p>
+                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${entry.status === 'sent' ? 'text-emerald-700' : 'text-red-600'}`}>{entry.status}</span>
+                          </div>
+                          <p className="text-[11px] text-muted">{new Date(entry.created_at).toLocaleString('en-GB')}</p>
+                          {entry.error && <p className="mt-1 text-[11px] leading-5 text-red-600">{entry.error}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
               {selected.approval_notes && <div className="bg-red-50 p-3"><p className="text-xs text-red-600">Rejection reason: {selected.approval_notes}</p></div>}
             </div>
             <div className="p-6 border-t border-border sticky bottom-0 bg-white space-y-3">
@@ -211,7 +357,7 @@ export default function AdminUsersPage() {
       )}
 
       {showReject && selected && (
-        <div className="fixed inset-0 bg-[#0f0e0d]/70 z-[60] flex items-center justify-center p-4" onClick={() => setShowReject(false)}>
+        <div className="fixed inset-0 bg-[#161814]/70 z-[60] flex items-center justify-center p-4" onClick={() => setShowReject(false)}>
           <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6">
             <h3 id="admin-user-reject-heading" className="text-lg font-bold text-ink mb-4">Rejection Reason</h3>
             <textarea rows={4} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="input-field mb-4" placeholder="Explain why this profile is being rejected..." />

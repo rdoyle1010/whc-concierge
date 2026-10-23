@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
+import { notifyAdmins } from '@/lib/notifications'
 
 // The therapist's certificate manager: structured submissions with a review
 // lifecycle. Files are uploaded through the existing document upload path;
-// this API records what each document IS, so WHC can review it and employers
+// this API records what each document IS, so Talent House can review it and employers
 // can trust it.
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data: candidate } = await admin.from('candidate_profiles').select('id,certificates_urls').eq('user_id', user.id).maybeSingle()
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -65,6 +66,17 @@ export async function POST(req: NextRequest) {
     }
 
     await trackEvent('certificate_submitted', { actorUserId: user.id, candidateId: candidate.id }, { title })
+
+    // A certificate sits at 'submitted' until a person looks at it, and
+    // nothing told anybody it had arrived. The professional sees "under
+    // review" and waits; the review queue is a page somebody has to remember
+    // to open. Verification is the whole promise of the register, so the
+    // submission has to reach an administrator rather than wait to be found.
+    await notifyAdmins(
+      'A certificate is waiting for review',
+      `${candidate.full_name || 'A professional'} submitted "${title}" for verification.`,
+      '/admin/certificates',
+    )
     return NextResponse.json({ success: true, certificate: row })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not save the certificate.' }, { status: 500 })
@@ -73,7 +85,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   try {
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: 'Certificate is required.' }, { status: 400 })
@@ -82,9 +94,14 @@ export async function DELETE(req: NextRequest) {
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
     const { data: row } = await admin.from('certificate_submissions').select('id,document_url').eq('id', id).eq('candidate_id', candidate.id).maybeSingle()
     if (!row) return NextResponse.json({ error: 'Certificate not found.' }, { status: 404 })
-    await admin.from('certificate_submissions').delete().eq('id', row.id)
+    // Somebody removing a certificate is usually correcting a mistake or
+    // taking down a document they did not mean to share. Telling them it is
+    // gone while it sits in the review queue is the worst possible answer.
+    const { error: deleteError } = await admin.from('certificate_submissions').delete().eq('id', row.id)
+    if (deleteError) return NextResponse.json({ error: 'The certificate could not be removed. Please try again.' }, { status: 500 })
     const urls = (candidate.certificates_urls || []).filter((url: string) => url !== row.document_url)
-    await admin.from('candidate_profiles').update({ certificates_urls: urls }).eq('id', candidate.id)
+    const { error: listError } = await admin.from('candidate_profiles').update({ certificates_urls: urls }).eq('id', candidate.id)
+    if (listError) return NextResponse.json({ error: 'The certificate was removed but your document list could not be updated. Please refresh.' }, { status: 500 })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not remove the certificate.' }, { status: 500 })

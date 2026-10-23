@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { courseBySlug, type AcademyCourse } from '@/lib/academy'
+import type { AcademyCourse } from '@/lib/academy-types-public'
 import { Printer, ArrowLeft } from 'lucide-react'
 
 // The certificate - designed to be printed or saved as PDF and to look
@@ -12,7 +12,9 @@ import { Printer, ArrowLeft } from 'lucide-react'
 export default function CertificatePage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
-  const [course, setCourse] = useState<AcademyCourse | null>(courseBySlug(slug) || null)
+  // Fetched below, not seeded from the static catalogue: that index carries
+  // every lesson of every course, which is a lot of download for a certificate.
+  const [course, setCourse] = useState<AcademyCourse | null>(null)
   const [loading, setLoading] = useState(true)
   const [enr, setEnr] = useState<any>(null)
   const [name, setName] = useState('')
@@ -53,30 +55,30 @@ export default function CertificatePage() {
   const date = new Date(enr.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div className="min-h-screen bg-[#f3f0eb] print:bg-white">
-      <div className="print:hidden border-b border-[#e0dad2] bg-white px-6 py-4 flex items-center justify-between max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#ede8df] print:bg-white">
+      <div className="print:hidden border-b border-[#dcd4c8] bg-white px-6 py-4 flex items-center justify-between max-w-4xl mx-auto">
         <Link href="/talent/academy" className="text-[13px] text-secondary hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Academy</Link>
         <button onClick={() => window.print()} className="btn-primary text-[13px] inline-flex items-center gap-2"><Printer size={14} /> Print / Save as PDF</button>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10 print:py-0">
-        <div className="bg-white border-[3px] border-double p-12 md:p-16 text-center" style={{ borderColor: '#57534e' }}>
-          <p className="font-serif text-[20px] font-semibold text-black leading-none">Wellness House</p>
-          <p className="uppercase text-[9px] font-medium tracking-[0.42em] mt-1 mb-10" style={{ color: '#57534e' }}>Collective</p>
+        <div className="bg-white border-[3px] border-double p-12 md:p-16 text-center" style={{ borderColor: '#57544c' }}>
+          <p className="font-serif text-[20px] font-semibold text-black leading-none">Talent House</p>
+          <p className="uppercase text-[9px] font-medium tracking-[0.42em] mt-1 mb-10" style={{ color: '#57544c' }}>Collective</p>
 
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted mb-6">Certificate of Completion</p>
 
           <p className="text-[13px] text-secondary mb-2">This certifies that</p>
-          <p className="font-serif text-[34px] font-bold text-black capitalize mb-2">{name || 'WHC Professional'}</p>
-          <p className="text-[13px] text-secondary mb-1">has successfully completed the WHC Academy course</p>
+          <p className="font-serif text-[34px] font-bold text-black capitalize mb-2">{name || 'Talent House Professional'}</p>
+          <p className="text-[13px] text-secondary mb-1">has successfully completed the Talent House Academy course</p>
           <p className="font-serif text-[22px] font-semibold text-black mb-8">{course.title}</p>
 
           <p className="text-[12px] text-secondary mb-10">including assessment passed at {enr.quiz_score}% &middot; {date}</p>
 
-          <div className="w-[80px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#57534e' }} />
+          <div className="w-[80px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#57544c' }} />
           <p className="text-[11px] text-muted">Verification code: <span className="font-mono text-gray-600">{enr.certificate_code}</span> · anyone can verify this certificate at <span className="text-gray-600">talenthousecollective.co.uk/certificates/verify</span></p>
           <p className="text-[10px] text-muted mt-1">Verify this certificate at talenthousecollective.co.uk/verify</p>
-          <p className="text-[10px] text-muted mt-0.5">Issued by Wellness House Collective</p>
+          <p className="text-[10px] text-muted mt-0.5">Issued by Talent House Collective</p>
         </div>
       </div>
     </div>

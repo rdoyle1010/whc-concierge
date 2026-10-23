@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   } else if (product === 'featured_talent_7' || product === 'featured_talent_30') {
     const cfg = product === 'featured_talent_7' ? FEATURED_TALENT.seven_days : FEATURED_TALENT.thirty_days
     amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'payment'; successPath = '/talent/membership'
-    description = `${cfg.days} days of premium visibility in employer searches and WHC featured placements.`
+    description = `${cfg.days} days of premium visibility in employer searches and Talent House featured placements.`
     metadata = { ...metadata, role: 'talent', featured_days: String(cfg.days) }
   } else if (product === 'employer_pro' || product === 'employer_group') {
     const tier = product === 'employer_pro' ? 'pro' : 'group'
@@ -38,6 +38,19 @@ export async function POST(req: NextRequest) {
     amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'subscription'; successPath = '/employer/membership'
     description = tier === 'pro' ? 'Annual employer membership with full talent search, enhanced matching, analytics and £99 Standard Jobs.' : 'Annual multi-property membership with up to 20 included job listings and advanced recruitment tools.'
     metadata = { ...metadata, role: 'employer', tier }
+  } else if (product === 'consultancy_featured') {
+    // Priced in admin Settings like every other product, so the directory's
+    // paid slot can be repriced without a deploy.
+    amount = 14900
+    try {
+      const { getCommercialSetting } = await import('@/lib/commercial-settings')
+      const setting = await getCommercialSetting('consultancy_featured')
+      if (setting?.is_active && setting.price_pence > 0) amount = setting.price_pence
+    } catch { /* fall back */ }
+    name = 'Talent House Collective - Featured Consultancy'
+    mode = 'payment'; successPath = '/talent/consultancy'
+    description = '30 days at the top of the Consultancy directory with the Featured mark and an enlarged listing.'
+    metadata = { ...metadata, role: 'talent', featured_days: '30' }
   } else if (product === 'residency_featured') {
     // Price editable in admin Settings via the commercial_settings row.
     amount = 9900

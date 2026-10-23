@@ -1,0 +1,123 @@
+'use client'
+
+import { useState } from 'react'
+import { Sparkles, RefreshCw, Check, X } from 'lucide-react'
+import type { WriteField } from '@/lib/ai-write'
+
+// The button next to the blank box.
+//
+// Two things it must never do: save anything by itself, and replace something
+// somebody wrote without showing it to them first. A draft appears, they read
+// it, and they decide. If they do not like it they say why in one line and
+// press again, which is how a person actually works with a draft.
+
+type Props = {
+  field: WriteField
+  /** What is in the box now. Empty means there is nothing to improve. */
+  value: string
+  onAccept: (text: string) => void
+  /** Which box this is, where one shape serves many. */
+  subject?: string
+  /** Extra detail the server cannot read from a saved record, for an unsaved role. */
+  context?: Record<string, unknown>
+  className?: string
+}
+
+export default function AiWrite({ field, value, onAccept, subject, context, className = '' }: Props) {
+  const [busy, setBusy] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [steer, setSteer] = useState('')
+  const [error, setError] = useState('')
+  // Said after the draft is taken.
+  //
+  // Pressing Use this cleared the panel and put the text in the field, which
+  // sits above the button. On a long form that field is often off the top of
+  // the screen, so from where the person is looking the panel simply vanished
+  // and nothing appeared. Reported as "I pressed Use this and nothing came
+  // up", which is exactly what it looks like. It also never said the text was
+  // unsaved, so the other way to read it was that it had saved itself, which
+  // this tool promises never to do.
+  const [took, setTook] = useState(false)
+
+  const hasText = String(value || '').trim().length > 40
+
+  async function run(mode: 'write' | 'improve') {
+    setBusy(true); setError(''); setTook(false)
+    try {
+      const res = await fetch('/api/ai/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, mode, draft: value, steer, subject, ...(context || {}) }),
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) {
+        setError(body?.error || `That did not work (${res.status}). Try again in a moment.`)
+        return
+      }
+      setDraft(body.text || '')
+    } catch {
+      setError('That did not work. Check your connection and try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className={className}>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => run('write')} disabled={busy}
+          className="inline-flex items-center gap-1.5 border border-[#222321] px-3 py-1.5 text-[12px] font-semibold text-[#222321] disabled:opacity-40">
+          <Sparkles size={13} /> {busy ? 'Writing...' : hasText ? 'Write a fresh one' : 'Write it for me'}
+        </button>
+        {hasText && (
+          <button type="button" onClick={() => run('improve')} disabled={busy}
+            className="inline-flex items-center gap-1.5 border border-[#dcd4c8] px-3 py-1.5 text-[12px] font-medium text-[#57544c] disabled:opacity-40">
+            <RefreshCw size={13} /> Make mine read better
+          </button>
+        )}
+        <span className="text-[11px] text-[#777777]">
+          From what is already on here. Nothing is saved until you say so.
+        </span>
+      </div>
+
+      {error && (
+        <p className="mt-2 border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</p>
+      )}
+
+      {took && !draft && (
+        <p className="mt-2 border border-[#28322b] bg-white px-3 py-2 text-[12px] text-[#28322b]">
+          Put in the box above. Nothing is saved until you press Save.
+        </p>
+      )}
+
+      {draft && (
+        <div className="mt-3 border border-[#222321] bg-white p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#777777]">A draft, for you to read</p>
+          <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-[#222321]">{draft}</p>
+
+          <label className="mt-3 block">
+            <span className="block text-[11px] text-[#777777]">Not quite? Say what to change and press again.</span>
+            <input value={steer} onChange={e => setSteer(e.target.value)}
+              placeholder="Shorter. Less about training, more about running the floor."
+              className="mt-1 w-full border border-[#dcd4c8] px-3 py-2 text-[13px]" />
+          </label>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => { onAccept(draft); setDraft(''); setSteer(''); setTook(true) }}
+              className="inline-flex items-center gap-1.5 bg-[#222321] px-3 py-1.5 text-[12px] font-semibold text-white">
+              <Check size={13} /> Use this
+            </button>
+            <button type="button" disabled={busy} onClick={() => run(hasText ? 'improve' : 'write')}
+              className="inline-flex items-center gap-1.5 border border-[#dcd4c8] px-3 py-1.5 text-[12px] font-medium text-[#57544c] disabled:opacity-40">
+              <RefreshCw size={13} /> {busy ? 'Writing...' : 'Try again'}
+            </button>
+            <button type="button" onClick={() => { setDraft(''); setSteer(''); setError('') }}
+              className="inline-flex items-center gap-1.5 px-2 py-1.5 text-[12px] text-[#777777]">
+              <X size={13} /> Leave mine as it is
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

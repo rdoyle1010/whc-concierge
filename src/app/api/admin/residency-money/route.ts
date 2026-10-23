@@ -39,7 +39,7 @@ async function notifyParties(admin: any, booking: any, title: string, candidateM
 }
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const BOOKING_LIMIT = 250
@@ -72,7 +72,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   if (!body.bookingId || !['mark_paid_out', 'open_dispute', 'resolve_dispute'].includes(body.action)) {
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       .update({ dispute_status: 'open', dispute_reason: reason })
       .eq('id', booking.id)
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
-    await notifyParties(admin, booking, 'Residency booking under review', 'Spa Platform is reviewing an issue with this Residency. Payout is on hold while it is reviewed.', 'Spa Platform is reviewing an issue with this Residency. Specialist payout is on hold while it is reviewed.')
+    await notifyParties(admin, booking, 'Residency booking under review', 'Talent House Collective is reviewing an issue with this Residency. Payout is on hold while it is reviewed.', 'Talent House Collective is reviewing an issue with this Residency. Specialist payout is on hold while it is reviewed.')
     return NextResponse.json({ success: true })
   }
 

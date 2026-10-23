@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizeArticleHtml } from '@/lib/article-html'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Admin blog management - the blog_posts table is RLS-locked to public reads
 // of published posts only (migration 023), so all writes come through this
@@ -29,7 +31,7 @@ function pickEditable(body: Record<string, unknown>) {
 
 export async function GET(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   // The admin UI sends per_page/page (per_page=200 by default).
   const perPageRaw = Number(req.nextUrl.searchParams.get('per_page') || 200)
@@ -50,9 +52,16 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ posts: data || [], total: count ?? 0, page, per_page: perPage })
 }
 
+// Article bodies arrive as HTML from the editor. They are sanitised here so
+// the stored value is already safe for anything that reads it - the public
+// page, the RSS feed, an export - rather than trusting each reader to do it.
+function withCleanBody<T extends Record<string, any>>(post: T): T {
+  return typeof post.content === 'string' ? { ...post, content: sanitizeArticleHtml(post.content) } : post
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const post = pickEditable(body)
@@ -61,20 +70,22 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient()
-  const { data, error } = await admin.from('blog_posts').insert(post).select().single()
+  const { data, error } = await admin.from('blog_posts').insert(withCleanBody(post)).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // A published or edited post reaches the Journal immediately.
+  revalidatePublic(PUBLIC_CACHE_TAGS.blog)
   return NextResponse.json({ success: true, post: data })
 }
 
 export async function PATCH(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const { id } = body
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  const updates = pickEditable(body)
+  const updates = withCleanBody(pickEditable(body))
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
   }
@@ -83,12 +94,13 @@ export async function PATCH(req: NextRequest) {
   const { data, error } = await admin.from('blog_posts').update(updates).eq('id', id).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePublic(PUBLIC_CACHE_TAGS.blog)
   return NextResponse.json({ success: true, post: data })
 }
 
 export async function DELETE(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const { id } = body
@@ -98,5 +110,6 @@ export async function DELETE(req: NextRequest) {
   const { error } = await admin.from('blog_posts').delete().eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePublic(PUBLIC_CACHE_TAGS.blog)
   return NextResponse.json({ success: true })
 }

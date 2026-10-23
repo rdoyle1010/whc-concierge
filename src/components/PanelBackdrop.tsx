@@ -6,7 +6,12 @@ import type { AdPlacementKey } from '@/lib/advertising'
 // The platform's large charcoal panels are the most valuable empty space on
 // the site. This turns one into inventory without turning the page into a
 // banner farm: the panel keeps its own copy and buttons, and the backdrop
-// behind them is either a picture WHC controls or a sponsor's creative.
+// behind them is either a picture Talent House controls or a sponsor's creative.
+//
+// The rule is deliberately blunt: a panel with a picture shows that picture.
+// An earlier version gated it behind a separate on/off setting, so uploading
+// a picture appeared to do nothing at all. The presence of the picture is the
+// decision; removing it returns the panel to plain charcoal.
 //
 // The fallback order matters commercially. A panel sold to sponsors that has
 // no live advert - between campaigns, or while one is awaiting approval -
@@ -48,8 +53,6 @@ export default function PanelBackdrop({ panel, placement }: { panel: Panel; plac
     return () => { active = false }
   }, [panel.mode, placement])
 
-  if (panel.mode === 'brand') return null
-
   const creative = advert?.media_type === 'video' ? null : advert?.media_url || advert?.logo_url
   const backdrop = creative || panel.image.url
   if (!backdrop) return null
@@ -77,7 +80,7 @@ export default function PanelBackdrop({ panel, placement }: { panel: Panel; plac
             style={{ objectPosition: `${panel.image.focalX}% ${panel.image.focalY}%` }}
           />
         )}
-        <div className="absolute inset-0 bg-[#1c1b1a]" style={{ opacity: scrim }} />
+        <div className="absolute inset-0 bg-[#222321]" style={{ opacity: scrim }} />
       </div>
 
       {advert && (
@@ -85,7 +88,7 @@ export default function PanelBackdrop({ panel, placement }: { panel: Panel; plac
           href={`/api/advertising/click?id=${encodeURIComponent(advert.id)}`}
           target="_blank"
           rel="noopener sponsored"
-          className="absolute right-5 top-5 z-10 max-w-[240px] border border-white/25 bg-[#1c1b1a]/70 px-3.5 py-2.5 backdrop-blur-sm transition-colors hover:border-white/60"
+          className="absolute right-5 top-5 z-10 max-w-[240px] border border-white/25 bg-[#222321]/70 px-3.5 py-2.5 backdrop-blur-sm transition-colors hover:border-white/60"
         >
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/70">Sponsored</p>
           <p className="mt-0.5 truncate text-[12px] font-medium text-white">{advert.brand_name}</p>

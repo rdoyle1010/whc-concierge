@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import EmailAddressPanel from '@/components/EmailAddressPanel'
 import { Save, Search, ShieldOff, X, Download, AlertTriangle, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { deletionSummary } from '@/lib/account-deletion'
@@ -46,6 +48,27 @@ export default function TalentSettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  // null until we know; then 'consultant' or '' for the ordinary workspace.
+  const [accountFocus, setAccountFocus] = useState<string | null>(null)
+  const [workspaceBusy, setWorkspaceBusy] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/consultancy/mine', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      // Only offered to somebody who has a consultancy listing. Everybody else
+      // has no use for a switch between two workspaces they will never see.
+      .then(json => { if (json?.profile) setAccountFocus(json.accountFocus || '') })
+      .catch(() => {})
+  }, [])
+
+  async function setWorkspace(next: 'consultant' | null) {
+    setWorkspaceBusy(true)
+    await fetch('/api/consultancy/mine', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_focus: next }),
+    }).catch(() => {})
+    window.location.reload()
+  }
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('error')
 
@@ -157,7 +180,7 @@ export default function TalentSettingsPage() {
 
   useEffect(() => {
     async function loadStealth() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) { setStealthLoading(false); return }
       setUserId(user.id)
 
@@ -352,7 +375,7 @@ export default function TalentSettingsPage() {
 
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user?.email) {
       setLoading(false)
       setMessage('Unable to verify your identity. Please sign in again.')
@@ -391,7 +414,11 @@ export default function TalentSettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [showDeleteRequest, setShowDeleteRequest] = useState(false)
-  const deleteDialog = useDialog(() => setShowDeleteRequest(false), 'delete-account-heading')
+  // Without the enabled flag this dialog counts as open from the moment the
+  // page loads, and an open dialog locks page scrolling. The delete
+  // confirmation is never on screen, so nothing looked wrong - Settings just
+  // would not scroll, and no amount of staring at the layout explained it.
+  const deleteDialog = useDialog(() => setShowDeleteRequest(false), 'delete-account-heading', { enabled: showDeleteRequest })
   const [deleteRequested, setDeleteRequested] = useState(false)
 
   const handleExportData = async () => {
@@ -411,7 +438,7 @@ export default function TalentSettingsPage() {
   }
 
   const handleDeletionRequest = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user) return
     await fetch('/api/contact-notify', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -452,6 +479,42 @@ export default function TalentSettingsPage() {
       </div>
 
       <div className="max-w-2xl space-y-6">
+        {/* An account-level choice, so it lives with the other account-level
+            choices. It sat on the consultancy listing page, where it invited
+            somebody who had come to consult to take on a jobs dashboard they
+            never asked for - but removing it outright would trap anybody who
+            later does want roles. */}
+        {accountFocus !== null && (
+          <div className="dashboard-card">
+            <h3 className="font-serif text-lg font-semibold mb-2">What this account is for</h3>
+            {accountFocus === 'consultant' ? (
+              <>
+                <p className="text-[13px] leading-7 text-secondary">
+                  Your workspace is set up for consultancy, so agency shifts, Residency and the job tools are hidden.
+                  Turn them on if you also want to be found for roles or flexible work.
+                </p>
+                <button type="button" onClick={() => setWorkspace(null)} disabled={workspaceBusy}
+                  className="btn-secondary mt-4 text-[13px] disabled:opacity-50">
+                  {workspaceBusy ? 'Switching...' : 'Show roles and agency work too'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-[13px] leading-7 text-secondary">
+                  You are seeing the full workspace. If you are only here to consult, the agency, shift and job tools
+                  can be hidden until you want them.
+                </p>
+                <button type="button" onClick={() => setWorkspace('consultant')} disabled={workspaceBusy}
+                  className="btn-secondary mt-4 text-[13px] disabled:opacity-50">
+                  {workspaceBusy ? 'Switching...' : 'Simplify to consultancy only'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        <EmailAddressPanel />
+
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>
           {message && <div className={`px-4 py-3 rounded-lg mb-4 text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
@@ -481,7 +544,7 @@ export default function TalentSettingsPage() {
             <div>
               <h3 className="font-serif text-lg font-semibold flex items-center gap-2"><ShieldOff size={18} /> Stealth Mode</h3>
               <p className="text-sm text-gray-500 mt-1">Hide from specific employers without hiding from everyone else. Blocked businesses are removed before your profile reaches search, matching, agency results or shortlists.</p>
-              <p className="text-xs text-gray-400 mt-2">This does not withdraw an application or message you already chose to send. WHC administrators retain access for safety and support.</p>
+              <p className="text-xs text-gray-400 mt-2">This does not withdraw an application or message you already chose to send. Talent House administrators retain access for safety and support.</p>
             </div>
             <button type="button" onClick={() => toggleStealth(!stealthEnabled)}
               aria-label={stealthEnabled ? 'Turn Stealth Mode off' : 'Turn Stealth Mode on'}
@@ -583,7 +646,7 @@ export default function TalentSettingsPage() {
 
             <div className="py-3">
               <p className="text-[13px] font-medium text-ink">Hide me from specific employers</p>
-              <p className="text-[12px] leading-5 text-muted mt-0.5">Blocked employers can never see your profile anywhere on WHC - use this for your current employer.</p>
+              <p className="text-[12px] leading-5 text-muted mt-0.5">Blocked employers can never see your profile anywhere on Talent House - use this for your current employer.</p>
               {pcmMessage && <p className="text-[12px] text-red-600 mt-2">{pcmMessage}</p>}
 
               <div className="relative mt-3">

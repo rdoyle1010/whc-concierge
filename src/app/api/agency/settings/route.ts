@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { geocodePostcode } from '@/lib/geo'
+import { productAvailableIn, unavailableReason } from '@/lib/countries'
 
 // Agency register settings. This route owns the practical details the
 // register needs: rate, mobile, postcode, travel radius and optional SMS consent.
@@ -30,7 +31,7 @@ export async function GET() {
     let referralStats: { total: number; converted: number } | null = null
     try {
       if (!referralCode) {
-        const base = (cand.full_name || 'WHC').split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8) || 'WHC'
+        const base = (cand.full_name || 'Talent House').split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8) || 'Talent House'
         for (let i = 0; i < 4 && !referralCode; i++) {
           const attempt = `${base}${String(Math.floor(1000 + Math.random() * 9000))}`
           const { error } = await admin.from('candidate_profiles').update({ referral_code: attempt }).eq('id', cand.id).is('referral_code', null)
@@ -59,6 +60,11 @@ export async function GET() {
         postcode: cand.postcode ?? null,
         travel_radius_miles: cand.travel_radius_miles ?? null,
         has_coords: cand.latitude != null && cand.longitude != null,
+        // What the register actually asks for, so the page can say so before
+        // somebody pays rather than after.
+        right_to_work_verified: ['approved', 'verified'].includes(String(cand.right_to_work_status || '').toLowerCase()),
+        has_insurance: Boolean(cand.has_insurance),
+        qualifications_count: Array.isArray(cand.qualifications) ? cand.qualifications.length : 0,
       },
     })
   } catch (e: any) {
@@ -72,10 +78,22 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
-    const { data: cand } = await admin.from('candidate_profiles').select('id, postcode').eq('user_id', user.id).maybeSingle()
+    const { data: cand } = await admin.from('candidate_profiles')
+      .select('id, postcode, country_code, location_country').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
     const body = await req.json()
+
+    if (body.joining) {
+      // Agency Cover is the one line with a border on it. Placing somebody
+      // into a shift makes Talent House an employment business, which is
+      // licensed country by country - so the gate is here, on the server,
+      // rather than only in a form that a request can go round.
+      const country = cand.country_code || cand.location_country
+      if (!productAvailableIn('agency', country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
+    }
 
     if (body.joining) {
       const rate = parseInt(String(body.hourly_rate), 10)

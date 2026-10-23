@@ -5,6 +5,29 @@ import { enforceRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Supabase's own wording, turned into something a person can act on.
+ *
+ * "Invalid login credentials" covers a wrong password, a typo in the address
+ * and an account that was never created, and says nothing about which - so
+ * somebody reads it as "the platform will not let me in" rather than "try the
+ * reset link". Worse, an unconfirmed sign-up returns a different message that
+ * reads the same way, when the fix is simply to open the confirmation email.
+ */
+function signInMessage(raw: string | undefined): string {
+  const message = String(raw || '').toLowerCase()
+  if (message.includes('email not confirmed')) {
+    return 'Your account is created but the email address has not been confirmed yet. Open the confirmation email we sent you, then sign in.'
+  }
+  if (message.includes('invalid login credentials') || message.includes('invalid credentials')) {
+    return 'That email and password do not match an account. Check the password, use the reset link below, or create an account if you have not registered yet.'
+  }
+  if (message.includes('rate limit') || message.includes('too many')) {
+    return 'Too many attempts. Wait a few minutes and try again.'
+  }
+  return raw || 'Sign in failed. Please try again.'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
@@ -50,14 +73,23 @@ export async function POST(request: NextRequest) {
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError || !authData.user) {
-      return NextResponse.json({ error: authError?.message || 'Sign in failed.' }, { status: 401 })
+      return NextResponse.json({ error: signInMessage(authError?.message) }, { status: 401 })
     }
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, email')
       .eq('id', authData.user.id)
       .maybeSingle()
+
+    // A confirmed email change updates auth.users and nothing else, so the
+    // copies held on profiles and employer_profiles keep the old address -
+    // and those are what the admin lists, invoices and contact routes read.
+    // Sign-in is where the two can be reconciled for free: the person has
+    // just proved which address is current by using it.
+    if (profile && authData.user.email && profile.email !== authData.user.email) {
+      await syncStoredEmail(authData.user.id, authData.user.email)
+    }
 
     if (profileError) {
       await supabase.auth.signOut()
@@ -67,7 +99,7 @@ export async function POST(request: NextRequest) {
     const accountRole = normaliseAccountRole(profile?.role)
     if (!accountRole) {
       await supabase.auth.signOut()
-      return NextResponse.json({ error: 'Your account role could not be verified. Please contact WHC support.' }, { status: 403 })
+      return NextResponse.json({ error: 'Your account role could not be verified. Please contact Talent House support.' }, { status: 403 })
     }
 
     if (expectedRole) {
@@ -79,14 +111,28 @@ export async function POST(request: NextRequest) {
 
       if (!matchesSelectedLogin) {
         await supabase.auth.signOut()
+        // Naming the door matters more than naming the account type. An
+        // administrator who tries the ordinary sign-in page was told to "use
+        // the Admin sign in" - which is not on that page, has no toggle, and
+        // is at a URL nothing links to. That is a dead end dressed up as an
+        // instruction, and it is how an administrator concludes their account
+        // is broken.
         const correctArea = accountRole === 'employer'
           ? 'Hotel / Employer'
           : accountRole === 'candidate'
             ? 'Talent'
-            : 'Admin'
+            : 'administrator'
+        const where = accountRole === 'admin'
+          // Not '/admin'. That path is guarded by src/app/admin/layout.tsx,
+          // which bounces a signed-out administrator straight back to this
+          // page - so this very sentence used to close the loop it was
+          // written to open.
+          ? 'Administrators sign in at talenthousecollective.co.uk/admin-sign-in, not here.'
+          : `Please use the ${correctArea} side of this page.`
         return NextResponse.json({
-          error: `This is a ${correctArea} account. Please use the ${correctArea} sign in.`,
+          error: `This is ${accountRole === 'admin' ? 'an' : 'a'} ${correctArea} account. ${where}`,
           accountRole,
+          adminSignIn: accountRole === 'admin' ? '/admin-sign-in' : undefined,
         }, { status: 403 })
       }
     }
@@ -122,4 +168,16 @@ export async function POST(request: NextRequest) {
     console.error('Login route failed:', error)
     return NextResponse.json({ error: 'Sign in failed. Please try again.' }, { status: 500 })
   }
+}
+
+
+// Best-effort, and deliberately silent. A stale copy of an address is a
+// nuisance; a sign-in that fails because tidying it up went wrong is not.
+async function syncStoredEmail(userId: string, email: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const admin = createAdminClient()
+    await admin.from('profiles').update({ email }).eq('id', userId)
+    await admin.from('employer_profiles').update({ email }).eq('user_id', userId)
+  } catch { /* the address on auth.users is the one that signs people in */ }
 }

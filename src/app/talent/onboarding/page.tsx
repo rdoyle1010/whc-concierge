@@ -439,7 +439,14 @@ export default function OnboardingWizard() {
             </div>
             <div><label className="eyebrow block mb-1.5">Headline</label><input aria-label="Headline" type="text" value={basic.headline} onChange={e => setBasic({ ...basic, headline: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO | 6 Years Luxury" /></div>
             <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea aria-label="Short Bio" rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
-            <div className="grid grid-cols-3 gap-4">
+            {/* Three across on a phone is what made the labels wrap: "Agency day
+                rate min (£ per day)" took two lines where "Availability Date"
+                took one, so the three inputs sat at three different heights.
+                A tester noticed within a minute of signing up. Full width on a
+                phone, three across from small screens up, and bottom-aligned
+                either way so a label that wraps can never push its box out of
+                line again. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
               <div><label className="eyebrow block mb-1.5">Availability Date</label><input aria-label="Availability Date" type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Agency day rate min (£ per day)</label><input aria-label="Agency day rate min (£ per day)" type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Agency day rate max (£ per day)</label><input aria-label="Agency day rate max (£ per day)" type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
@@ -586,11 +593,11 @@ export default function OnboardingWizard() {
         {/* ═══ STEP 9: Agency Work ═══ */}
         {step === 9 && (
           <div className="space-y-5">
-            <div className="flex items-start gap-3 p-4 bg-[#f3f0eb] rounded-xl">
+            <div className="flex items-start gap-3 p-4 bg-[#ede8df] rounded-xl">
               <Zap size={18} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-ink">Join the agency register</p>
-                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Wellness House Collective and WHC pays you after the shift, so you never have to chase a property for money.</p>
+                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Talent House Collective and Talent House pays you after the shift, so you never have to chase a property for money.</p>
               </div>
             </div>
 
@@ -655,7 +662,7 @@ export default function OnboardingWizard() {
               <div className="relative w-16 h-16">
                 <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="16" fill="none" stroke="#e5e5e5" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#1c1b1a' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#222321' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
                 </svg>
                 <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-ink">{completionPct}%</span>
               </div>

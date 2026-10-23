@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 export async function GET() {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
@@ -27,7 +27,7 @@ export async function GET() {
   const applicationIds = rows.map(row => row.id)
   const candidateIds = Array.from(new Set(rows.map(row => row.candidate_id).filter(Boolean)))
   const [{ data: candidates }, { data: interviews }, { data: offers }] = await Promise.all([
-    candidateIds.length ? admin.from('candidate_profiles').select('id,full_name,headline').in('id', candidateIds) : Promise.resolve({ data: [] as any[] }),
+    candidateIds.length ? admin.from('candidate_profiles').select('id,user_id,full_name,headline').in('id', candidateIds) : Promise.resolve({ data: [] as any[] }),
     applicationIds.length ? admin.from('application_interviews').select('*').in('application_id', applicationIds).order('round_number', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
     applicationIds.length ? admin.from('application_offers').select('*').in('application_id', applicationIds) : Promise.resolve({ data: [] as any[] }),
   ])

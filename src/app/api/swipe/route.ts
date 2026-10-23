@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
+import { sendPropertyInterestEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { calculateMatchScore } from '@/lib/matching'
 import { createMutualMatch } from '@/lib/mutual-match'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
@@ -38,7 +40,7 @@ async function replaceSwipe(admin: any, row: SwipeRow) {
 export async function GET() {
   try {
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     const admin = createAdminClient()
     const { data } = await admin.from('swipes').select('target_id,target_type,action,context_job_id')
       .eq('swiper_id', user.id)
@@ -63,7 +65,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json()
     const { targetId, targetType, action, contextJobId } = body as {
@@ -181,7 +183,21 @@ export async function POST(req: NextRequest) {
     if (saved.error) return NextResponse.json({ error: 'Your interest could not be saved.' }, { status: 500 })
 
     if (candidate.user_id) {
-      await createNotification(candidate.user_id, 'general', 'A property is interested in you', `${employer.property_name || employer.company_name || 'An employer'} is interested in you for ${job.job_title}.`, '/talent/jobs')
+      const propertyName = employer.property_name || employer.company_name || 'An employer'
+      await createNotification(candidate.user_id, 'general', 'A property is interested in you', `${propertyName} is interested in you for ${job.job_title}.`, '/talent/jobs')
+
+      // And by email, because a bell in an app they may not have installed is
+      // not being told. This is a property asking for somebody by name, and
+      // the screen has always claimed it reached them.
+      try {
+        if (await emailAllowed(admin, candidate.user_id, 'job_alerts')) {
+          const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+          const address = authUser?.user?.email
+          if (address) await sendPropertyInterestEmail(address, candidate.full_name || '', propertyName, job.job_title)
+        }
+      } catch (emailError: any) {
+        console.error('[Interest email failed]', emailError?.message)
+      }
     }
 
     if (!candidate.user_id) return NextResponse.json({ matched: false })

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
+import { sendAgencyUpdateEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
+import { londonToday } from '@/lib/agency-time'
 
 async function currentUser() {
   const store = await cookies()
@@ -10,10 +13,6 @@ async function currentUser() {
     cookies: { getAll() { return store.getAll() }, setAll() {} },
   })
   return (await client.auth.getUser()).data.user
-}
-
-function londonToday() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
 }
 
 export async function POST(req: NextRequest) {
@@ -33,12 +32,13 @@ export async function POST(req: NextRequest) {
   ])
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   const role = booking.candidate_id === candidate?.id ? 'candidate' : booking.employer_id === employer?.id ? 'employer' : null
-  if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!role) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
   if (!['accepted','confirmed'].includes(booking.status)) return NextResponse.json({ error: `This shift is currently '${booking.status}', so there is nothing to cancel - it may have just been actioned from the other side. Refresh the page to see its latest state.` }, { status: 400 })
   if (booking.shift_date < londonToday()) return NextResponse.json({ error: 'This shift has already passed. Use Shift Resolution instead.' }, { status: 400 })
 
   const fee = Math.max(0, Number(booking.platform_fee || 0))
-  const gross = Math.max(0, Number(booking.rate || 0) * Number(booking.hours || 8))
+  const gross = Math.round(Math.max(0, Number(booking.rate || 0) * Number(booking.hours || 8)) * 100) / 100
+  const halfGross = Math.round(gross * 50) / 100
   const paid = Boolean(booking.paid_at)
 
   // Late-cancellation policy: a property cancelling within 24 hours of the
@@ -47,8 +47,12 @@ export async function POST(req: NextRequest) {
   // professional. Admin reviews every case and can override either way.
   const tomorrow = (() => { const d = new Date(`${londonToday()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10) })()
   const lateEmployerCancellation = role === 'employer' && String(booking.shift_date) <= tomorrow
+  // Pounds and pence. A seven-and-a-half hour shift at £25 is £187.50, and
+  // rounding the half to whole pounds proposed £94 to the property and £93.50
+  // to the professional - two numbers that do not add up to what was paid, in
+  // the one document both sides have to sign.
 
-  // Before payment there is no money to retain. After payment WHC's agreed
+  // Before payment there is no money to retain. After payment Talent House's agreed
   // admin/platform fee remains earned; the shift money is frozen for Admin to
   // decide any refund/compensation under the cancellation policy.
   const update: Record<string, any> = {
@@ -70,19 +74,30 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await admin.from('agency_cases').select('id').eq('booking_id', booking.id)
       .in('status', ['open','awaiting_response','under_review','awaiting_payment']).maybeSingle()
     if (!existing) {
-      await admin.from('agency_cases').insert({
+      const { error: caseError } = await admin.from('agency_cases').insert({
         booking_id: booking.id,
         opened_by_user_id: user.id,
         opened_by_role: role,
         issue_type: role === 'candidate' ? 'professional_cancelled' : 'property_cancelled',
         description: reason,
         requested_adjustment_type: role === 'employer' ? 'refund' : 'none',
-        requested_amount: role === 'employer' ? (lateEmployerCancellation ? Math.round(gross / 2) : gross) : null,
+        requested_amount: role === 'employer' ? (lateEmployerCancellation ? halfGross : gross) : null,
         requested_reason: lateEmployerCancellation
-          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${Math.round(gross / 2)}), 50% (£${gross - Math.round(gross / 2)}) compensates the professional for the held day. WHC admin fee of £${fee} is retained.`
-          : `Pre-shift cancellation. WHC admin fee of £${fee} is retained.`,
+          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${halfGross.toFixed(2)}), 50% (£${(gross - halfGross).toFixed(2)}) compensates the professional for the held day. Talent House admin fee of £${fee.toFixed(2)} is retained.`
+          : `Pre-shift cancellation. Talent House admin fee of £${fee.toFixed(2)} is retained.`,
         status: 'under_review',
       })
+      // A cancelled shift that has been paid for freezes money for a person to
+      // review. Without the case there is nobody to review it, and the shift
+      // sits cancelled with the payment neither returned nor released.
+      if (caseError) {
+        console.error('Agency cancellation case not raised:', caseError.message)
+        await notifyAdmins(
+          'A cancelled shift has no case behind it',
+          `The ${booking.shift_date} booking was cancelled and paid for, but the review case could not be created. The money needs looking at by hand.`,
+          '/admin/agency-cases',
+        )
+      }
     }
   }
 
@@ -92,9 +107,25 @@ export async function POST(req: NextRequest) {
   ])
   const otherUser = role === 'candidate' ? emp?.user_id : cand?.user_id
   if (otherUser) {
-    await createNotification(otherUser, 'general', 'Agency shift cancelled',
-      `${role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'} cancelled the ${booking.shift_date} Agency shift. ${paid ? `WHC will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`,
-      role === 'candidate' ? '/employer/agency' : '/talent/agency')
+    const who = role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'
+    const line = `${who} cancelled the ${booking.shift_date} Agency shift. ${paid ? `Talent House will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`
+    const link = role === 'candidate' ? '/employer/agency' : '/talent/agency'
+    await createNotification(otherUser, 'general', 'Agency shift cancelled', line, link)
+
+    // A cancelled shift has to arrive, not sit in a notifications list. The
+    // professional has held that day, probably turned other work down for it,
+    // and the employer's screen has always said they were told. Until now
+    // they were told only if they happened to open the site.
+    try {
+      if (await emailAllowed(admin, otherUser, 'booking_updates')) {
+        const { data: authUser } = await admin.auth.admin.getUserById(otherUser)
+        const address = authUser?.user?.email
+        const name = role === 'candidate' ? emp?.property_name || emp?.company_name || '' : cand?.full_name || ''
+        if (address) await sendAgencyUpdateEmail(address, name, 'Agency shift cancelled', line, link)
+      }
+    } catch (emailError: any) {
+      console.error('[Shift cancellation email failed]', emailError?.message)
+    }
   }
 
   return NextResponse.json({ success: true, paid, admin_fee_retained: paid ? fee : 0, gross_shift_value: gross })

@@ -3,7 +3,22 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
-const AUTH_PAGES = ['/login', '/register']
+// The staff door is '/admin-sign-in', and the hyphen is load-bearing: it does
+// not match the '/admin' prefix above, so it is not protected by the rule
+// below and never redirects a signed-out administrator away from itself.
+//
+// A sign-in page was once put at '/admin/login' instead, and listing it here
+// was supposed to make that safe. It did not, and could not. This exemption
+// covers the proxy only, while src/app/admin/layout.tsx guards the same paths
+// again on the server and knows nothing about this list. So the form was
+// never reached: the layout sent her to '/login', which refuses admin
+// accounts and tells her to go to '/admin', which arrives back at the layout.
+// A closed loop, and the reason the owner could not get into her own
+// platform. Two guards, one exemption, and the gap between them.
+//
+// It stays listed as belt and braces. The door being outside '/admin' is what
+// actually keeps it open.
+const AUTH_PAGES = ['/login', '/register', '/admin-sign-in']
 
 // Two-step verification on the API, not only on the pages.
 //
@@ -80,8 +95,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const isProtected = PROTECTED_PREFIXES.some(prefix => matchesRoutePrefix(pathname, prefix))
   const isAuthPage = AUTH_PAGES.some(page => matchesRoutePrefix(pathname, page))
+  // A sign-in page is never protected, whichever prefix it happens to sit under.
+  const isProtected = !isAuthPage && PROTECTED_PREFIXES.some(prefix => matchesRoutePrefix(pathname, prefix))
 
   // The mobile app has no cookie jar; it sends a Bearer token, and
   // getRequestUser already enforces two-step verification on those. Leaving
@@ -122,6 +138,9 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set('redirect', destination)
     if (matchesRoutePrefix(pathname, '/employer') || matchesRoutePrefix(pathname, '/hotel')) loginUrl.searchParams.set('role', 'employer')
     if (matchesRoutePrefix(pathname, '/talent')) loginUrl.searchParams.set('role', 'talent')
+    // Administrators have their own door. Sending them to the member sign-in
+    // page hands their account to a form that is built to reject it.
+    if (matchesRoutePrefix(pathname, '/admin')) loginUrl.pathname = '/admin-sign-in'
     return NextResponse.redirect(loginUrl)
   }
 
@@ -162,12 +181,20 @@ export async function proxy(request: NextRequest) {
     const premiumEntry = Object.entries(EMPLOYER_PREMIUM_ROUTES).find(([route]) => matchesRoutePrefix(pathname, route))
     if (premiumEntry) {
       const { data: employer } = await supabase
-        .from('employer_profiles')
-        .select('membership_tier,featured_employer,featured_until')
+        // The private view, not the table: membership_tier and
+        // talent_search_until are no longer readable by a signed-in browser
+        // on anybody's row, including its own.
+        .from('employer_profiles_private')
+        .select('membership_tier,featured_employer,featured_until,talent_search_until')
         .eq('user_id', user.id)
         .maybeSingle()
       const tier = String(employer?.membership_tier || '').toLowerCase()
-      const premium = tier === 'pro' || tier === 'group' || activeFeaturedEmployer(employer)
+      // A live paid advert carries the recruitment tools for its own duration.
+      // Without this the middleware would bounce a property off a page its
+      // own sidebar had just told it was unlocked.
+      const advertUntil = employer?.talent_search_until ? new Date(employer.talent_search_until).getTime() : 0
+      const advertPremium = Number.isFinite(advertUntil) && advertUntil > Date.now()
+      const premium = tier === 'pro' || tier === 'group' || advertPremium || activeFeaturedEmployer(employer)
       if (!premium) {
         const billingUrl = request.nextUrl.clone()
         billingUrl.pathname = '/employer/billing'

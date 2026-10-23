@@ -1,34 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseTalentRegistration, verifyRegistrationProof } from '@/lib/registration'
 import { canCompleteRegistration } from '@/lib/role-access'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+async function sendWelcomeEmail(email: string, firstName: string, userId?: string | null) {
+  await sendTransactionalEmail({
+    to: email,
+    subject: 'Welcome to Talent House Collective',
+    html: welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talenthousecollective.co.uk/talent/dashboard' }),
+    kind: 'welcome_talent',
+    userId,
+  })
+}
+
+// The alert to the operator and the welcome to the member are two different
+// messages to two different people. They were on one line joined by a
+// semicolon, which read as one guarded statement and was not: the guard
+// covered only the alert, so a sign-up with no address on it sent nothing to
+// Rebecca while still calling the welcome sender with an empty string.
+async function announceSignup(email: string, fullName: string, userId: string) {
+  await alertAdminOfSignup('talent', fullName)
+  if (email) await sendWelcomeEmail(email, String(fullName).split(' ')[0] || 'there', userId)
+}
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-async function sendWelcomeEmail(email: string, firstName: string) {
-  const html = welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talenthousecollective.co.uk/talent/dashboard' })
-  if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to Talent House Collective', html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Welcome email FAILED ${res.status}] To: ${email} - ${detail.slice(0, 300)}`)
-    }
-  } catch (err) {
-    console.error('Welcome email failed:', err)
-  }
 }
 
 async function recordReferral(supabase: any, userId: string, refCode: string) {
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     const { data: { user: signedInUser } } = await authClient.auth.getUser()
     const proof = verifyRegistrationProof(registrationProof, { userId, role: 'talent' })
     if (signedInUser?.id !== userId && !proof) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+      return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     }
 
     const supabase = createAdminClient()
@@ -131,7 +132,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This email is already registered as a hotel or employer account. Please sign in through Hotel / Employer.' }, { status: 409 })
     }
 
-    const safeProfile = sanitiseTalentRegistration(profileData, userId)
+    const safeProfile: Record<string, any> = sanitiseTalentRegistration(profileData, userId)
+
+    // Registering through the consultancy door says outright what this account
+    // is for, so the workspace is right from the first screen rather than
+    // inferred from an empty profile once they have already been handed agency
+    // shifts and a treatment menu.
+    if (String(body.focus || '') === 'consultant') safeProfile.account_focus = 'consultant'
     if (!safeProfile.full_name || !safeProfile.role_level || safeProfile.agreed_terms !== true) {
       return NextResponse.json({ error: 'Name, role level and acceptance of the terms are required.' }, { status: 400 })
     }
@@ -162,7 +169,7 @@ export async function POST(req: NextRequest) {
 
       if (!profileError) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
+        await announceSignup(userEmail, safeProfile.full_name, userId)
         return NextResponse.json({ success: true })
       }
 
@@ -176,7 +183,7 @@ export async function POST(req: NextRequest) {
       const result = await upsertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
       if (result.ok) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
+        await announceSignup(userEmail, safeProfile.full_name, userId)
         return NextResponse.json({ success: true })
       }
       lastError = result.error

@@ -56,10 +56,12 @@ test('escape closes the dialog on top, not the one underneath', () => {
   const hook = read('src/components/useDialog.ts')
   assert.ok(hook.includes('const stack'), 'nested dialogs need a stack, not a guard at each site')
   assert.ok(hook.includes('isTopmost'), 'only the topmost dialog may react to a key press')
-  assert.ok(
-    hook.includes('if (stack.length === 0) document.body.style.overflow'),
-    'the last dialog out unlocks the page, not the first',
-  )
+  // The contract, not the exact line: unlocking is guarded on the stack being
+  // empty, so a nested dialog closing does not hand scrolling back while the
+  // drawer behind it is still up.
+  const unlock = hook.slice(hook.indexOf('if (stack.length === 0)'))
+  assert.ok(unlock.startsWith('if (stack.length === 0)'), 'unlocking is guarded on an empty stack')
+  assert.match(unlock.slice(0, 200), /document\.body\.style\.overflow/, 'and that guard is what restores scrolling')
   // The alternative - disabling the dialog underneath - re-runs its effect on
   // close and drags focus to its first field instead of returning it.
   for (const path of ['src/app/admin/users/page.tsx', 'src/app/admin/campaigns/page.tsx']) {
@@ -130,4 +132,58 @@ test('the indexes the commonest queries need exist', () => {
     guarded.length,
     'every index must be IF NOT EXISTS, so the migration is safe against what is already live',
   )
+})
+
+// A box that only says "Search..." makes you guess what it will match, and the
+// wrong guess reads as no results rather than as the wrong query.
+test('every search box says what it searches', () => {
+  const bare: string[] = []
+  for (const file of walk(APP).concat(walk(COMPONENTS))) {
+    const source = readFileSync(file, 'utf8')
+    for (const match of source.matchAll(/placeholder="(Search[^"]*)"/g)) {
+      const hint = match[1].replace(/[.\s]+$/, '')
+      if (hint.toLowerCase() === 'search') bare.push(`${file.split('/src/')[1]}: "${match[1]}"`)
+    }
+  }
+  assert.deepEqual(bare, [], 'a search placeholder has to name what it matches')
+})
+
+// Talent and properties are different decisions - a property is a customer, a
+// professional is the product - and interleaved by signup date they were
+// impossible to tell apart at a glance.
+test('the admin user list keeps talent and properties apart', () => {
+  const page = read('src/app/admin/users/page.tsx')
+  assert.match(page, /lg:grid-cols-2/, 'the two audiences sit side by side')
+  assert.match(page, />Talent</, 'the talent column is labelled')
+  assert.match(page, /Hotels &amp; employers/, 'the property column is labelled')
+  // Separate paging: one shared page number would scroll both columns at once
+  // and hide whichever list is longer.
+  for (const state of ['talentPage', 'hotelPage']) {
+    assert.ok(page.includes(state), `${state} must exist so each column pages on its own`)
+  }
+})
+
+// An open dialog locks page scrolling, and `enabled` defaults to true - so a
+// dialog declared without it counts as open from the moment its page loads.
+// Nothing appears on screen; the page simply will not scroll, and the layout
+// gives no clue why. Settings had exactly this, and it survived one wrong fix.
+test('no dialog is left permanently open', () => {
+  const offenders: string[] = []
+  for (const file of walk(APP).concat(walk(COMPONENTS))) {
+    const source = readFileSync(file, 'utf8')
+    for (const call of source.match(/useDialog\([\s\S]{0,240}?\)\n/g) || []) {
+      if (!call.includes('enabled')) offenders.push(file.split('/src/')[1])
+    }
+  }
+  assert.deepEqual(offenders, [], 'every useDialog needs an enabled flag, or its page cannot scroll')
+})
+
+// Capturing the page's overflow per dialog looks equivalent to capturing it
+// once and is not: two dialogs closing in the wrong order restore 'hidden'.
+test('page scrolling is restored to what it was, not to what a dialog saw', () => {
+  const hook = read('src/components/useDialog.ts')
+  assert.match(hook, /let pageOverflow: string \| null = null/, 'one baseline, not one per dialog')
+  assert.match(hook, /if \(stack\.length === 1\) pageOverflow = document\.body\.style\.overflow/,
+    'captured only when the first dialog opens')
+  assert.ok(!/const previousOverflow/.test(hook), 'no per-dialog copy left behind')
 })

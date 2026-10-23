@@ -28,7 +28,7 @@ export default function TalentToolkitPage() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-4xl">
-        <p className="dashboard-eyebrow">WHC Academy</p>
+        <p className="dashboard-eyebrow">Talent House Academy</p>
         <h1 className="dashboard-title">My Toolkit</h1>
         <p className="dashboard-intro max-w-2xl mb-7">Every tool, template and worksheet you gain through Academy courses lives here permanently - {total > 0 ? `${total} tool${total === 1 ? '' : 's'} and counting` : 'they appear as you enrol'}. Use them with real figures from your own spa.</p>
 
@@ -54,7 +54,7 @@ export default function TalentToolkitPage() {
                   {course.resources.map(resource => (
                     <div key={`${resource.kind}-${resource.id}`} className="flex flex-col rounded-xl border border-border p-4">
                       <div className="flex items-start gap-2.5 mb-2">
-                        <FileSpreadsheet size={16} className="mt-0.5 shrink-0 text-[#1c1b1a]" />
+                        <FileSpreadsheet size={16} className="mt-0.5 shrink-0 text-[#222321]" />
                         <div className="min-w-0">
                           <p className="text-[13px] font-semibold text-ink">{resource.title}</p>
                           {resource.description && <p className="mt-0.5 text-[11.5px] leading-5 text-muted">{resource.description}</p>}

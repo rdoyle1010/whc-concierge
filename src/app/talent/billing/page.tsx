@@ -12,6 +12,7 @@ export default function TalentBillingPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [redirecting, setRedirecting] = useState(false)
+  const [portalError, setPortalError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -26,20 +27,22 @@ export default function TalentBillingPage() {
   }, [])
 
   const handleManageSubscription = async () => {
-    setRedirecting(true)
+    setRedirecting(true); setPortalError('')
     try {
       const res = await fetch('/api/billing/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
-      const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        setRedirecting(false)
-      }
+      const data = await res.json().catch(() => ({}))
+      if (data.url) { window.location.href = data.url; return }
+      // Nothing was said before: the spinner stopped and the page stayed
+      // where it was, so somebody trying to cancel a membership had no way to
+      // tell whether it had refused them or simply not worked.
+      setPortalError(data.error || 'The billing portal could not be opened. Please try again, and tell us if it keeps happening.')
+      setRedirecting(false)
     } catch (error) {
       console.error('Error redirecting to portal:', error)
+      setPortalError('We could not reach the billing portal. Please check your connection and try again.')
       setRedirecting(false)
     }
   }
@@ -143,10 +146,18 @@ export default function TalentBillingPage() {
                 {redirecting ? 'Redirecting...' : 'Manage Subscription'}
               </button>
             ) : (
-              <Link href="/talent/upgrade" className="btn-primary w-full flex items-center justify-center gap-2">
-                <CreditCard size={14} />
-                Upgrade to Featured
-              </Link>
+              <div className="space-y-2">
+                <Link href="/talent/membership" className="btn-primary w-full flex items-center justify-center gap-2">
+                  <CreditCard size={14} />
+                  See membership plans
+                </Link>
+                {/* Featured buys visibility, not Interview Ready credits.
+                    Leading with it sent anybody hunting for credits to the one
+                    product that does not include them. */}
+                <Link href="/talent/upgrade" className="btn-secondary w-full flex items-center justify-center gap-2">
+                  Or feature my profile
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -202,11 +213,14 @@ export default function TalentBillingPage() {
         <div className="pt-5">
           {profile?.agency_available ? (
             profile?.agency_listed_until ? (
-              <button onClick={handleManageSubscription} disabled={redirecting}
-                className="btn-secondary w-full flex items-center justify-center gap-2">
-                <ExternalLink size={14} />
-                {redirecting ? 'Redirecting...' : 'Manage Agency Subscription'}
-              </button>
+              <>
+                <button type="button" onClick={handleManageSubscription} disabled={redirecting}
+                  className="btn-secondary w-full flex items-center justify-center gap-2">
+                  <ExternalLink size={14} />
+                  {redirecting ? 'Redirecting...' : 'Manage Agency Subscription'}
+                </button>
+                {portalError ? <p role="alert" className="mt-2 text-[12px] leading-5 text-red-700">{portalError}</p> : null}
+              </>
             ) : (
               <Link href="/talent/agency/settings" className="btn-secondary w-full flex items-center justify-center gap-2">
                 Agency Settings

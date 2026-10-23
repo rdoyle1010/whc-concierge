@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@supabase/supabase-js'
+import { askForJson } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const INTERVIEW_MODEL = process.env.OPENAI_INTERVIEW_MODEL || process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 const MAX_CV_SIZE = 10 * 1024 * 1024
 
 const clean = (value: unknown) => String(value || '').trim()
@@ -32,23 +32,15 @@ function parseJson(text: string) {
 }
 
 async function generatePreparation(prompt: string) {
-  if (!OPENAI_API_KEY) return null
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 7000)
-  try {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: INTERVIEW_MODEL, reasoning: { effort: 'low' }, input: prompt, max_output_tokens: 2600 }),
-    })
-    if (!response.ok) return null
-    return parseJson(parseResponseText(await response.json()))
-  } catch {
+  // Null on any failure, because Interview Ready has a written fallback and a
+  // candidate preparing for an interview tonight is better served by the
+  // fallback than by an error. The reason is logged, not shown.
+  const result = await askForJson<any>({ label: 'interview ready (mobile)', prompt, maxTokens: 3700 })
+  if (!result.ok) {
+    console.error('[Interview Ready mobile]', result.error)
     return null
-  } finally {
-    clearTimeout(timeout)
   }
+  return result.data
 }
 
 async function extractCvText(supabase: any, cvUrl: string | null, userId: string) {
@@ -209,7 +201,7 @@ function fallback(candidate: any, job: any, employer: any, cvText: string) {
 export async function POST(req: NextRequest) {
   const authorization = req.headers.get('authorization') || ''
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
-  if (!token) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!token) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -217,7 +209,7 @@ export async function POST(req: NextRequest) {
 
   const authClient = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } })
   const { data: { user }, error: authError } = await authClient.auth.getUser(token)
-  if (authError || !user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (authError || !user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   // Two-step verification applies to bearer tokens here exactly as in
   // getRequestUser: an account with a verified authenticator must present an
@@ -229,7 +221,7 @@ export async function POST(req: NextRequest) {
       const payload = JSON.parse(Buffer.from((token.split('.')[1] || ''), 'base64url').toString('utf8'))
       if (payload?.aal !== 'aal2') return NextResponse.json({ error: 'Two-step verification required' }, { status: 401 })
     }
-  } catch { return NextResponse.json({ error: 'Unauthorised' }, { status: 401 }) }
+  } catch { return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 }) }
 
   const supabase = createClient(url, key, {
     accessToken: async () => token,
@@ -245,11 +237,32 @@ export async function POST(req: NextRequest) {
     if (candidateError || !candidate) return NextResponse.json({ error: 'Complete your talent profile first.' }, { status: 404 })
 
     const credits = Math.max(0, Number(candidate.interview_ready_credits || 0))
-    if (credits < 1) return NextResponse.json({ error: 'You have used your Interview Ready allowance.', code: 'FEATURE_LOCKED' }, { status: 403 })
+    if (credits < 1) return NextResponse.json({
+      error: 'You have used your Interview Ready allowance. A membership adds credits every month.',
+      code: 'FEATURE_LOCKED',
+      upgradeHref: '/talent/membership',
+    }, { status: 403 })
 
-    const { data: job, error: jobError } = await supabase.from('job_listings').select('*, employer_profiles(*)').eq('id', jobId).maybeSingle()
+    // The role and the property, separately.
+    //
+    // The same query on the website embedded employer_profiles(*) in this
+    // one. That table has row level security a talent user does not satisfy,
+    // so the embed failed and took the role with it, and somebody who had
+    // chosen a role was told the role was gone. Here it produced "This role
+    // is no longer available" against a role plainly on the board.
+    const { data: job, error: jobError } = await supabase.from('job_listings')
+      .select('*').eq('id', jobId).maybeSingle()
     if (jobError || !job) return NextResponse.json({ error: 'This role is no longer available.' }, { status: 404 })
-    const employer = Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles
+
+    // Property facts are a bonus, never a blocker: companyFacts names what is
+    // missing rather than inventing it.
+    let employer: any = null
+    if (job.employer_id) {
+      const { data: property, error: propertyError } = await supabase
+        .from('employer_profiles').select('*').eq('id', job.employer_id).maybeSingle()
+      if (propertyError) console.error('Interview Ready property query', propertyError.message)
+      employer = property || null
+    }
     const cvText = await extractCvText(supabase, candidate.cv_url, user.id)
     const base = fallback(candidate, job, employer, cvText)
     const level = seniority(job)
@@ -272,8 +285,21 @@ export async function POST(req: NextRequest) {
       readiness: { overall: Math.max(0, Math.min(100, Number(ai.readiness?.overall) || base.readiness.overall)), message: clean(ai.readiness?.message) || base.readiness.message },
     } : base
 
+    // Spent with the service role, on the row belonging to the signed-in user.
+    //
+    // This was the user's own client, and a talent account cannot write its
+    // own credit balance: row level security forbids it, correctly, because a
+    // column somebody can set for themselves is not an allowance, it is a
+    // suggestion. So the update failed and the honest answer, "we could not
+    // confirm your allowance", was returned to somebody the sidebar was
+    // telling they had one credit left.
+    //
+    // Two things keep this safe. candidate.id came from a row already matched
+    // on the authenticated user, so this can only ever touch their own
+    // profile. And the compare-and-set on the old balance survives, so two
+    // requests racing still spend one credit between them rather than two.
     const nextCredits = credits - 1
-    const { data: consumed, error: consumeError } = await supabase.from('candidate_profiles')
+    const { data: consumed, error: consumeError } = await createAdminClient().from('candidate_profiles')
       .update({ interview_ready_credits: nextCredits })
       .eq('id', candidate.id)
       .eq('interview_ready_credits', credits)

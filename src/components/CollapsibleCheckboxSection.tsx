@@ -16,6 +16,19 @@ interface CollapsibleCheckboxSectionProps {
   onChange: (selected: string[]) => void
 }
 
+// There is no "Select All" here, and there is not meant to be.
+//
+// Every list this renders is a claim about somebody: the treatments they can
+// perform, the houses they have trained with, the systems they have run. A
+// profile claiming all eighty-seven treatments and all forty-seven product
+// houses is not an impressive profile, it is an unbelievable one, and it
+// makes matching worthless for everybody else on the register - a search for
+// a Biologique Recherche facialist that returns them is a search that has
+// stopped meaning anything.
+//
+// It took one person about ten seconds to do it to five sections at once,
+// because the link sat at the top of each one and looked like a convenience.
+// Clearing stays, because undoing it has to be one press.
 export default function CollapsibleCheckboxSection({ title, categories, flatItems, selected, onChange }: CollapsibleCheckboxSectionProps) {
   const [open, setOpen] = useState(false)
 
@@ -26,12 +39,6 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
     onChange(selected.includes(item) ? selected.filter(s => s !== item) : [...selected, item])
   }
 
-  const selectAll = () => {
-    const newSelected = new Set(selected)
-    allItems.forEach(i => newSelected.add(i))
-    onChange(Array.from(newSelected))
-  }
-
   const clearAll = () => {
     const itemSet = new Set(allItems)
     onChange(selected.filter(s => !itemSet.has(s)))
@@ -39,7 +46,7 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
 
   return (
     <div className="border border-neutral-200">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left hover:bg-neutral-50 transition-colors">
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left hover:bg-neutral-50 transition-colors">
         <div className="flex items-center space-x-3">
           <span className="text-sm font-semibold text-black">{title}</span>
           {count > 0 && <span className="text-xs bg-black text-white px-2 py-0.5">{count} selected</span>}
@@ -49,10 +56,9 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
 
       {open && (
         <div className="px-4 pb-4 border-t border-neutral-100">
-          {/* Select All / Clear All */}
-          <div className="flex space-x-4 py-3 mb-2">
-            <button onClick={selectAll} className="text-xs text-neutral-500 hover:text-black underline">Select All</button>
-            <button onClick={clearAll} className="text-xs text-neutral-500 hover:text-black underline">Clear All</button>
+          <div className="flex items-center justify-between gap-4 py-3 mb-2">
+            <p className="text-xs text-neutral-500">Tick only what you would be happy to be asked about.</p>
+            <button type="button" onClick={clearAll} className="shrink-0 text-xs text-neutral-500 hover:text-black underline">Clear All</button>
           </div>
 
           {categories ? (

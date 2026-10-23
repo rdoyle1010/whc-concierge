@@ -12,7 +12,7 @@ async function requireAdmin() {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data: rows, error } = await admin.from('agency_cases').select('*, booking:agency_bookings(*)').order('created_at', { ascending: false }).limit(200)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -38,7 +38,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   if (!body.caseId) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   const admin = createAdminClient()
@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   if (body.action === 'message') {
     const message = String(body.message || '').trim()
     if (!message) return NextResponse.json({ error: 'Write a message first.' }, { status: 400 })
-    await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: 'admin', message: message.slice(0, 4000) })
+    const { error: messageError } = await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: 'admin', message: message.slice(0, 4000) })
+    if (messageError) return NextResponse.json({ error: 'That message could not be sent. Please try again.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: 'admin', event_type: 'admin_message_added' })
     return NextResponse.json({ success: true })
   }
@@ -67,14 +68,14 @@ export async function POST(req: NextRequest) {
   // The same invariant the admin dispute route enforces, and this one was
   // missing it: refund plus payout cannot exceed what the property actually
   // paid in. Without it an administrator could propose a full refund AND the
-  // full shift value, both parties could sign, and WHC would pay the
+  // full shift value, both parties could sign, and Talent House would pay the
   // professional out of its own money on top of refunding the property.
   //
   // The extra the property is being asked to pay counts as collected, since
   // the resolution only completes once that payment clears.
   if (agencyResolutionExceedsCollected(Number(booking.amount_paid || 0) + extra, refund, adjustedPayout)) {
     return NextResponse.json(
-      { error: `The refund (£${refund.toFixed(2)}) plus the payout (£${adjustedPayout.toFixed(2)}) is more than the £${(Number(booking.amount_paid || 0) + extra).toFixed(2)} this booking will have collected. WHC cannot hand out more than it took in.` },
+      { error: `The refund (£${refund.toFixed(2)}) plus the payout (£${adjustedPayout.toFixed(2)}) is more than the £${(Number(booking.amount_paid || 0) + extra).toFixed(2)} this booking will have collected. Talent House cannot hand out more than it took in.` },
       { status: 400 },
     )
   }
@@ -101,8 +102,8 @@ export async function POST(req: NextRequest) {
     admin.from('employer_profiles').select('user_id').eq('id', booking.employer_id).maybeSingle(),
   ])
   await Promise.allSettled([
-    c?.user_id ? createNotification(c.user_id, 'general', 'Agency case resolution ready', 'WHC has proposed a resolution. Please review the terms and sign if you agree.', '/talent/agency/cases') : Promise.resolve(),
-    e?.user_id ? createNotification(e.user_id, 'general', 'Agency case resolution ready', 'WHC has proposed a resolution. Please review the terms and sign if you agree.', '/employer/agency/cases') : Promise.resolve(),
+    c?.user_id ? createNotification(c.user_id, 'general', 'Agency case resolution ready', 'Talent House has proposed a resolution. Please review the terms and sign if you agree.', '/talent/agency/cases') : Promise.resolve(),
+    e?.user_id ? createNotification(e.user_id, 'general', 'Agency case resolution ready', 'Talent House has proposed a resolution. Please review the terms and sign if you agree.', '/employer/agency/cases') : Promise.resolve(),
   ])
   return NextResponse.json({ success: true, awaitingAgreement: true })
 }

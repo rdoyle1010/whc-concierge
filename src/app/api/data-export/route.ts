@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/request-user'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -69,16 +68,12 @@ async function listStoredFiles(admin: Admin, bucket: string, prefix: string): Pr
   return found
 }
 
-export async function GET(_req: NextRequest) {
-  // Authenticate
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+export async function GET(req: NextRequest) {
+  // A cookie or a bearer token. The right to a copy of your own data does not
+  // depend on which device you happen to be holding, and the app had no way
+  // to ask for one.
+  const user = await getRequestUser(req)
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const unavailable: string[] = []
@@ -95,7 +90,7 @@ export async function GET(_req: NextRequest) {
       role,
       platform: 'Talent House Collective',
       url: 'https://talenthousecollective.co.uk',
-      note: 'This is the personal data WHC holds about this account. No section is capped or truncated.',
+      note: 'This is the personal data Talent House holds about this account. No section is capped or truncated.',
       unavailable,
     },
     account: {
@@ -160,7 +155,7 @@ export async function GET(_req: NextRequest) {
         .select('*, employer_profiles:blocked_employer_id(company_name)')
         .eq('candidate_id', cp.id))
 
-      // The taxonomy joins - the structured skills profile WHC matches on,
+      // The taxonomy joins - the structured skills profile Talent House matches on,
       // which is personal data in its own right.
       await section(exportData, 'candidate_skills', unavailable, () =>
         admin.from('candidate_skills').select('*').eq('candidate_id', cp.id))
@@ -210,7 +205,7 @@ export async function GET(_req: NextRequest) {
 
     if (cp) {
       // References written ABOUT this person by somebody else. Among the most
-      // consequential records WHC holds on a professional, and the export
+      // consequential records Talent House holds on a professional, and the export
       // never mentioned them.
       await section(exportData, 'references_about_you', unavailable, () =>
         admin.from('reference_requests').select('*').eq('candidate_id', cp.id).order('created_at', { ascending: false }))
@@ -314,7 +309,7 @@ export async function GET(_req: NextRequest) {
   await section(exportData, 'platform_experience_reviews', unavailable, () =>
     admin.from('platform_experience_reviews').select('*').eq('reviewer_user_id', user.id).order('created_at', { ascending: false }))
 
-  // The behavioural profile WHC keeps server-side: job views, candidate
+  // The behavioural profile Talent House keeps server-side: job views, candidate
   // profile views and other recorded activity. Retained for 13 months.
   await section(exportData, 'analytics_events', unavailable, () =>
     admin.from('analytics_events').select('*').eq('actor_user_id', user.id).order('created_at', { ascending: false }))
@@ -349,7 +344,7 @@ export async function GET(_req: NextRequest) {
     }
   }
   exportData.documents = {
-    note: 'The files WHC stores for this account. The files themselves are not included in this export - download them from your profile and verification pages, where each one is already linked.',
+    note: 'The files Talent House stores for this account. The files themselves are not included in this export - download them from your profile and verification pages, where each one is already linked.',
     count: documents.length,
     files: documents,
   }

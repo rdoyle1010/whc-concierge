@@ -28,14 +28,14 @@ export default function AcademyToolkitPage() {
       <div className="max-w-5xl">
         <Link href={`/talent/academy/${slug}`} className="mb-5 inline-flex items-center gap-1 text-[12px] text-muted hover:text-ink"><ArrowLeft size={13} /> Back to programme</Link>
         <div className="mb-7">
-          <p className="dashboard-eyebrow">WHC Academy resources</p>
+          <p className="dashboard-eyebrow">Talent House Academy resources</p>
           <h1 className="dashboard-title">{title}</h1>
           <p className="dashboard-intro max-w-2xl">Download the working tools used throughout the programme. Use them with real or practice spa figures as you complete the management labs.</p>
         </div>
 
         {uploads.length > 0 && (
           <div className="mb-7">
-            <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1c1b1a]">Course downloads</p>
+            <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#222321]">Course downloads</p>
             <div className="grid gap-4 md:grid-cols-2">
               {uploads.map(upload => (
                 <article key={upload.id} className="dashboard-card flex flex-col">
@@ -58,7 +58,7 @@ export default function AcademyToolkitPage() {
             {resources.map(resource => (
               <article key={resource.id} className="dashboard-card flex flex-col">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f3f0eb] text-[#1c1b1a]"><FileSpreadsheet size={18} /></div>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ede8df] text-[#222321]"><FileSpreadsheet size={18} /></div>
                   <div>
                     <h2 className="text-[15px] font-semibold text-ink">{resource.title}</h2>
                     <p className="mt-1 text-[12px] leading-5 text-muted">{resource.description}</p>

@@ -1,8 +1,11 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
+import { unavailableReason } from '@/lib/countries'
+import { moneyTone, toneClasses, type StatusTone } from '@/lib/status-tone'
 import { Calendar, Clock, Banknote, Star, X, Zap, Car, TrainFront, MapPin, Check } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
 import { useDialog } from '@/components/useDialog'
@@ -19,7 +22,24 @@ function expiryLabel(expiresAt: string | null | undefined): string | null {
   return `Expires ${new Date(expiresAt).toLocaleDateString('en-GB')}`
 }
 
+// A figure, what it means, and a colour that says whether it needs anything
+// from you.
+function MoneyTile({ label, amount, tone, note }: { label: string; amount: number; tone: StatusTone; note: string }) {
+  const classes = toneClasses(tone)
+  return <div className={`dashboard-card !py-4 ${classes.card}`}>
+    <div className="flex items-start justify-between gap-2 mb-1">
+      <p className="text-[11px] uppercase tracking-wide text-muted">{label}</p>
+      {classes.word && <span className={`shrink-0 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.08em] ${classes.pill}`}>{classes.word}</span>}
+    </div>
+    <p className="text-[20px] font-semibold text-ink">£{amount}</p>
+    <p className="text-[10px] text-muted mt-0.5">{note}</p>
+  </div>
+}
+
 export default function TalentAgencyPage() {
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [counteringId, setCounteringId] = useState<string | null>(null)
@@ -27,7 +47,7 @@ export default function TalentAgencyPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const [reviewing, setReviewing] = useState<{ userId: string; name: string; bookingId?: string } | null>(null)
-  const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null } | null>(null)
+  const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null; availableHere: boolean } | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState('')
@@ -44,6 +64,7 @@ export default function TalentAgencyPage() {
           available: Boolean(viewer.agency_available),
           tier: viewer.agency_tier || null,
           until: viewer.agency_listed_until || null,
+          availableHere: viewer.agency_available_here !== false,
         } : null)
       } else {
         setBookings([])
@@ -111,7 +132,7 @@ export default function TalentAgencyPage() {
 
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
-    countered: 'bg-[#f3f0eb] text-accent',
+    countered: 'bg-[#ede8df] text-accent',
     accepted: 'bg-green-50 text-green-700',
     confirmed: 'bg-green-50 text-green-700',
     completed: 'bg-blue-50 text-blue-700',
@@ -126,7 +147,7 @@ export default function TalentAgencyPage() {
     .sort((a, b) => Number(Boolean(b.employer_agency_plus)) - Number(Boolean(a.employer_agency_plus)))
   const shifts = bookings.filter((b) => b.status !== 'pending' && b.status !== 'countered')
 
-  // The professional keeps the full agreed rate - the WHC fee is paid by the
+  // The professional keeps the full agreed rate - the Talent House fee is paid by the
   // property on top, so nothing is deducted from the payout.
   const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8))
   // Where Stripe payouts are connected the money reached the professional as
@@ -146,7 +167,18 @@ export default function TalentAgencyPage() {
         <p className="dashboard-intro">Shift offers from properties that need cover, matched to your rate and travel area.</p>
       </div>
 
-      {listing && (
+      {listing && !listing.availableHere && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 mb-6">
+          <p className="text-[14px] font-medium text-amber-900">Agency Cover is not available where you are</p>
+          <p className="mt-1 text-[12.5px] leading-5 text-amber-800">{unavailableReason('agency')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/roles" className="btn-secondary text-[12px]">Browse roles</Link>
+            <Link href="/talent/consultancy" className="btn-secondary text-[12px]">List a consultancy</Link>
+          </div>
+        </div>
+      )}
+
+      {listing && listing.availableHere && (
         listing.available ? (
           <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
             <div>
@@ -162,7 +194,7 @@ export default function TalentAgencyPage() {
             <Link href="/talent/agency/settings" className="text-[12px] font-medium text-green-800 underline shrink-0 ml-4">Manage</Link>
           </div>
         ) : (
-          <div className="flex items-center justify-between bg-[#f3f0eb] border border-border rounded-xl px-5 py-4 mb-6">
+          <div className="flex items-center justify-between bg-[#ede8df] border border-border rounded-xl px-5 py-4 mb-6">
             <div>
               <p className="text-[14px] font-medium text-ink">You&apos;re not on the agency register yet</p>
               <p className="text-[12px] text-secondary mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>
@@ -178,10 +210,14 @@ export default function TalentAgencyPage() {
         <>
           {hasEarnings && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Paid to you</p><p className="text-[20px] font-semibold text-green-700">£{paidOut}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-muted">Property has paid - WHC pays you after the shift</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting property payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingProperty}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">On hold</p><p className="text-[20px] font-semibold text-secondary">£{onHold}</p><p className="text-[10px] text-muted">{onHold > 0 ? 'An issue is being reviewed by WHC' : 'No open issues'}</p></div>
+              {/* Green is finished, amber is somebody else's move, red is yours.
+                  These four were four grey cards with a coloured number, so an
+                  open dispute and a settled payment looked the same from a
+                  metre away. */}
+              <MoneyTile label="Paid to you" amount={paidOut} tone={moneyTone(paidOut, 'done')} note={paidOut > 0 ? 'Cleared and sent' : 'Nothing paid out yet'} />
+              <MoneyTile label="Awaiting payout" amount={awaitingPayout} tone={moneyTone(awaitingPayout, 'waiting')} note="Property has paid - Talent House pays you after the shift" />
+              <MoneyTile label="Awaiting property payment" amount={awaitingProperty} tone={moneyTone(awaitingProperty, 'waiting')} note="The property has not paid Talent House yet" />
+              <MoneyTile label="On hold" amount={onHold} tone={moneyTone(onHold, 'action')} note={onHold > 0 ? 'An issue is being reviewed - check Shift Resolution' : 'No open issues'} />
             </div>
           )}
           {hasEarnings && (
@@ -282,13 +318,13 @@ export default function TalentAgencyPage() {
                       {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                       {b.hours && <span>{b.hours}h</span>}
                     </div>
-                    {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your full payout of £{b.rate * (b.hours && b.hours > 0 ? b.hours : 8)} is confirmed. The property pays the WHC fee - nothing is deducted from you.</p>}
-                    {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while WHC reviews it.</p>}
+                    {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to Talent House. Once paid, your full payout of £{b.rate * (b.hours && b.hours > 0 ? b.hours : 8)} is confirmed. The property pays the Talent House fee - nothing is deducted from you.</p>}
+                    {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while Talent House reviews it.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status !== 'open' && (
                       b.payout_status === 'cancelled' ? <p className="text-[11px] text-secondary mt-1.5">Issue resolved - no payout is due for this booking.</p>
                         : b.payout_method === 'stripe_connect'
                           ? <p className="text-[11px] text-green-700 mt-1.5">Paid directly by Stripe - your £{expectedPayout(b)} went straight to your connected bank account when the property paid. It usually lands within 2 to 3 working days.</p>
-                          : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} by bank transfer after the shift{b.payout_status === 'paid' ? ` (sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}${b.payout_reference ? `, reference ${b.payout_reference}` : ''})` : ''}.</p>
+                          : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - Talent House pays you £{expectedPayout(b)} by bank transfer after the shift{b.payout_status === 'paid' ? ` (sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}${b.payout_reference ? `, reference ${b.payout_reference}` : ''})` : ''}.</p>
                     )}
                   </div>
                   <div className="text-right">

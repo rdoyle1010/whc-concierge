@@ -13,23 +13,27 @@ import {
 const SECTIONS = [
   { group: 'People & operations', label: 'Verification', desc: 'Approve talent and properties.', href: '/admin/verification', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Users', desc: 'Approve, reject and inspect talent and employer accounts.', href: '/admin/users', icon: <Users size={17} /> },
+  { group: 'People & operations', label: 'Sign-ups & Setup', desc: 'How far new accounts got, and offer them a hand.', href: '/admin/onboarding', icon: <Users size={17} /> },
+  { group: 'People & operations', label: 'Profiles We Build', desc: 'People who sent a CV instead of filling in a form.', href: '/admin/profile-build', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Certificates', desc: 'Review and verify submitted qualifications.', href: '/admin/certificates', icon: <GraduationCap size={17} /> },
   { group: 'People & operations', label: 'Messages', desc: 'Enquiries and complaints from the contact form.', href: '/admin/messages', icon: <MessageSquare size={17} /> },
-  { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Spa Platform.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
+  { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Talent House Collective.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Complaints', desc: 'Resolve reported issues.', href: '/admin/complaints', icon: <AlertTriangle size={17} /> },
-  { group: 'People & operations', label: 'Managed Search', desc: 'Employer briefs for WHC-run recruitment.', href: '/admin/recruitment', icon: <Briefcase size={17} /> },
+  { group: 'People & operations', label: 'Managed Search', desc: 'Employer briefs for Talent House-run recruitment.', href: '/admin/recruitment', icon: <Briefcase size={17} /> },
   { group: 'Content & revenue', label: 'Website & Brand', desc: 'Control public content and identity.', href: '/admin/website', icon: <Palette size={17} /> },
   { group: 'Content & revenue', label: 'Public Pages', desc: 'Edit the wording and photography of each public page.', href: '/admin/website/pages', icon: <Palette size={17} /> },
   { group: 'Content & revenue', label: 'Revenue', desc: 'Recorded revenue and booked recurring value.', href: '/admin/revenue', icon: <CreditCard size={17} /> },
   { group: 'Content & revenue', label: 'Academy', desc: 'Courses, learners and certificates.', href: '/admin/academy', icon: <GraduationCap size={17} /> },
   { group: 'Content & revenue', label: 'Academy Downloads', desc: 'Workbooks and files attached to courses and modules.', href: '/admin/academy/downloads', icon: <FileText size={17} /> },
   { group: 'Content & revenue', label: 'Blog & Journal', desc: 'Write, illustrate and publish editorial content.', href: '/admin/blog', icon: <FileText size={17} /> },
+  { group: 'Content & revenue', label: 'Events', desc: 'Launches, masterclasses and trade shows, and telling the register first.', href: '/admin/events', icon: <Calendar size={17} /> },
   { group: 'Content & revenue', label: 'Newsletters & Campaigns', desc: 'Create, preview, test and send newsletters.', href: '/admin/campaigns', icon: <Megaphone size={17} /> },
   { group: 'Content & revenue', label: 'Newsletter', desc: 'Subscribers, exports and the signup popup.', href: '/admin/newsletter', icon: <Megaphone size={17} /> },
   { group: 'Content & revenue', label: 'Sponsored Ads', desc: 'Approve paid brand placements.', href: '/admin/advertising', icon: <Megaphone size={17} /> },
   { group: 'Content & revenue', label: 'Ad Slots', desc: 'Switch site ad positions on and off; place direct adverts.', href: '/admin/ad-slots', icon: <Megaphone size={17} /> },
   { group: 'Platform', label: 'Job Listings', desc: 'Review live and closed roles.', href: '/admin/jobs', icon: <Briefcase size={17} /> },
   { group: 'Platform', label: 'Matches', desc: 'Mutual matches between talent and properties.', href: '/admin/matches', icon: <Users size={17} /> },
+  { group: 'Platform', label: 'Who is Looking', desc: 'Website visitors, including everybody who never signed up.', href: '/admin/visitors', icon: <Users size={17} /> },
   { group: 'Platform', label: 'Residency Listings', desc: 'Review programmes and placements.', href: '/admin/residency', icon: <Calendar size={17} /> },
   { group: 'Platform', label: 'Residency Money', desc: 'Residency payments, platform fees and payouts.', href: '/admin/residency-money', icon: <CreditCard size={17} /> },
   { group: 'Platform', label: 'Agency Money', desc: 'Bookings, payouts and disputes.', href: '/admin/agency', icon: <CreditCard size={17} /> },
@@ -88,7 +92,7 @@ export default function AdminDashboard() {
     <DashboardShell role="admin" userName="Admin">
       <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="dashboard-eyebrow">Wellness House Collective</p>
+          <p className="dashboard-eyebrow">Talent House Collective</p>
           <h1 className="dashboard-title">Administration</h1>
           <p className="dashboard-intro">A focused view of the people, content and commercial work that needs your attention.</p>
         </div>
@@ -102,7 +106,7 @@ export default function AdminDashboard() {
           </button>
           {showHelp && (
             <div className="absolute right-0 top-12 z-20 w-[320px] rounded-2xl border border-border bg-white p-4 text-[12px] leading-5 text-secondary shadow-xl">
-              This panel checks live WHC platform data. Stripe means a paid entitlement belongs to an account with a Stripe customer record. Manual means access was granted outside Stripe. Comped Academy enrolments were granted free by an admin and are not a problem. The scale row shows how much data the platform is carrying so growth is visible before it becomes a performance problem.
+              This panel checks live Talent House platform data. Stripe means a paid entitlement belongs to an account with a Stripe customer record. Manual means access was granted outside Stripe. Comped Academy enrolments were granted free by an admin and are not a problem. The scale row shows how much data the platform is carrying so growth is visible before it becomes a performance problem.
             </div>
           )}
         </div>
@@ -181,7 +185,7 @@ export default function AdminDashboard() {
             )}
 
             {health.scale && (
-              <div className="border-t border-border bg-[#f3f0eb] px-5 py-4">
+              <div className="border-t border-border bg-[#ede8df] px-5 py-4">
                 <p className="dashboard-eyebrow !mb-2">Platform scale</p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
                   <ScaleCell label="Users" value={health.scale.users} />
@@ -232,7 +236,7 @@ function HealthCell({ label, value, detail, alert = false }: { label: string; va
 
 function FunnelCell({ label, value, emphasis = false }: { label: string; value: number; emphasis?: boolean }) {
   return (
-    <div className={emphasis ? 'bg-[#f3f8f5] px-4 py-4' : 'bg-[#f3f0eb] px-4 py-4'}>
+    <div className={emphasis ? 'bg-[#f3f8f5] px-4 py-4' : 'bg-[#ede8df] px-4 py-4'}>
       <p className="text-[9px] uppercase tracking-[0.13em] text-muted">{label}</p>
       <p className={emphasis ? 'mt-1 text-[23px] font-semibold text-emerald-700' : 'mt-1 text-[23px] font-semibold text-ink'}>{value}</p>
     </div>

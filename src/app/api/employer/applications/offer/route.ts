@@ -4,9 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 function escapeHtml(value: string) {
   return value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')
@@ -14,7 +12,7 @@ function escapeHtml(value: string) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -47,7 +45,7 @@ export async function POST(req: NextRequest) {
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
       admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle(),
     ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const { data: offer, error } = await admin.from('application_offers').upsert({
       application_id: application.id,
@@ -63,7 +61,12 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'application_id' }).select('*').single()
     if (error) return NextResponse.json({ error: 'Could not create the offer.' }, { status: 500 })
 
-    await admin.from('applications').update({ status: 'offered', updated_at: new Date().toISOString() }).eq('id', application.id)
+    // Without this the professional is shown an offer the pipeline does not
+    // know exists, so nothing on the property's side will let them respond to
+    // an answer when it comes.
+    const { error: stageError } = await admin.from('applications')
+      .update({ status: 'offered', updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (stageError) return NextResponse.json({ error: 'The offer was created but the application stage did not move. Refresh before making it again.' }, { status: 500 })
     const propertyName = employer.property_name || employer.company_name || 'The property'
     await createNotification(candidate.user_id, 'general', `Job offer - ${job.job_title}`, `${propertyName} would like to offer you the role. Review the message in My Applications.`, '/talent/applications')
 
@@ -76,23 +79,19 @@ export async function POST(req: NextRequest) {
     // The offer is the most important email on the platform - send it as well
     // as the in-app notification and SMS.
     let emailSent = false
-    if (RESEND_API_KEY) {
+    {
       try {
         const { data: candidateUser } = await admin.auth.admin.getUserById(candidate.user_id)
         const candidateEmail = candidateUser?.user?.email
         if (candidateEmail) {
-          const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: FROM_EMAIL,
-              to: candidateEmail,
-              subject: `Job offer - ${job.job_title} at ${propertyName}`,
-              html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;color:#1c1b1a"><div style="background:#1c1b1a;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">Job offer</p><h1 style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="font-weight:600;margin:0 0 12px;">Congratulations, ${escapeHtml(candidate.full_name || 'there')}</h2><p style="line-height:1.6">${escapeHtml(propertyName)} would like to offer you the role of <strong>${escapeHtml(job.job_title)}</strong>.</p><div style="background:#f7f7f7;border:1px solid #e5e5e5;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${escapeHtml(note)}</div><p style="line-height:1.6">Sign in to review the offer and respond.</p><p style="margin:28px 0"><a href="https://talenthousecollective.co.uk/talent/applications" style="background:#1c1b1a;color:#ffffff;padding:12px 24px;text-decoration:none">Review your offer</a></p><p style="color:#777;font-size:13px">Wellness House Collective · Talent House Collective</p></div></div>`,
-            }),
+          const response = await sendTransactionalEmail({
+            to: candidateEmail,
+            kind: 'offer',
+            userId: candidate.user_id,
+            subject: `Job offer - ${job.job_title} at ${propertyName}`,
+            html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;color:#222321"><div style="background:#222321;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">Job offer</p><h1 style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="font-weight:600;margin:0 0 12px;">Congratulations, ${escapeHtml(candidate.full_name || 'there')}</h2><p style="line-height:1.6">${escapeHtml(propertyName)} would like to offer you the role of <strong>${escapeHtml(job.job_title)}</strong>.</p><div style="background:#ede8df;border:1px solid #e5e5e5;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${escapeHtml(note)}</div><p style="line-height:1.6">Sign in to review the offer and respond.</p><p style="margin:28px 0"><a href="https://talenthousecollective.co.uk/talent/applications" style="background:#222321;color:#ffffff;padding:12px 24px;text-decoration:none">Review your offer</a></p><p style="color:#777;font-size:13px">Talent House Collective · Talent House Collective</p></div></div>`,
           })
           emailSent = response.ok
-          if (!response.ok) console.error('Offer email failed:', await response.text().catch(() => response.status))
         }
       } catch (emailError: any) {
         console.error('Offer email failed:', emailError?.message)

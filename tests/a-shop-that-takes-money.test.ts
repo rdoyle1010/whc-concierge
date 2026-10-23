@@ -1,0 +1,273 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { packReadiness, referencesForOrder, ownedReferences, priceSingle, pricePack } from '../src/lib/documents/stock'
+import {
+  packBySlug, DEPARTMENT_PACK_PRICE, departmentPacks, sumSingles, singlePriceFor,
+} from '../src/lib/documents/pricing'
+import { LIBRARY_PLAN } from '../src/lib/documents/library-plan'
+import { sellableCatalogue } from '../src/lib/documents/catalogue'
+
+const body = (file: string) =>
+  readFileSync(file, 'utf8')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+
+const everything = new Set(sellableCatalogue().map(entry => entry.reference))
+const firstDepartment = LIBRARY_PLAN[0].department
+const departmentSlug = `department-${firstDepartment.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+
+test('a pack goes on sale only when every document in it is signed off', () => {
+  const pack = packBySlug(departmentSlug)!
+  assert.ok(pack, 'the department pack should resolve')
+
+  const none = packReadiness(pack, new Set())
+  assert.equal(none.buyable, false)
+  assert.equal(none.ready, 0)
+
+  const all = packReadiness(pack, everything)
+  assert.equal(all.buyable, true)
+  assert.equal(all.ready, all.total)
+
+  // One short is not ready. This is the whole rule: a buyer who pays for a
+  // department and receives all but one of it has been sold something else.
+  const oneShort = new Set(everything)
+  const dropped = LIBRARY_PLAN.find(entry => pack.includes(entry.reference))!.reference
+  oneShort.delete(dropped)
+  assert.equal(packReadiness(pack, oneShort).buyable, false)
+})
+
+test('an order entitles its buyer to exactly what the pack covers', () => {
+  const single = referencesForOrder({ document_reference: 'REC-OPEN-CHK-001' })
+  assert.deepEqual(single, ['REC-OPEN-CHK-001'])
+
+  // The complete library means complete, which now includes the two pool
+  // safety plans. They are priced separately and listed together, because
+  // "every document" that omits the two a pool operator needs most is a list
+  // that misleads by being complete-sounding.
+  const complete = referencesForOrder({ pack_slug: 'the-complete-library' })
+  assert.equal(complete.length, sellableCatalogue().length)
+  assert.ok(complete.length > LIBRARY_PLAN.length)
+  assert.ok(complete.includes('SPA-OPERATIONS-NOP-001'))
+  assert.ok(complete.includes('SPA-OPERATIONS-EAP-002'))
+
+  // A slug nobody sells entitles nobody to anything, rather than everything.
+  assert.deepEqual(referencesForOrder({ pack_slug: 'not-a-pack' }), [])
+  assert.deepEqual(referencesForOrder({}), [])
+})
+
+test('two purchases add up rather than replacing each other', () => {
+  // Bought a department in March and one extra document in June. Showing them
+  // only the most recent order shows them less than they paid for.
+  const owned = ownedReferences([
+    { pack_slug: departmentSlug },
+    { document_reference: 'AUD-INTERNAL-AUDIT-PROGRAMME-SCHEDULE-SOP-460' },
+  ])
+  assert.ok(owned.has('AUD-INTERNAL-AUDIT-PROGRAMME-SCHEDULE-SOP-460'))
+  const inDepartment = LIBRARY_PLAN.find(entry => entry.department === firstDepartment)!
+  assert.ok(owned.has(inDepartment.reference))
+})
+
+test('a pack never costs more than buying its documents one at a time', () => {
+  const references = sellableCatalogue().map(entry => entry.reference)
+  for (const pack of departmentPacks()) {
+    assert.ok(pack.price <= sumSingles(references.filter(pack.includes)),
+      'a pack dearer than its parts is a pack nobody buys twice')
+    assert.ok(pack.price <= DEPARTMENT_PACK_PRICE)
+  }
+})
+
+test('nothing unfinished can be paid for', () => {
+  // REC-OPENING-CHK-501, not REC-OPEN-CHK-001: the second was planned before
+  // the checklist suite existed, the suite then wrote the same shift properly,
+  // and two references for one sheet is worse than either alone.
+  const refused = priceSingle('REC-OPENING-CHK-501', new Set(), singlePriceFor('REC-OPENING-CHK-501'))
+  assert.equal(refused.ok, false)
+  assert.match((refused as any).reason, /still in preparation/)
+
+  const unknown = priceSingle('NOT-A-REAL-REF-SOP-999', everything, singlePriceFor('NOT-A-REAL-REF-SOP-999'))
+  assert.equal(unknown.ok, false)
+
+  const sold = priceSingle('REC-OPENING-CHK-501', everything, singlePriceFor('REC-OPENING-CHK-501'))
+  assert.equal(sold.ok, true)
+  // A checklist, priced as a checklist rather than as one flat number.
+  assert.equal((sold as any).amountPence, singlePriceFor('REC-OPENING-CHK-501'))
+
+  // And the refusal says how far along it is, because a number gets a reply
+  // and "not available" gets a closed tab.
+  const partPack = pricePack(departmentSlug, new Set())
+  assert.equal(partPack.ok, false)
+  assert.match((partPack as any).reason, /of \d+ in that pack are signed off/)
+})
+
+test('nothing is sold to somebody who cannot get it back', () => {
+  const checkout = body('src/app/api/standards/checkout/route.ts')
+  // The account check is above every other thing the route does, so a request
+  // that is not signed in cannot reach Stripe at all.
+  const guard = checkout.indexOf('needsAccount')
+  assert.ok(guard > 0, 'checkout must refuse an unauthenticated request')
+  assert.ok(guard < checkout.indexOf('stripe.checkout.sessions.create'))
+  assert.match(checkout, /supabase\.auth\.getUser\(\)/)
+
+  // The receipt goes to the account's own address. One typed at the till is a
+  // purchase the account cannot find afterwards, which is the whole failure.
+  assert.match(checkout, /customer_email: user\.email/)
+  assert.match(checkout, /buyer_user_id: user\.id/)
+
+  // And a signed-out visitor is told, rather than being promised a checkout
+  // and handed a login form.
+  //
+  // This used to require the words "Sign in to buy" on the button itself,
+  // which replaced the name of the product with the name of a hurdle across
+  // every buy button on the site, to almost every visitor, before anybody had
+  // decided they wanted anything. The requirement is real and it still has to
+  // be visible; it is said beside the button now, to the people it applies
+  // to, rather than instead of the thing being sold.
+  const button = body('src/components/BuyButton.tsx')
+  assert.match(button, /signedIn === false && !busy && !error/)
+  assert.match(button, /create an account/)
+  assert.doesNotMatch(button, /: 'Sign in to buy' :/, 'the label is the product, not the hurdle')
+  assert.match(button, /res\.status === 401 \|\| body\?\.needsAccount/)
+  assert.match(button, /\/register\/buyer\?redirect=/)
+
+  // Said on the page before anybody presses anything.
+  assert.match(body('src/app/standards/page.tsx'), /You will need an account/)
+})
+
+test('the browser never says what anything costs', () => {
+  const checkout = body('src/app/api/standards/checkout/route.ts')
+  // Only these two come off the request. An amount from the page is a shop
+  // where the complete library costs a pound.
+  assert.match(checkout, /body\.packSlug/)
+  assert.match(checkout, /body\.reference/)
+  assert.doesNotMatch(checkout, /body\.(price|amount|amountPence)/)
+  assert.match(checkout, /unit_amount: purchase\.amountPence/)
+
+  // Stock is read at the moment of sale, not trusted from the page.
+  assert.match(checkout, /\.eq\('status', 'approved'\)/)
+  assert.match(checkout, /nothing has been charged/)
+
+  const button = body('src/components/BuyButton.tsx')
+  assert.doesNotMatch(button, /amount|unit_amount/, 'the button posts what, never how much')
+})
+
+test('a download is refused unless that buyer bought it', () => {
+  const download = body('src/app/api/standards/download/route.ts')
+  assert.match(download, /ownedReferences\(orders, await bundleReferenceMap\(admin\)\)\.has\(reference\)/)
+  assert.match(download, /not part of what you bought/)
+  // And only a signed off document ever leaves the platform.
+  assert.match(download, /\.eq\('status', 'approved'\)/)
+})
+
+test('a paid purchase has two ways of being delivered', () => {
+  // Fulfilment in the webhook alone took the money and delivered nothing for
+  // several days on this platform when its URL was wrong, with nothing that
+  // would ever have noticed.
+  const library = body('src/app/api/standards/library/route.ts')
+  assert.match(library, /fulfilCheckoutSession/)
+  assert.match(library, /payment_status === 'paid'/)
+
+  const fulfilment = body('src/lib/stripe-checkout-fulfilment.ts')
+  const branch = fulfilment.slice(
+    fulfilment.indexOf("meta?.type === 'standards'"),
+    fulfilment.indexOf("meta?.type === 'sponsored_ad'"),
+  )
+  assert.ok(branch.length > 500, 'the standards branch should have been found')
+  // One row per Stripe session, so the webhook and the browser cannot deliver
+  // the same purchase twice.
+  assert.match(branch, /onConflict: 'stripe_checkout_session_id'/)
+  // The email is the delivery. A failure to send is a failure to deliver.
+  assert.match(branch, /receipt_sent_at/)
+  assert.match(branch, /notifyAdmins/)
+  assert.match(branch, /paid and have nothing/)
+})
+
+test('a purchase lives on the dashboard, not only in an email', () => {
+  const shell = body('src/components/DashboardShell.tsx')
+  // Every workspace that can buy one. A talent, a property and a consultancy
+  // see the same shelf, so it is one page rather than three to keep in step.
+  for (const workspace of ['talent', 'employer', 'consultant']) {
+    const list = shell.slice(shell.indexOf(`${workspace}: [`), shell.indexOf('],', shell.indexOf(`${workspace}: [`)))
+    assert.ok(list.length > 100, `the ${workspace} navigation should have been found`)
+    assert.match(list, /My Documents', href: '\/my-documents'/, `${workspace} cannot reach what it bought`)
+  }
+})
+
+test('a signed-in buyer does not need to find their receipt', () => {
+  const download = body('src/app/api/standards/download/route.ts')
+  // Two ways of being the buyer, because there are two ways of buying.
+  assert.match(download, /if \(token\) \{/)
+  assert.match(download, /createServerSupabaseClient/)
+  assert.match(download, /buyer_user_id\.eq\.\$\{user\.id\}/)
+  // And neither way skips the entitlement check.
+  assert.match(download, /ownedReferences\(orders, await bundleReferenceMap\(admin\)\)\.has\(reference\)/)
+
+  const mine = body('src/app/api/standards/mine/route.ts')
+  // Refused when signed out, by status code. The body used to carry the
+  // word Unauthorised and the page printed it at a buyer, so the check is
+  // on the code that means it rather than on a word that leaks.
+  assert.match(mine, /status: 401/)
+  // Bought before they had an account, claimed onto it the first time they
+  // look, so it is theirs on every device from then on.
+  assert.match(mine, /buyer_user_id: user\.id/)
+})
+
+test('the receipt link is not a dead end', () => {
+  const page = body('src/components/BuyerLibrary.tsx')
+  assert.match(page, /<Navbar \/>/)
+  assert.match(page, /<Footer \/>/)
+  assert.match(page, /href="\/standards"/)
+  // And it says plainly that the link is the only key without an account.
+  assert.match(page, /only way back without an account/)
+})
+
+test('the account a buyer is sent to make is four fields, not a property profile', () => {
+  const page = body('src/app/register/buyer/page.tsx')
+
+  // Exactly what it asks for. Somebody who came for a thirty-nine pound
+  // procedure will not first declare their treatment rooms, their product
+  // houses and their team size, and the ones who abandon that form do not
+  // come back to finish it.
+  for (const field of ['property', 'name', 'email', 'password']) {
+    assert.match(page, new RegExp(`key: '${field}'`), `the short form should ask for ${field}`)
+  }
+  for (const asked of ['num_treatment_rooms', 'team_size', 'product_houses_used', 'systems_used', 'postcode']) {
+    assert.doesNotMatch(page, new RegExp(asked), `the short form must not ask for ${asked}`)
+  }
+
+  // The same account as any other property, made with the least it can be.
+  assert.match(page, /role: 'employer'/)
+  assert.match(page, /api\/register\/employer/)
+  assert.match(page, /agreed_terms: true/)
+
+  // And it returns to what they were buying, down both paths. An account
+  // created to finish a purchase that then drops somebody on a dashboard has
+  // not finished it, and the confirmation path was doing exactly that: inbox,
+  // confirm, sign in, land on a dashboard with no memory of the pack.
+  assert.match(page, /confirm=1&redirect=\$\{encodeURIComponent\(back\)\}/,
+    'the redirect must survive an email confirmation')
+  assert.match(page, /requested\.startsWith\('\/'\) && !requested\.startsWith\('\/\/'\)/,
+    'an open redirect would send a buyer anywhere')
+
+  // The buy button sends them here rather than to the full registration.
+  assert.match(body('src/components/BuyButton.tsx'), /\/register\/buyer\?redirect=/)
+})
+
+// Where somebody was going before they were asked to make an account.
+//
+// The sign-in page sends people to /register/talent and /register/employer
+// with ?redirect= on it, and so do the brand pages. Neither register page read
+// it. So somebody sent to sign up from the match deck made an account and
+// landed on an empty profile editor, with no way back to the thing they were
+// looking at, at the most motivated moment in the whole funnel.
+test('both registration forms come back to what sent somebody there', () => {
+  for (const page of ['src/app/register/talent/page.tsx', 'src/app/register/employer/page.tsx']) {
+    const source = readFileSync(page, 'utf8')
+    assert.match(source, /get\('redirect'\)/, `${page} must read the redirect`)
+    assert.match(source, /startsWith\('\/'\) && !wanted\.startsWith\('\/\/'\)/,
+      `${page}: an open redirect on a registration form sends new accounts anywhere`)
+    assert.match(source, /confirm=1\$\{carry\}/,
+      `${page}: the destination has to survive the email confirmation too`)
+  }
+})

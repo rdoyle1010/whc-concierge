@@ -1,11 +1,89 @@
 import { z } from 'zod'
+// Moved out so the browser can read the defaults without the validator;
+// re-exported so nothing that already imports them has to change.
+import { DEFAULT_PUBLIC_PAGES_CONTENT, DEFAULT_FAQ_SECTIONS, defaultEditorialBand } from './public-page-content-values'
+export { DEFAULT_PUBLIC_PAGES_CONTENT, DEFAULT_FAQ_SECTIONS }
 import { normaliseLegacySiteLinks } from '@/lib/site-content'
 
 export const PUBLIC_PAGES_DRAFT_KEY = 'public_pages_content_draft_v1'
 export const PUBLIC_PAGES_PUBLISHED_KEY = 'public_pages_content_published_v1'
 export const PUBLIC_PAGES_HISTORY_KEY = 'public_pages_content_history_v1'
 
-export const PUBLIC_PAGE_SLUGS = ['properties', 'agency', 'residency', 'pricing', 'coming-soon'] as const
+export const PUBLIC_PAGE_SLUGS = [
+  'properties', 'agency', 'residency', 'pricing', 'coming-soon',
+  // Added once the site had outgrown the five it started with. These are the
+  // pages a stranger reads before deciding whether to take this seriously, and
+  // until now only a deploy could change a word of them.
+  'about', 'advertise', 'how-to-use', 'academy', 'agency-cover', 'contact',
+] as const
+
+/**
+ * What each page actually renders, so the editor only offers what exists.
+ *
+ * This map is the answer to the complaint that started it: an editor full of
+ * boxes that change nothing is worse than no editor, because somebody writes
+ * something, saves it, looks at the page and concludes the whole screen is
+ * broken. The five newer pages have text heroes and no hero photograph and no
+ * three-block band, so they get three fields and no image picker.
+ *
+ * A test holds this against what the pages consume. If a page starts rendering
+ * its blocks, or stops, the map is wrong until somebody changes it here.
+ */
+/**
+ * What each page is called and where it lives.
+ *
+ * Kept here because there were two copies, one on the page editor and one on
+ * the Pictures screen, and the second was typed as Record<string, string> so
+ * nothing complained when six pages were added and only one copy was updated.
+ * The Pictures screen quietly rendered them with no heading at all.
+ */
+export const PAGE_NAMES: Record<PublicPageSlug, string> = {
+  properties: 'Properties', agency: 'Agency', residency: 'Residency',
+  pricing: 'Pricing', 'coming-soon': 'Coming Soon', about: 'About',
+  advertise: 'Advertise', 'how-to-use': 'How It Works', academy: 'Academy',
+  'agency-cover': 'Agency Cover', contact: 'Contact',
+}
+
+export const PAGE_PATHS: Record<PublicPageSlug, string> = {
+  properties: '/properties', agency: '/agency/about', residency: '/residency',
+  pricing: '/pricing', 'coming-soon': '/coming-soon', about: '/about',
+  advertise: '/advertise', 'how-to-use': '/how-to-use', academy: '/academy',
+  'agency-cover': '/agency', contact: '/contact',
+}
+
+/**
+ * What a page actually renders, and therefore what it may be asked about.
+ *
+ * `blocks` is a count rather than a flag. It was a boolean, and a boolean can
+ * only say "some", so a page that rendered one section still offered three
+ * editors - which is precisely the complaint recorded against Pricing below:
+ * boxes that take wording and a photograph and put them nowhere. A number
+ * cannot drift from the truth as quietly.
+ */
+export type PageSections = { heroImage: boolean; blocks: number }
+
+export const PAGE_SECTIONS: Record<PublicPageSlug, PageSections> = {
+  properties: { heroImage: true, blocks: 3 },
+  agency: { heroImage: true, blocks: 3 },
+  residency: { heroImage: true, blocks: 3 },
+  // Pricing has offered three section editors since it was built and has
+  // never rendered one of them. Not something this change broke: it was live,
+  // and it is exactly the complaint that started all of this. Recorded here
+  // rather than fixed by adding three sections nobody designed, so the boxes
+  // stop being offered until somebody decides the page wants them.
+  pricing: { heroImage: true, blocks: 0 },
+  'coming-soon': { heroImage: true, blocks: 3 },
+  // The founder section is the first block. It was hardcoded prose and a
+  // hardcoded file path - /images/founder-rebecca.jpg, which has never existed
+  // in this repository - so the About page showed a grey monogram and there was
+  // no upload slot anywhere on the platform that could fix it.
+  about: { heroImage: false, blocks: 1 },
+  advertise: { heroImage: false, blocks: 0 },
+  'how-to-use': { heroImage: false, blocks: 0 },
+  academy: { heroImage: false, blocks: 0 },
+  'agency-cover': { heroImage: false, blocks: 0 },
+  contact: { heroImage: false, blocks: 0 },
+}
 export type PublicPageSlug = typeof PUBLIC_PAGE_SLUGS[number]
 
 const text = z.string().trim().max(6000)
@@ -19,22 +97,31 @@ const pageSchema = z.object({
   blocks: z.array(blockSchema).length(3),
 })
 
-const defaultEditorialBand = [
-  { url: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', alt: 'Luxury spa treatment in progress', label: 'Spa & wellness', focalX: 50, focalY: 50 },
-  { url: 'https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1600', alt: 'Contemporary luxury hospitality interior', label: 'Exceptional properties', focalX: 50, focalY: 50 },
-  { url: 'https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1600', alt: 'Modern timber sauna and wellness space', label: 'Wellness environments', focalX: 50, focalY: 50 },
-  { url: 'https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1600', alt: 'Warm Mediterranean hospitality courtyard', label: 'Destination hospitality', focalX: 50, focalY: 50 },
-]
+
+// Questions and answers, which are a list of lists rather than a hero and
+// three blocks. Forcing them into the page shape was the reason FAQ was left
+// out of the first pass, and the reason it is a separate key now: a screen
+// that lets somebody edit three of their twenty-three questions is not an
+// improvement on a screen that lets them edit none.
+const faqItemSchema = z.object({ question: text, answer: text })
+const faqSectionSchema = z.object({ title: text, items: z.array(faqItemSchema).max(40) })
 
 export const PublicPagesContentSchema = z.object({
   version: z.literal(1),
   editorialBand: z.array(labelledImageSchema).length(4).default(defaultEditorialBand),
+  faq: z.array(faqSectionSchema).max(12).default(() => DEFAULT_FAQ_SECTIONS),
   pages: z.object({
     properties: pageSchema,
     agency: pageSchema,
     residency: pageSchema,
     pricing: pageSchema,
     'coming-soon': pageSchema,
+    about: pageSchema,
+    advertise: pageSchema,
+    'how-to-use': pageSchema,
+    academy: pageSchema,
+    'agency-cover': pageSchema,
+    contact: pageSchema,
   }),
 })
 
@@ -42,92 +129,89 @@ export type PublicPagesContent = z.infer<typeof PublicPagesContentSchema>
 export type PublicPageContent = PublicPagesContent['pages'][PublicPageSlug]
 export type PublicPagesHistoryEntry = { id: string; publishedAt: string; publishedBy?: string; content: PublicPagesContent }
 
-const image = (url: string, alt: string) => ({ url, alt, focalX: 50, focalY: 50 })
-const block = (eyebrow: string, heading: string, text: string, url = '', alt = '') => ({ eyebrow, heading, text, image: image(url, alt), visible: true })
-
-export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
-  version: 1,
-  editorialBand: defaultEditorialBand,
-  pages: {
-    properties: {
-      label: 'Properties',
-      hero: {
-        eyebrow: 'WHC properties',
-        heading: 'Exceptional places to work.',
-        text: 'Meet verified hotels, spas and wellness destinations using Talent House Collective to find exceptional people. Featured properties appear first.',
-        image: image('https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality interior'),
-      },
-      blocks: [
-        block('Verified partners', 'Properties building their teams with us.', 'Discover properties using Talent House Collective to recruit and book exceptional wellness professionals.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Luxury spa treatment'),
-        block('A better first impression', 'See the place behind the role.', 'Property photography, brand information, reviews and live opportunities help professionals understand where they could work.', 'https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1600', 'Contemporary wellness space'),
-        block('For exceptional properties', 'Your employer brand should be visible.', 'Verified properties can build a richer profile so talent sees more than a job title.', 'https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1600', 'Luxury destination hospitality'),
-      ],
-    },
-    agency: {
-      label: 'Agency',
-      hero: {
-        eyebrow: 'Flexible spa staffing',
-        heading: 'Need a therapist tomorrow? Want flexible spa shifts?',
-        text: 'Agency connects spas and hotels that need qualified cover with professionals who have chosen when they are available to work. Employers search the shift. Professionals choose when and where they work.',
-        image: image('https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1800', 'Spa professional delivering a treatment'),
-      },
-      blocks: [
-        block('For employers', 'Post the shift. See who is genuinely available.', 'Choose the date, hours, location and treatments you need. Talent House Collective shows suitable professionals whose availability fits the whole shift, together with their experience, skills, rate, location and verification information. Review the profile, make an offer and confirm the cover.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Luxury hotel spa team'),
-        block('For professionals', 'Tell us when you are free. You decide what you accept.', 'Set your exact availability, hourly rate, travel radius, treatment skills and preferred working area. Suitable properties can find you for the hours you have chosen. You review the opportunity and decide whether the shift works for you.', 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=82&w=1600', 'Wellness professional'),
-        block('Verification made clearer', 'Qualified abroad? Your experience should still make sense here.', 'Spa is an international industry. Profiles can show where a professional trained, the treatments they are qualified to perform, qualification review status, right-to-work information and insurance status. Where a formal UK equivalence has not been established, the platform does not pretend that it has.', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=82&w=1600', 'Spa therapist at work'),
-      ],
-    },
-    residency: {
-      label: 'Residency',
-      hero: {
-        eyebrow: 'Curated Residency Marketplace',
-        heading: 'Bring exceptional wellness talent into your property.',
-        text: 'Discover experienced specialists for seasonal, short-term and signature residencies. Identity stays protected while you discuss fit, then agreed terms and payment stay securely on Talent House Collective.',
-        image: image('https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1800', 'Destination wellness setting'),
-      },
-      blocks: [
-        block('Residency talent', 'Specialists available for placement', 'Discover visiting practitioners, educators, trainers and programme creators for focused placements.', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=82&auto=format&fit=crop', 'Luxury spa setting'),
-        block('For properties', 'Create something guests cannot get every day.', 'Residencies can bring distinctive expertise, seasonal programming and new commercial energy into a spa or wellness operation.', 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=82&w=1600', 'Spa and wellness experience'),
-        block('For specialists', 'Take your expertise somewhere remarkable.', 'Package your specialism, availability, preferred destinations and commercial terms into a protected professional listing.', 'https://images.unsplash.com/photo-1591343395082-e120087004b4?auto=format&fit=crop&q=82&w=1600', 'Wellness practitioner'),
-      ],
-    },
-    pricing: {
-      label: 'Pricing',
-      hero: {
-        eyebrow: 'Pricing',
-        heading: 'Choose what you need. Know what you pay.',
-        text: 'A free career profile at the centre, optional visibility and flexible-work memberships for professionals, and clear commercial pricing for properties.',
-        image: image('https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1800', 'Luxury spa treatment environment'),
-      },
-      blocks: [
-        block('For professionals', 'Start free. Add only what helps your career.', 'Permanent recruitment remains free for Talent. Paid options are for extra visibility or participation in specialist marketplaces.', 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=82&w=1600', 'Wellness professional'),
-        block('Flexible staffing & specialist bookings', 'The property pays the platform fee.', 'For Agency and Residency bookings, the commercial split is shown before confirmation so both sides know what has been agreed.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Premium hotel'),
-        block('For employers', 'Permanent recruitment, without salary commission.', 'Choose the reach and support level for each role. Once you hire, there is no additional percentage fee on salary.', 'https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1600', 'Luxury property interior'),
-      ],
-    },
-    'coming-soon': {
-      label: 'Coming Soon',
-      hero: {
-        eyebrow: 'Coming next',
-        heading: 'Talent House Collective is only the beginning.',
-        text: 'We are building the talent, flexible staffing and career-confidence platform for hospitality - starting with spa and wellness, then expanding into the departments every great property depends on.',
-        image: image('https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality destination'),
-      },
-      blocks: [
-        block('AI Interview & Confidence Coach', 'Not an answer machine. A confidence builder.', 'Help professionals understand themselves, pull stronger evidence from their own experience and practise until they can answer with confidence.', 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=82&w=1600', 'Professionals in conversation'),
-        block('Hospitality expansion', 'From spa into the departments that make hospitality work.', 'Permanent jobs and flexible Agency staffing will expand beyond spa while Residency stays specialist.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Hospitality property'),
-        block('Property arrival packs', 'Know the property before your first shift starts.', 'Confirmed Agency and Residency professionals receive the practical details they need before they arrive.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Spa operations'),
-      ],
-    },
-  },
-}
 
 export function cloneDefaultPublicPagesContent(): PublicPagesContent {
   return JSON.parse(JSON.stringify(DEFAULT_PUBLIC_PAGES_CONTENT)) as PublicPagesContent
 }
 
+/**
+ * Fill the gaps rather than throw the lot away.
+ *
+ * This is the fix for a bug I caused. Stored content was validated strictly
+ * and, on any failure, discarded in favour of the code defaults. That was
+ * survivable while the shape never changed. The moment six pages and a list of
+ * questions were added to the schema, every draft and every published version
+ * saved before that stopped validating - so every read returned the defaults,
+ * and the owner watched her photographs revert to stock every time she opened
+ * the screen. Nothing said why. The editor simply showed old pictures again.
+ *
+ * Adding a field must never be able to erase somebody's work. Stored values
+ * now sit on top of the defaults, key by key, so anything missing fills itself
+ * in and anything present survives.
+ */
+function fillGaps(stored: any, defaults: any): any {
+  if (Array.isArray(defaults)) {
+    // A stored array wins outright. Merging element by element would quietly
+    // resurrect a question she deleted, or a fifth footer tile.
+    return Array.isArray(stored) ? stored : defaults
+  }
+  if (defaults && typeof defaults === 'object') {
+    if (!stored || typeof stored !== 'object') return defaults
+    const merged: any = { ...defaults }
+    for (const key of Object.keys(defaults)) merged[key] = fillGaps(stored[key], defaults[key])
+    // Anything stored that the defaults no longer know about is dropped, which
+    // is what removing a page from the schema should mean.
+    return merged
+  }
+  return stored === undefined || stored === null ? defaults : stored
+}
+
+/**
+ * A section nobody has ever written gets the wording the page shipped with.
+ *
+ * Changing a default does not change a page that has already been published:
+ * the stored content wins. About had three empty blocks saved against it from
+ * before its founder section was editable, so making that section editable
+ * emptied it - the live page went from two paragraphs to a lone LinkedIn
+ * button.
+ *
+ * Strictly untouched only: no eyebrow, no heading, no wording. A block she has
+ * put a single word in is hers, and nothing here second-guesses it. The way to
+ * remove a section deliberately is the Show section tickbox, which is what that
+ * control is for.
+ *
+ * Images are never substituted. An empty picture means none has been uploaded,
+ * which is a different statement from empty wording.
+ */
+function fillUntouchedBlocks(content: PublicPagesContent): PublicPagesContent {
+  for (const slug of PUBLIC_PAGE_SLUGS) {
+    const page = content.pages[slug]
+    const defaults = DEFAULT_PUBLIC_PAGES_CONTENT.pages[slug]
+    page.blocks.forEach((block, index) => {
+      const fallback = defaults.blocks[index]
+      if (!fallback) return
+      const untouched = !block.eyebrow.trim() && !block.heading.trim() && !block.text.trim()
+      if (!untouched) return
+      block.eyebrow = fallback.eyebrow
+      block.heading = fallback.heading
+      block.text = fallback.text
+    })
+  }
+  return content
+}
+
 export function parsePublicPagesContent(value: unknown): PublicPagesContent {
   const raw = typeof value === 'string' ? (() => { try { return JSON.parse(value) } catch { return null } })() : value
+
   const parsed = PublicPagesContentSchema.safeParse(raw)
-  return parsed.success ? normaliseLegacySiteLinks(parsed.data) : cloneDefaultPublicPagesContent()
+  if (parsed.success) return fillUntouchedBlocks(normaliseLegacySiteLinks(parsed.data))
+
+  // Second attempt, with the gaps filled from the defaults. A version saved
+  // before a field existed is not corrupt, it is just older than the schema.
+  const repaired = PublicPagesContentSchema.safeParse(fillGaps(raw, DEFAULT_PUBLIC_PAGES_CONTENT))
+  if (repaired.success) return fillUntouchedBlocks(normaliseLegacySiteLinks(repaired.data))
+
+  // Genuinely unreadable. Now the defaults are the right answer.
+  console.error('[public pages] stored content could not be read even after filling gaps')
+  return cloneDefaultPublicPagesContent()
 }

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const admin = createAdminClient()
     const { data: employer } = await admin.from('employer_profiles')
@@ -33,6 +33,10 @@ export async function GET(req: NextRequest) {
       admin.from('candidate_profiles').select('id')
         .eq('approval_status', 'approved')
         .or('profile_visible.eq.true,profile_visible.is.null')
+        // Counting somebody in "talent available near you" who has hidden
+        // themselves is a small leak and a wrong number at once: it promises
+        // a property reach it does not have.
+        .or('stealth_mode.eq.false,stealth_mode.is.null')
         .gte('created_at', fortnightAgo),
       // Unfilled agency cover, honestly counted: cascades that expired without
       // acceptance, for shifts that have not yet passed.

@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og'
 
-export const runtime = 'edge'
 export const alt = 'Talent House Collective - Luxury Wellness Careers Platform'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -16,7 +15,7 @@ export default function OGImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#F8F7F5',
+          background: '#ede8df',
           padding: '80px',
           position: 'relative',
           fontFamily: 'Helvetica, Arial, sans-serif',
@@ -28,7 +27,7 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 18,
             fontWeight: 600,
-            color: '#57534e',
+            color: '#57544c',
             letterSpacing: '6px',
             textTransform: 'uppercase',
             marginBottom: 56,
@@ -43,7 +42,7 @@ export default function OGImage() {
             display: 'flex',
             width: 80,
             height: 1,
-            background: '#57534e',
+            background: '#57544c',
             marginBottom: 40,
           }}
         />
@@ -55,7 +54,7 @@ export default function OGImage() {
             textAlign: 'center',
             fontSize: 68,
             fontWeight: 500,
-            color: '#1c1b1a',
+            color: '#222321',
             lineHeight: 1.12,
             letterSpacing: '-1px',
             maxWidth: 940,
@@ -71,7 +70,7 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 24,
             fontWeight: 400,
-            color: '#57534e',
+            color: '#57544c',
             textAlign: 'center',
             maxWidth: 760,
             lineHeight: 1.5,
@@ -89,7 +88,7 @@ export default function OGImage() {
             right: 80,
             display: 'flex',
             fontSize: 16,
-            color: '#6e6a66',
+            color: '#6e6a60',
             letterSpacing: '1px',
             fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
           }}

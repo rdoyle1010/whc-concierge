@@ -20,7 +20,7 @@ async function getAuthed() {
 
 export async function GET() {
   const user = await getAuthed()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const [{ data: cand }, { data: emp }] = await Promise.all([
@@ -55,7 +55,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await getAuthed()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: cand } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()

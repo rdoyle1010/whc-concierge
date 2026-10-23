@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Briefcase, Users, ArrowRight, Plus, Clock, Calendar, MapPin } from 'lucide-react'
 import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 import SponsoredAd from '@/components/SponsoredAd'
+import AmbassadorCodeBox from '@/components/AmbassadorCodeBox'
+import DailyThought from '@/components/DailyThought'
 
 // Time-of-day greeting for the property brief, computed on the client clock.
 function timeOfDayGreeting(): string {
@@ -40,14 +43,16 @@ export default function EmployerDashboard() {
         .then(res => (res.ok ? res.json() : null))
         .then(data => { if (data && !data.error) setIntel(data) })
         .catch(() => { /* intelligence is optional */ })
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) { setLoading(false); return }
 
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       setProfile(prof)
       if (!prof) { setLoading(false); return }
 
-      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
+      const { data: jobs } = await supabase.from('job_listings')
+        .select('id, job_title, title, is_live, job_type, contract_type, location, tier, posted_date')
+        .eq('employer_id', prof.id).order('posted_date', { ascending: false })
       const normalizedJobs = (jobs || []).map((j: any) => ({
         ...j,
         title: j.job_title || j.title,
@@ -58,32 +63,36 @@ export default function EmployerDashboard() {
       const activeJobs = normalizedJobs.filter(j => j.is_live)
       const jobIds = normalizedJobs.map(j => j.id)
 
-      let appCount = 0
-      if (jobIds.length > 0) {
-        const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('role_id', jobIds).neq('status', 'draft')
-        appCount = count || 0
-
-        const { data: apps } = await supabase
-          .from('applications')
-          .select('*, candidate_profiles(full_name, headline)')
-          .in('role_id', jobIds)
-          .neq('status', 'draft')
-          .order('created_at', { ascending: false })
-          .limit(5)
-        setRecentApps((apps || []).map((a: any) => {
-          const job = normalizedJobs.find(j => j.id === a.role_id)
-          return { ...a, jobTitle: job?.title || 'Role' }
-        }))
-      }
-
-      let matchCount = 0
-      if (jobIds.length > 0) {
+      // These four asked nothing of each other and were run one after the
+      // other anyway: four round trips of waiting where one will do. Everything
+      // they need is already in hand once the roles are loaded.
+      const hasJobs = jobIds.length > 0
+      const [appCountResult, appsResult, matchResult, msgResult] = await Promise.all([
+        hasJobs
+          ? supabase.from('applications').select('id', { count: 'exact', head: true }).in('role_id', jobIds).neq('status', 'draft')
+          : Promise.resolve({ count: 0 }),
+        hasJobs
+          ? supabase.from('applications')
+              .select('*, candidate_profiles(full_name, headline)')
+              .in('role_id', jobIds)
+              .neq('status', 'draft')
+              .order('created_at', { ascending: false })
+              .limit(5)
+          : Promise.resolve({ data: [] }),
         // The live matches table keys jobs by job_listing_id.
-        const current = await supabase.from('matches').select('id', { count: 'exact', head: true }).in('job_listing_id', jobIds)
-        matchCount = current.count || 0
-      }
+        hasJobs
+          ? supabase.from('matches').select('id', { count: 'exact', head: true }).in('job_listing_id', jobIds)
+          : Promise.resolve({ count: 0 }),
+        supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
+      ])
 
-      const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false)
+      const appCount = appCountResult.count || 0
+      setRecentApps(((appsResult as any).data || []).map((a: any) => {
+        const job = normalizedJobs.find(j => j.id === a.role_id)
+        return { ...a, jobTitle: job?.title || 'Role' }
+      }))
+      const matchCount = matchResult.count || 0
+      const msgCount = msgResult.count
 
       setStats({ active: activeJobs.length, applications: appCount, matches: matchCount, messages: msgCount || 0 })
       setLoading(false)
@@ -118,6 +127,8 @@ export default function EmployerDashboard() {
         <h1 className="dashboard-title">{profile?.property_name || profile?.company_name || 'Property dashboard'}</h1>
         <p className="dashboard-intro">Permanent recruitment, urgent agency cover, specialist Residencies and private candidate conversations in one verified property workspace.</p>
       </div>
+
+      <DailyThought className="mb-9" />
 
       {(!profile?.approval_status || profile?.approval_status === 'pending') && (
         <div className="border-l-2 border-amber-500 bg-white/65 px-5 py-4 mb-7 flex items-start gap-3">
@@ -365,6 +376,11 @@ export default function EmployerDashboard() {
           )}
         </section>
       </div>
+
+      <div className="mt-8">
+        <AmbassadorCodeBox audience="employer" />
+      </div>
+
           <SponsoredAd placement="employer_dashboard_sponsor" />
     </DashboardShell>
   )

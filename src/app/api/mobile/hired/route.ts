@@ -4,7 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: account } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -79,21 +79,21 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const applicationId = String(body.applicationId || '')
   if (!applicationId || String(body.action || '') !== 'reopen_record') return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data: account } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (account?.role !== 'employer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (account?.role !== 'employer') return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
   const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
   if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
   const { data: application } = await admin.from('applications').select('id,role_id,job_id,archived_at').eq('id', applicationId).maybeSingle()
   if (!application?.archived_at) return NextResponse.json({ error: 'Archived placement not found.' }, { status: 404 })
   const jobId = application.role_id || application.job_id
   const { data: job } = await admin.from('job_listings').select('id,employer_id').eq('id', jobId).maybeSingle()
-  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
   const { error } = await admin.from('applications').update({ archived_at: null, updated_at: new Date().toISOString() }).eq('id', application.id)
   if (error) return NextResponse.json({ error: 'Could not reopen placement record.' }, { status: 500 })
   return NextResponse.json({ success: true })

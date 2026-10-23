@@ -1,6 +1,13 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
+// The defaults come from the values file, not from public-page-content.
+// That module builds the zod schemas these types are inferred from, so
+// importing a default through it pulled the whole of zod into this page:
+// 62KB gzipped, to render copy that is already in the HTML. Types are
+// erased at compile time, so `import type` from it stays free.
+import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
+import type { PublicPageContent } from '@/lib/public-page-content'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -25,7 +32,7 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
   academy_sponsor: {
     audience: 'Professionals actively developing their careers',
-    where: 'Inside the WHC Academy journey',
+    where: 'Inside the Talent House Academy journey',
     bestFor: 'Training, product houses, education, equipment and professional services',
   },
   jobs_talent_sponsor: {
@@ -40,7 +47,7 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
   journal_sponsor: {
     audience: 'Professionals and leaders reading industry editorial',
-    where: 'At the top of the WHC Journal',
+    where: 'At the top of the Talent House Journal',
     bestFor: 'Product houses, education, events and industry announcements',
   },
   journal_article_sponsor: {
@@ -60,8 +67,18 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
   agency_page_sponsor: {
     audience: 'Flexible-work professionals and the properties booking them',
-    where: 'On WHC agency and flexible-work pages',
+    where: 'On Talent House agency and flexible-work pages',
     bestFor: 'Insurance, payroll, training and products for freelance professionals',
+  },
+  intelligence_hero: {
+    audience: 'Operators, group directors and senior professionals reading the market',
+    where: 'The picture box beside the Talent House Intelligence masthead',
+    bestFor: 'Consultancies, equipment houses and groups who want to be seen as part of the industry conversation',
+  },
+  intelligence_band: {
+    audience: 'Readers who have worked through the market report to the end',
+    where: 'The full-width panel that closes Talent House Intelligence',
+    bestFor: 'Brands and suppliers targeting decision-makers at the point they act on what they have read',
   },
   residency_page_sponsor: {
     audience: 'Professionals considering international placements',
@@ -78,6 +95,18 @@ function formatPounds(pence: number) {
 }
 
 export default function AdvertisePage() {
+  // Header wording, hers to change without a deploy. Loaded in the browser
+  // so the page itself stays static for everybody, with the code default
+  // showing until it arrives - which is the same words, so nothing flickers.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['advertise'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=advertise${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   const [placement, setPlacement] = useState<AdPlacementKey>('homepage_spotlight')
   const [prices, setPrices] = useState<Record<string, number>>({})
   const [form, setForm] = useState({ brandName: '', contactEmail: '', tagline: '', websiteUrl: '', logoUrl: '' })
@@ -143,41 +172,41 @@ export default function AdvertisePage() {
   const priceFor = (key: AdPlacementKey) => prices[key] ?? AD_PLACEMENTS[key].monthlyPence
   const selectedPrice = priceFor(placement)
 
-  return <div className="min-h-screen bg-[#f3f0eb]">
+  return <div className="min-h-screen bg-[#ede8df]">
     <Navbar />
     <main id="main-content" className="pt-[76px]">
-      <section className="bg-[#1c1b1a] text-white">
+      <section className="bg-[#ede8df] text-ink">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#57534e] font-semibold mb-4">Advertise with Wellness House Collective</p>
-          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-white max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
-          <p className="text-[15px] leading-7 text-white/70 max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then WHC reviews the creative before publication.</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#57544c] font-semibold mb-4">{cms.hero.eyebrow}</p>
+          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-ink max-w-4xl">{cms.hero.heading}</h1>
+          <p className="text-[15px] leading-7 text-secondary max-w-2xl mt-5">{cms.hero.text}</p>
         </div>
       </section>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-8 space-y-3">
         {confirming && <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-5">Confirming your Stripe payment and creating the admin approval record…</div>}
-        {confirmation && <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-5"><p className="font-medium flex items-center gap-2"><Check size={16} /> Payment confirmed and advert submitted.</p><p className="text-[13px] mt-1"><strong>{confirmation.brandName}</strong> · {confirmation.placement}. Status: awaiting WHC approval. A confirmation email has been sent to the address supplied.</p></div>}
+        {confirmation && <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-5"><p className="font-medium flex items-center gap-2"><Check size={16} /> Payment confirmed and advert submitted.</p><p className="text-[13px] mt-1"><strong>{confirmation.brandName}</strong> · {confirmation.placement}. Status: awaiting Talent House approval. A confirmation email has been sent to the address supplied.</p></div>}
         {confirmationError && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5"><p className="font-medium">Payment return needs attention.</p><p className="text-[13px] mt-1">{confirmationError}</p></div>}
         {cancelled && <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-5">Checkout was cancelled. No advert has been submitted.</div>}
       </div>
 
       <section className="max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-16">
         <div className="max-w-3xl mb-8">
-          <p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#1c1b1a]">Choose your placement</p>
-          <h2 className="text-[32px] md:text-[42px] font-semibold tracking-[-.04em] text-[#1c1b1a] mt-2">Where do you want your brand to live?</h2>
-          <p className="text-[13px] leading-6 text-[#57534e] mt-3">All placements are rolling monthly subscriptions. They renew each month until cancelled.</p>
+          <p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#222321]">Choose your placement</p>
+          <h2 className="text-[32px] md:text-[42px] font-semibold tracking-[-.04em] text-[#222321] mt-2">Where do you want your brand to live?</h2>
+          <p className="text-[13px] leading-6 text-[#57544c] mt-3">All placements are rolling monthly subscriptions. They renew each month until cancelled.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10">
           {(Object.entries(AD_PLACEMENTS) as [AdPlacementKey, (typeof AD_PLACEMENTS)[AdPlacementKey]][]).map(([key, config]) => {
             const copy = audienceCopy[key]
             const active = placement === key
-            return <button key={key} type="button" onClick={() => setPlacement(key)} className={`text-left rounded-[22px] p-6 transition-all ${active ? 'bg-[#1c1b1a] text-white border border-[#1c1b1a] shadow-lg' : 'bg-white border border-[#e0dad2] text-[#1c1b1a] hover:border-[#57534e]'}`}>
-              <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-white/70' : 'text-[#1c1b1a]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#1c1b1a]'}`}>£{formatPounds(priceFor(key))}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#6e6a66]'}`}> / month</span></p></div>{active && <Check size={18} className="text-white" />}</div>
-              <p className={`text-[12px] leading-6 mt-4 ${active ? 'text-white/66' : 'text-[#57534e]'}`}>{config.description}</p>
-              <div className={`mt-5 pt-4 border-t space-y-2 ${active ? 'border-white/12' : 'border-[#e0dad2]'}`}>
-                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#57534e]'}`}><strong>Audience:</strong> {copy.audience}</p>
-                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#57534e]'}`}><strong>Best for:</strong> {copy.bestFor}</p>
+            return <button key={key} type="button" onClick={() => setPlacement(key)} className={`text-left rounded-[22px] p-6 transition-all ${active ? 'bg-[#222321] text-white border border-[#222321] shadow-lg' : 'bg-white border border-[#dcd4c8] text-[#222321] hover:border-[#57544c]'}`}>
+              <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-white/70' : 'text-[#222321]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#222321]'}`}>£{formatPounds(priceFor(key))}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#6e6a60]'}`}> / month</span></p></div>{active && <Check size={18} className="text-white" />}</div>
+              <p className={`text-[12px] leading-6 mt-4 ${active ? 'text-white/66' : 'text-[#57544c]'}`}>{config.description}</p>
+              <div className={`mt-5 pt-4 border-t space-y-2 ${active ? 'border-white/12' : 'border-[#dcd4c8]'}`}>
+                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#57544c]'}`}><strong>Audience:</strong> {copy.audience}</p>
+                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#57544c]'}`}><strong>Best for:</strong> {copy.bestFor}</p>
               </div>
             </button>
           })}
@@ -185,47 +214,47 @@ export default function AdvertisePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[.9fr_1.1fr] gap-8 items-start">
           <div className="space-y-5">
-            <div className="rounded-[22px] bg-white border border-[#e0dad2] p-7">
-              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1b1a]">Your selected placement</p>
-              <h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#1c1b1a] mt-2">{selected.label}</h2>
-              <div className="space-y-4 mt-6 text-[12px] leading-6 text-[#57534e]">
-                <div><p className="font-semibold text-[#1c1b1a]">Where it appears</p><p>{selectedAudience.where}</p></div>
-                <div><p className="font-semibold text-[#1c1b1a]">Who sees it</p><p>{selectedAudience.audience}</p></div>
-                <div><p className="font-semibold text-[#1c1b1a]">How long it runs</p><p>{AD_BILLING_COPY.short}</p></div>
-                <div><p className="font-semibold text-[#1c1b1a]">When it starts</p><p>{AD_BILLING_COPY.start}</p></div>
+            <div className="rounded-[22px] bg-white border border-[#dcd4c8] p-7">
+              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#222321]">Your selected placement</p>
+              <h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#222321] mt-2">{selected.label}</h2>
+              <div className="space-y-4 mt-6 text-[12px] leading-6 text-[#57544c]">
+                <div><p className="font-semibold text-[#222321]">Where it appears</p><p>{selectedAudience.where}</p></div>
+                <div><p className="font-semibold text-[#222321]">Who sees it</p><p>{selectedAudience.audience}</p></div>
+                <div><p className="font-semibold text-[#222321]">How long it runs</p><p>{AD_BILLING_COPY.short}</p></div>
+                <div><p className="font-semibold text-[#222321]">When it starts</p><p>{AD_BILLING_COPY.start}</p></div>
               </div>
             </div>
 
-            <div className="rounded-[22px] bg-[#f3f0eb] border border-[#e0dad2] p-7 text-[12px] leading-6 text-[#57534e]">
-              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1b1a] mb-3">Approval journey</p>
-              <p><strong className="text-[#1c1b1a]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
-              <p><strong className="text-[#1c1b1a]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
-              <p><strong className="text-[#1c1b1a]">3.</strong> The booking is written to Admin as <strong>Pending Approval</strong>.</p>
-              <p><strong className="text-[#1c1b1a]">4.</strong> WHC reviews it, then approval makes the advert live in the placement you bought.</p>
-              <p><strong className="text-[#1c1b1a]">5.</strong> You receive an email when it is submitted and another when it goes live.</p>
+            <div className="rounded-[22px] bg-[#ede8df] border border-[#dcd4c8] p-7 text-[12px] leading-6 text-[#57544c]">
+              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#222321] mb-3">Approval journey</p>
+              <p><strong className="text-[#222321]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
+              <p><strong className="text-[#222321]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
+              <p><strong className="text-[#222321]">3.</strong> The booking is written to Admin as <strong>Pending Approval</strong>.</p>
+              <p><strong className="text-[#222321]">4.</strong> Talent House reviews it, then approval makes the advert live in the placement you bought.</p>
+              <p><strong className="text-[#222321]">5.</strong> You receive an email when it is submitted and another when it goes live.</p>
             </div>
           </div>
 
-          <form onSubmit={submit} className="bg-white border border-[#e0dad2] rounded-[22px] p-7 md:p-8 shadow-sm">
-            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#e0dad2]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1b1a]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#1c1b1a] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#1c1b1a]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#6e6a66]">per month · recurring</span></p></div>
+          <form onSubmit={submit} className="bg-white border border-[#dcd4c8] rounded-[22px] p-7 md:p-8 shadow-sm">
+            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#dcd4c8]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#222321]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#222321] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#222321]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#6e6a60]">per month · recurring</span></p></div>
             <div className="space-y-4">
-              <label className="block text-[12px] text-[#57534e]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#57534e]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#57534e]">Advert wording<input required maxLength={220} value={form.tagline} onChange={event => setForm({ ...form, tagline: event.target.value })} placeholder="A short line shown beside your logo" className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#57534e]">Website link<input required type="url" value={form.websiteUrl} onChange={event => setForm({ ...form, websiteUrl: event.target.value })} placeholder="https://yourbrand.com" className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#57534e]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#6e6a66]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
+              <label className="block text-[12px] text-[#57544c]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#57544c]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#57544c]">Advert wording<input required maxLength={220} value={form.tagline} onChange={event => setForm({ ...form, tagline: event.target.value })} placeholder="A short line shown beside your logo" className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#57544c]">Website link<input required type="url" value={form.websiteUrl} onChange={event => setForm({ ...form, websiteUrl: event.target.value })} placeholder="https://yourbrand.com" className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#57544c]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#6e6a60]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
             </div>
 
-            <div className="mt-6 rounded-xl border border-[#e0dad2] bg-[#f3f0eb] p-4">
-              <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#57534e]">
+            <div className="mt-6 rounded-xl border border-[#dcd4c8] bg-[#ede8df] p-4">
+              <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#57544c]">
                 <input required type="checkbox" checked={termsAccepted} onChange={event => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4" />
-                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#1c1b1a] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to WHC approval.</span>
+                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#222321] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to Talent House approval.</span>
               </label>
             </div>
 
             {error && <p className="text-[12px] text-red-600 mt-4">{error}</p>}
-            <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
-            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#6e6a66]"><ShieldCheck size={14} className="text-[#1c1b1a] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
+            <button type="submit" disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
+            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#6e6a60]"><ShieldCheck size={14} className="text-[#222321] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. Talent House approval is required before the placement can go live.</p></div>
           </form>
         </div>
       </section>

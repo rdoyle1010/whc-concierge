@@ -14,7 +14,7 @@ async function findProfile(userId: string) {
 export async function GET() {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const found = await findProfile(user.id)
   if (!found) return NextResponse.json({ error: 'Profile not found.' }, { status: 404 })
@@ -25,7 +25,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const { optIn } = await req.json().catch(() => ({ optIn: null }))
   if (typeof optIn !== 'boolean') return NextResponse.json({ error: 'Choose whether to receive SMS alerts.' }, { status: 400 })

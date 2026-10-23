@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Upload, RefreshCw, Send, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { Upload, RefreshCw, Send, ExternalLink, Trash2, Image as ImageIcon } from 'lucide-react'
 import { cloneDefaultWebsiteContent, type WebsiteContent } from '@/lib/site-content'
-import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPagesContent } from '@/lib/public-page-content'
+import { cloneDefaultPublicPagesContent, PAGE_NAMES, PAGE_PATHS, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPagesContent } from '@/lib/public-page-content'
 
 // Every picture on the public site, on one screen. The two content stores
 // behind the site (homepage/brand, and the standalone public pages) each
@@ -15,17 +15,13 @@ import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPagesCont
 // publishes both stores in a single action.
 
 type Store = 'website' | 'pages'
-type PanelKey = 'homepageCta' | 'authPanel'
+type PanelKey = 'homepageCta' | 'authPanel' | 'intelligenceHero' | 'intelligenceJournal' | 'agencyProfessional'
 type Slot = { store: Store; field: string; group: string; label: string; url: string; href?: string; panelKey?: PanelKey }
 
-const pageNames: Record<string, string> = {
-  properties: 'Properties', agency: 'Agency', residency: 'Residency',
-  pricing: 'Pricing', 'coming-soon': 'Coming Soon',
-}
-const pagePaths: Record<string, string> = {
-  properties: '/properties', agency: '/agency/about', residency: '/residency',
-  pricing: '/pricing', 'coming-soon': '/coming-soon',
-}
+const pageNames = PAGE_NAMES
+const pagePaths = PAGE_PATHS
+
+const asMb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1) + 'MB'
 
 function websiteSlots(content: WebsiteContent): Slot[] {
   const slots: Slot[] = [
@@ -43,6 +39,9 @@ function websiteSlots(content: WebsiteContent): Slot[] {
   }))
   slots.push({ store: 'website', field: 'panels.homepageCta.image.url', group: 'Dark panels', label: 'Homepage closing panel', url: content.panels.homepageCta.image.url, href: '/', panelKey: 'homepageCta' })
   slots.push({ store: 'website', field: 'panels.authPanel.image.url', group: 'Dark panels', label: 'Sign-in panel', url: content.panels.authPanel.image.url, href: '/login', panelKey: 'authPanel' })
+  slots.push({ store: 'website', field: 'panels.intelligenceHero.image.url', group: 'Dark panels', label: 'Intelligence masthead picture', url: content.panels.intelligenceHero.image.url, href: '/intelligence', panelKey: 'intelligenceHero' })
+  slots.push({ store: 'website', field: 'panels.intelligenceJournal.image.url', group: 'Dark panels', label: 'Intelligence closing panel', url: content.panels.intelligenceJournal.image.url, href: '/intelligence', panelKey: 'intelligenceJournal' })
+  slots.push({ store: 'website', field: 'panels.agencyProfessional.image.url', group: 'Dark panels', label: 'Agency professional band picture', url: content.panels.agencyProfessional.image.url, href: '/agency/about', panelKey: 'agencyProfessional' })
   return slots
 }
 
@@ -54,10 +53,22 @@ function pageSlots(content: PublicPagesContent): Slot[] {
   }))
   for (const slug of PUBLIC_PAGE_SLUGS) {
     const page = content.pages[slug]
-    slots.push({ store: 'pages', field: `pages.${slug}.hero.image.url`, group: pageNames[slug], label: 'Hero image', url: page.hero.image.url, href: pagePaths[slug] })
-    page.blocks.forEach((block, index) => slots.push({
+    // Only the pictures a page actually shows. Six of these pages have text
+    // headers with no photograph and no section band, so offering an upload
+    // for them would put a picture somewhere nobody can see it and leave
+    // somebody wondering which of the two screens was lying.
+    const sections = PAGE_SECTIONS[slug]
+    if (sections.heroImage) {
+      slots.push({ store: 'pages', field: `pages.${slug}.hero.image.url`, group: pageNames[slug], label: 'Hero image', url: page.hero.image.url, href: pagePaths[slug] })
+    }
+    // Only the sections this page renders. Offering a slot for a section that
+    // is never drawn puts a photograph somewhere nobody can see it.
+    page.blocks.slice(0, sections.blocks).forEach((block, index) => slots.push({
       store: 'pages', field: `pages.${slug}.blocks.${index}.image.url`, group: pageNames[slug],
-      label: `Section ${index + 1}${block.visible ? '' : ' (hidden)'}`, url: block.image.url, href: pagePaths[slug],
+      // Named by its heading where it has one. "Section 1" tells somebody
+      // holding a photograph nothing about where it is going to appear.
+      label: `${block.heading?.trim() || `Section ${index + 1}`}${block.visible ? '' : ' (hidden)'}`,
+      url: block.image.url, href: pagePaths[slug],
     }))
   }
   return slots
@@ -96,6 +107,7 @@ export default function MediaLibraryPage() {
       })
       .catch(() => setLoadError('The current pictures could not be loaded. Refresh and try again.'))
       .finally(() => setLoading(false))
+    countUnused()
   }, [])
 
   const slots = useMemo(
@@ -110,6 +122,47 @@ export default function MediaLibraryPage() {
 
   const changed = JSON.stringify(website) !== publishedWebsite || JSON.stringify(pages) !== publishedPages
 
+  // The pictures nothing points at any more.
+  //
+  // Replacing a photograph uploads a new file and leaves the old one where it
+  // was. Nothing has ever deleted one, so every picture ever uploaded is still
+  // in the bucket. Counted here rather than tidied away automatically: a
+  // replacement is not live until it is published, and the version history
+  // exists so a change can be put back, so a file is only safe to remove once
+  // nothing refers to it at all.
+  const [unused, setUnused] = useState<{ unused: number; total: number; bytes: number; known?: boolean; warning?: string; missing?: number; missingNames?: string[] } | null>(null)
+
+  async function countUnused() {
+    const res = await fetch('/api/admin/unused-pictures', { cache: 'no-store' })
+    const data = await res.json().catch(() => null)
+    if (res.ok && data) setUnused(data)
+  }
+
+  async function deleteUnused() {
+    if (!unused?.unused) return
+    // Never offered when the server could not establish what is in use. It
+    // refuses there too; this only avoids asking a question whose answer would
+    // be thrown away.
+    if (unused.known === false) { setNotice({ type: 'error', text: unused.warning || 'The reference check is not installed, so nothing can be deleted safely.' }); return }
+    if (!confirm(`Permanently delete ${unused.unused} picture${unused.unused === 1 ? '' : 's'} that no page uses? This cannot be undone.`)) return
+    setBusy('cleanup'); setNotice(null)
+    const res = await fetch('/api/admin/unused-pictures', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: true }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (!res.ok) { setNotice({ type: 'error', text: data.error || 'Those could not be deleted.' }); return }
+    // Say what actually went, not what was asked for. The version before this
+    // reported success and left thirteen pictures exactly where they were.
+    setNotice({
+      type: 'success',
+      text: data.asked && data.removed < data.asked
+        ? `${data.removed} of ${data.asked} old pictures deleted. The rest could not be removed.`
+        : `${data.removed} old picture${data.removed === 1 ? '' : 's'} deleted for good.`,
+    })
+    countUnused()
+  }
+
   async function replace(slot: Slot, file: File) {
     setBusy(slot.field); setNotice(null)
     const form = new FormData()
@@ -120,17 +173,8 @@ export default function MediaLibraryPage() {
     const data = await response.json().catch(() => ({}))
     setBusy(null)
     if (!response.ok) { setNotice({ type: 'error', text: data.error || 'That picture could not be uploaded.' }); return }
-    if (slot.store === 'website') {
-      setWebsite(current => {
-        let next = setPath(current, slot.field, data.url)
-        if (slot.panelKey && next.panels[slot.panelKey].mode === 'brand') {
-          next = setPath(next, `panels.${slot.panelKey}.mode`, 'image')
-        }
-        return next
-      })
-    } else {
-      setPages(current => setPath(current, slot.field, data.url))
-    }
+    if (slot.store === 'website') setWebsite(current => setPath(current, slot.field, data.url))
+    else setPages(current => setPath(current, slot.field, data.url))
     setNotice({ type: 'success', text: 'Uploaded. Press Publish pictures to put it live.' })
   }
 
@@ -158,6 +202,60 @@ export default function MediaLibraryPage() {
     }
   }
 
+  // Reprocessing every stored picture is too much work for one request, so
+  // the route hands back a cursor and this keeps calling until it is done.
+  // Losing a hundred photographs to a serverless timeout would be a poor trade
+  // for a simpler loop.
+  type Optimise = { running: boolean; applied: boolean; done: number; total: number; rewritten: number; before: number; after: number; failed: number }
+  const [optimise, setOptimise] = useState<Optimise | null>(null)
+  // Where the last run stopped. Without this, pressing the button again
+  // starts from the first picture and spends the whole time budget
+  // re-reading work already done - so a bucket this size would never finish,
+  // however many times somebody pressed it.
+  const [resumeAt, setResumeAt] = useState(0)
+
+  async function runOptimise(apply: boolean) {
+    // A check always reads everything; only an apply resumes, because the
+    // pictures behind it are already done.
+    let cursor = apply ? resumeAt : 0
+    setOptimise({ running: true, applied: apply, done: cursor, total: 0, rewritten: 0, before: 0, after: 0, failed: 0 })
+    const tally = { rewritten: 0, before: 0, after: 0, failed: 0 }
+    for (;;) {
+      // A batch that fails should cost that batch, not the run. Every picture
+      // already rewritten stays rewritten, so resuming from the last good
+      // cursor picks up exactly where it stopped.
+      let batch: any = null
+      for (let attempt = 0; attempt < 3 && !batch; attempt++) {
+        const response = await fetch('/api/admin/optimise-images', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apply, cursor }),
+        }).catch(() => null)
+        if (response?.ok) { batch = await response.json().catch(() => null) }
+        else if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1500 * (attempt + 1)))
+      }
+      if (!batch) {
+        setResumeAt(cursor)
+        setNotice({
+          type: 'error',
+          text: tally.rewritten
+            ? `Stopped after ${tally.rewritten} picture${tally.rewritten === 1 ? '' : 's'}. Those are done and saved - press the button again to carry on from here.`
+            : 'The pictures could not be optimised. Nothing was changed - try again.',
+        })
+        setOptimise(current => current && { ...current, running: false })
+        return
+      }
+      tally.rewritten += batch.rewritten
+      tally.before += batch.before
+      tally.after += batch.after
+      tally.failed += batch.failed
+      cursor = batch.cursor
+      setOptimise({ running: !batch.done, applied: apply, done: cursor, total: batch.total, ...tally })
+      if (batch.done) { setResumeAt(0); break }
+    }
+    // Nothing to reload: each picture is rewritten at its own path, so every
+    // URL on this screen still points at the same place.
+  }
+
   return (
     <DashboardShell role="admin">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -166,14 +264,88 @@ export default function MediaLibraryPage() {
           <h1 className="dashboard-title">Every picture on the site</h1>
           <p className="dashboard-intro max-w-2xl">Swap any picture on the public site from here. For wording, cropping and section order, use <Link href="/admin/website" className="underline">Website &amp; Brand</Link> or <Link href="/admin/website/pages" className="underline">Public pages</Link>.</p>
         </div>
-        <button type="button" onClick={publish} disabled={!changed || busy !== null || loading || Boolean(loadError)} className="btn-primary inline-flex items-center gap-2 disabled:opacity-50">
-          {busy === 'publish' ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />} Publish pictures
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button type="button" onClick={publish} disabled={!changed || busy !== null || loading || Boolean(loadError)} className="btn-primary inline-flex items-center gap-2 disabled:opacity-50">
+            {busy === 'publish' ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />} Publish pictures
+          </button>
+          {unused && unused.unused > 0 && (
+            <button type="button" onClick={deleteUnused} disabled={busy !== null}
+              className="btn-secondary inline-flex items-center gap-2 !py-2 !px-3 text-[12px] disabled:opacity-50">
+              {busy === 'cleanup' ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
+              Delete {unused.unused} unused picture{unused.unused === 1 ? '' : 's'}
+              {unused.bytes > 0 && ` (${(unused.bytes / 1048576).toFixed(1)} MB)`}
+            </button>
+          )}
+          {unused && unused.unused === 0 && unused.total > 0 && (
+            <span className="text-[11px] text-muted">All {unused.total} stored pictures are in use.</span>
+          )}
+          {unused?.known === false && (
+            <span className="text-[11px] text-amber-700 max-w-xs text-right">{unused.warning}</span>
+          )}
+        </div>
       </div>
+
+      {/* Pictures a page points at that are not in the bucket.
+          The inverse of the sweep above, from the same two lists, and the
+          report that would have caught the sweep deleting things on the first
+          morning rather than days later from a screen of broken icons. It is
+          also the list of what to upload again. */}
+      {unused && (unused.missing || 0) > 0 && (
+        <div role="alert" className="mt-5 border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-[13px] font-semibold text-amber-900">
+            {unused.missing} picture{unused.missing === 1 ? '' : 's'} {unused.missing === 1 ? 'is' : 'are'} missing from storage
+          </p>
+          <p className="mt-1 text-[12px] leading-6 text-amber-800">
+            A page still points at {unused.missing === 1 ? 'this file' : 'these files'} and {unused.missing === 1 ? 'it is' : 'they are'} no longer there,
+            so {unused.missing === 1 ? 'it shows' : 'they show'} as a broken image. Upload {unused.missing === 1 ? 'it' : 'them'} again to fix {unused.missing === 1 ? 'it' : 'them'}.
+          </p>
+          <ul className="mt-3 space-y-1">
+            {(unused.missingNames || []).map(name => (
+              <li key={name} className="font-mono text-[11px] text-amber-900 break-all">{name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {notice && <div role="status" className={`mt-5 border px-4 py-3 text-[13px] ${notice.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-600'}`}>{notice.text}</div>}
       {loadError && <div role="alert" className="mt-5 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">{loadError}</div>}
       {loading && <p className="mt-6 text-[13px] text-secondary">Loading pictures...</p>}
+
+      {!loading && !loadError && (
+        <section className="dashboard-panel mt-6">
+          <h2 className="dashboard-section-title">Picture sizes</h2>
+          <p className="mt-1 max-w-2xl text-[12px] leading-6 text-secondary">
+            Pictures uploaded from now on are resized automatically. Anything uploaded before that is still stored at the
+            size it came off the camera, which is what visitors download. Check first, then optimise: nothing is written
+            until you press the second button.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button type="button" disabled={optimise?.running} onClick={() => runOptimise(false)} className="btn-secondary text-[12px] disabled:opacity-50">
+              {optimise?.running && !optimise.applied ? 'Checking...' : 'Check what could be saved'}
+            </button>
+            <button type="button" disabled={optimise?.running} onClick={() => runOptimise(true)} className="btn-primary text-[12px] disabled:opacity-50">
+              {optimise?.running && optimise.applied ? 'Optimising...' : 'Optimise stored pictures'}
+            </button>
+          </div>
+          {optimise && (
+            <div role="status" className="mt-4 border border-border bg-white p-4 text-[12px] leading-6 text-secondary">
+              <p>
+                {optimise.done} of {optimise.total || '...'} checked
+                {optimise.running ? '...' : '.'}
+              </p>
+              {optimise.rewritten > 0 && (
+                <p className="mt-1 text-ink">
+                  {optimise.rewritten} picture{optimise.rewritten === 1 ? '' : 's'} {optimise.applied ? 'optimised' : 'could be optimised'}:{' '}
+                  {asMb(optimise.before)} down to {asMb(optimise.after)}
+                  {optimise.before > 0 && <> ({Math.round((1 - optimise.after / optimise.before) * 100)}% smaller)</>}.
+                </p>
+              )}
+              {!optimise.running && optimise.rewritten === 0 && <p className="mt-1">Every stored picture is already a sensible size.</p>}
+              {optimise.failed > 0 && <p className="mt-1 text-red-600">{optimise.failed} could not be read and were left exactly as they were.</p>}
+            </div>
+          )}
+        </section>
+      )}
 
       {!loading && !loadError && changed && (
         <div className="sticky bottom-4 z-20 mt-5 flex flex-wrap items-center justify-between gap-3 border border-ink bg-ink px-4 py-3 shadow-lg">
@@ -187,13 +359,13 @@ export default function MediaLibraryPage() {
       {groups.map(([group, items]) => (
         <section key={group} className="dashboard-panel mt-6">
           <h2 className="dashboard-section-title">{group}</h2>
-          {group === 'Dark panels' && <p className="mt-1 text-[12px] text-secondary max-w-2xl">The two large charcoal areas on the site. Upload a picture and the panel switches on automatically. Set one to a sponsor&apos;s advert to sell it - it falls back to your picture whenever no advert is running.</p>}
+          {group === 'Dark panels' && <p className="mt-1 text-[12px] text-secondary max-w-2xl">The two large charcoal areas on the site. A picture here shows on the site; remove it and the panel goes back to plain charcoal. Tick the box to sell the space - a sponsor&apos;s advert replaces your picture while their campaign runs.</p>}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {items.map(slot => (
               <div key={slot.field} className="border border-border bg-white p-3">
                 <div className="aspect-video overflow-hidden bg-surface">
                   {slot.url
-                    ? <img src={slot.url} alt="" className="h-full w-full object-cover" />
+                    ? <img loading="lazy" decoding="async" src={slot.url} alt="" className="h-full w-full object-cover" />
                     : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={26} /></div>}
                 </div>
                 <div className="mt-2.5 flex items-start justify-between gap-2">
@@ -202,17 +374,21 @@ export default function MediaLibraryPage() {
                 </div>
                 {!slot.url && <p className="mt-0.5 text-[11px] text-muted">No picture set</p>}
                 {slot.panelKey && (
-                  <label className="mt-2 block text-[11px] text-muted">This panel shows
-                    <select
-                      value={website.panels[slot.panelKey].mode}
-                      onChange={event => setWebsite(current => setPath(current, `panels.${slot.panelKey}.mode`, event.target.value))}
-                      className="input-field mt-1 !text-[11px] !py-1.5"
-                    >
-                      <option value="brand">Plain charcoal - picture hidden</option>
-                      <option value="image">Your picture</option>
-                      <option value="advert">A sponsor&apos;s advert</option>
-                    </select>
-                  </label>
+                  <div className="mt-2 space-y-1.5">
+                    <label className="flex items-center gap-2 text-[11px] text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={website.panels[slot.panelKey].mode === 'advert'}
+                        onChange={event => setWebsite(current => setPath(current, `panels.${slot.panelKey}.mode`, event.target.checked ? 'advert' : 'image'))}
+                      />
+                      Sell this panel to sponsors
+                    </label>
+                    {slot.url && (
+                      <button type="button" onClick={() => setWebsite(current => setPath(current, slot.field, ''))} className="text-[11px] text-muted underline hover:text-ink">
+                        Remove picture
+                      </button>
+                    )}
+                  </div>
                 )}
                 <label className="mt-2.5 flex cursor-pointer items-center justify-center gap-1.5 border border-border py-2 text-[11px] font-medium hover:bg-surface">
                   {busy === slot.field ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}

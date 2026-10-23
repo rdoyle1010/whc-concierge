@@ -1,4 +1,4 @@
-// WHC Academy answer keys - SERVER-SIDE ONLY. Imported exclusively by
+// Talent House Academy answer keys - SERVER-SIDE ONLY. Imported exclusively by
 // /api/academy; never import this from a client component, or the answers
 // ship in the browser bundle.
 

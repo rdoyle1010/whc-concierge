@@ -19,7 +19,10 @@ export default function CookieConsent() {
   if (!visible) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[60] animate-slide-up" style={{ pointerEvents: 'auto' }}>
+    // print:hidden because receipts and invoices are printed from these pages,
+    // and a cookie banner across the foot of a document sent to a hotel's
+    // finance team is not the impression to make.
+    <div className="fixed bottom-0 left-0 right-0 z-[60] animate-slide-up print:hidden" style={{ pointerEvents: 'auto' }}>
       <div className="bg-white border-t border-border shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[13px] text-secondary leading-relaxed text-center sm:text-left">
@@ -28,11 +31,11 @@ export default function CookieConsent() {
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <button type="button" onClick={() => respond('declined')}
-              className="px-4 py-1.5 text-[12px] font-medium text-muted border border-border rounded-lg hover:border-ink/20 hover:text-ink transition-colors">
+              className="inline-flex min-h-11 items-center px-5 text-[13px] font-medium text-muted border border-border rounded-lg hover:border-ink/20 hover:text-ink transition-colors">
               Decline
             </button>
             <button type="button" onClick={() => respond('accepted')}
-              className="px-4 py-1.5 text-[12px] font-semibold rounded-lg bg-accent text-white transition-colors hover:bg-navy-light">
+              className="inline-flex min-h-11 items-center px-5 text-[13px] font-semibold rounded-lg bg-accent text-white transition-colors hover:bg-navy-light">
               Accept
             </button>
           </div>

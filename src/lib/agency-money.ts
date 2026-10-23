@@ -27,7 +27,7 @@ export const AGENCY_URGENT_SURCHARGE_BPS = 500 // +5% for same-day or next-day c
 
 export const DEFAULT_SHIFT_HOURS = 8
 
-// The WHC fee in basis points for a shift, judged by how close the shift date
+// The Talent House fee in basis points for a shift, judged by how close the shift date
 // is to today (both YYYY-MM-DD, Europe/London). Same-day or next-day carries
 // the urgency premium, for everyone - it prices the emergency, not the
 // relationship. Integer addition, so no float drift.

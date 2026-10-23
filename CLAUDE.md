@@ -12,8 +12,12 @@ Wellness House Collective. It connects spa and wellness professionals (Talent) w
 luxury hotel employers (Hotel / Employer).
 
 Live URL: https://talenthousecollective.co.uk
-(Old domain talent.wellnesshousecollective.co.uk 301s here; /api/* on the old host is
-deliberately left unredirected so the existing Stripe webhook keeps working.)
+(Old domain talent.wellnesshousecollective.co.uk 301s here, /api/* included. It
+does NOT serve the API: a rule that claimed to was a self-referential rewrite
+Netlify could not resolve, so every call to the old host got a 404 page. Stripe
+sat at an 83% error rate against it and paid roles never published. Every
+integration - Stripe webhooks above all - must point at
+talenthousecollective.co.uk.)
 Netlify project: whc-concierge (repo name unchanged)
 Stack: Next.js (App Router) · Supabase (auth + database) · Stripe (payments) · Netlify (hosting)
 
@@ -124,6 +128,38 @@ All secrets live in Netlify environment variables:
 - Use the `/api/` routes for any database writes that need service role access
 
 <!-- BEGIN:nextjs-agent-rules -->
+
+## Shipping
+
+Rebecca has asked, as a standing instruction, that pull requests are merged
+without checking with her first. Finish the work, run the tests, the readiness
+checks and a production build, open the pull request and merge it. Tell her
+what changed and what she needs to do; do not ask permission to merge.
+
+This is recorded here so it survives a new session. It covers merging only.
+Anything that deletes data, changes a live setting outside the repository, or
+spends money is still hers to decide.
+
+## Working alongside another assistant
+
+Rebecca also uses ChatGPT on this project. It cannot see this repository, so
+it is the outside view: positioning, copy, pricing, strategy, and arguing with
+the plan. This session is the builder.
+
+`docs/project-brief.md` is the file she pastes into ChatGPT to bring it up to
+speed. Two obligations follow:
+
+1. **Keep it current.** When something material changes - a number in the
+   state table, a strategic decision, a new product surface - update the brief
+   in the same commit. A brief that describes last month is worse than none,
+   because it is believed.
+
+2. **Check its answers against the code before acting on them.** An assistant
+   working from a description will confidently name features that do not exist
+   and problems that were fixed last week. Say plainly which parts are right
+   and which are not, then build the ones worth building. Do not implement an
+   outside suggestion just because it arrived with confidence, and do not
+   dismiss one because it did.
 
 # This is NOT the Next.js you know
 

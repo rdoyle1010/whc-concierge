@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   buildContentDoc,
   contentMinutes,
@@ -230,4 +231,34 @@ test('a platform course with no rich content still copies to a publishable docum
   assert.equal(validateContent(doc), null)
   assert.equal(doc.modules[0].lessons[0].title, 'Overview')
   assert.equal(doc.modules[0].lessons[0].body, 'The written content of module one.')
+})
+
+// The course page is a client component, and academy-more/index.ts pulled each
+// pack in with `import * as`, which forces the whole module. So importing
+// @/lib/academy for a course title dragged in every lesson of every course:
+// one chunk reached 1.4MB of prose, downloaded by anyone opening the public
+// Academy page. Lessons live in .content files beside their pack now, fetched
+// one course at a time.
+//
+// The risk that swaps in is a course missing from the map, which renders an
+// empty page rather than failing loudly. So: every course must have a loader.
+test('every course in the catalogue can be loaded on its own', async () => {
+  const { loadCourseContent } = await import('../src/lib/academy-content-lazy')
+  const { MORE_CONTENT } = await import('../src/lib/academy-more/content')
+
+  const slugs = Object.keys(MORE_CONTENT)
+  assert.ok(slugs.length >= 30, `expected the masterclasses, found ${slugs.length}`)
+  for (const slug of slugs) {
+    const content = await loadCourseContent(slug)
+    assert.ok(content, `${slug} has lessons on the server but no loader for the browser`)
+    assert.equal(content.slug, slug, `${slug} loads the wrong course`)
+  }
+  assert.equal(await loadCourseContent('not-a-course'), null)
+})
+
+// The whole point of the split: metadata must not reach for lesson text.
+test('course metadata does not import lesson content', () => {
+  const index = readFileSync(new URL('../src/lib/academy-more/index.ts', import.meta.url), 'utf8')
+  assert.ok(!/MORE_CONTENT/.test(index.replace(/\/\/.*/g, '')), 'the pack index must not assemble lesson text')
+  assert.ok(!/content:/.test(index.slice(index.indexOf('type Pack'), index.indexOf('const PACKS'))))
 })

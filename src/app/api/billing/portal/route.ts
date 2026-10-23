@@ -9,7 +9,7 @@ const RETURN_PATHS = new Set(['/billing', '/talent/membership', '/employer/membe
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json().catch(() => ({}))
     const admin = createAdminClient()

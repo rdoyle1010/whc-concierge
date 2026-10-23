@@ -4,9 +4,7 @@ import { emailAllowed } from '@/lib/notification-prefs'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +16,7 @@ export async function POST(req: NextRequest) {
       { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
     )
     const { data: { user } } = await supabaseAuth.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { applicationId, decision } = await req.json()
     if (!applicationId || !['approved', 'rejected'].includes(decision)) {
@@ -48,7 +46,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     const isAdmin = callerProfile?.role === 'admin'
     if (!isAdmin && employer?.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     }
 
     // Preference-gated ('application_updates'): decision emails honour the
@@ -79,22 +77,8 @@ export async function POST(req: NextRequest) {
       html = rejectionEmailHtml({ applicantName: name, jobTitle, propertyName: property })
     }
 
-    if (!RESEND_API_KEY) {
-      console.log(`[Decision email skipped - no API key] To: ${toEmail}, Decision: ${decision}`)
-      return NextResponse.json({ success: true, skipped: true })
-    }
-
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: toEmail, subject, html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Decision email FAILED ${res.status}] To: ${toEmail} - ${detail.slice(0, 300)}`)
-    }
-
-    return NextResponse.json({ success: true })
+    const sent = await sendTransactionalEmail({ to: toEmail, subject, html, kind: 'decision' })
+    return NextResponse.json({ success: true, delivered: sent.ok, status: sent.status })
   } catch (error: any) {
     console.error('Decision email error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

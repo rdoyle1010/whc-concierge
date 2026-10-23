@@ -1,0 +1,82 @@
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { packBySlug, formatPrice, VAT_NOTE } from './pricing'
+import { sellableCatalogue } from './catalogue'
+import { DOCUMENT_STATUS } from './status'
+
+// The only thing the buyer actually receives.
+//
+// There is no account, so this email is the product delivery, the receipt and
+// the access link in one. If it does not arrive, somebody has paid and has
+// nothing, which is why the caller treats a failure here as a failed delivery
+// rather than a missing notification.
+
+export async function sendStandardsReceiptEmail(input: {
+  to: string
+  name: string | null
+  packSlug: string | null
+  reference: string | null
+  /**
+   * What they bought, when it is neither a pack nor a document.
+   *
+   * A file sold on its own carries a slug that packBySlug does not know, and
+   * without this the receipt read "You have bought your documents" under the
+   * subject "Your documents are ready: Talent House Collective". A receipt
+   * that cannot name the thing it is charging for is the first thing a buyer
+   * forwards to their finance team with a question attached.
+   */
+  itemName?: string | null
+  amountPence: number
+  libraryUrl: string
+}): Promise<boolean> {
+  const pack = input.packSlug ? packBySlug(input.packSlug) : null
+  const single = input.reference ? sellableCatalogue().find(entry => entry.reference === input.reference) : null
+
+  const what = pack
+    ? `${pack.name}, ${pack.count} documents`
+    : single
+      ? `${single.title} (${single.reference})`
+      : input.itemName || 'your documents'
+
+  const greeting = input.name ? `Thank you, ${input.name.split(' ')[0]}` : 'Thank you'
+
+  const result = await sendTransactionalEmail({
+    to: input.to,
+    subject: `Your documents are ready: ${
+      pack ? pack.name : single?.title || input.itemName || 'Talent House Collective'}`,
+    kind: 'notification',
+    html: `
+  <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+    <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">${greeting}</p>
+    <p style="color: #57544c;">You have bought <strong>${what}</strong> for ${formatPrice(input.amountPence)}. ${VAT_NOTE}</p>
+
+    <p style="margin: 28px 0;">
+      <a href="${input.libraryUrl}"
+         style="display: inline-block; background: #222321; color: #ffffff; text-decoration: none;
+                padding: 14px 24px; font-size: 15px; font-weight: 600;">Open My Documents</a>
+    </p>
+
+    <p style="color: #57544c;">
+      Everything you buy is kept in your account, under <strong>My Documents</strong>. It will still be there in a
+      year, on any device you sign in from. Each one downloads as a PDF you can type into with the free Adobe
+      Reader.
+    </p>
+
+    <p style="color: #57544c; margin-top: 24px;">
+      Each document has a page at the front listing what your property needs to fill in. Type each entry once and
+      it fills in wherever it appears.
+    </p>
+
+    <p style="color: #57544c; border-left: 3px solid #dcd4c8; padding-left: 14px; margin-top: 28px;">
+      ${DOCUMENT_STATUS} Anything concerning life safety must be checked against your building by a competent
+      person and signed off before it is issued to anybody.
+    </p>
+
+    <p style="margin-top: 40px; font-size: 12px; color: #8c8c8c;">
+      Talent House Collective &middot; talenthousecollective.co.uk
+    </p>
+  </div>`,
+  })
+
+  return result.ok
+}

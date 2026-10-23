@@ -9,7 +9,7 @@ const RETURN_PATHS = new Set(['/agency', '/employer/agency'])
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
 
     const { data: employer } = await admin.from('employer_profiles').select('id,user_id').eq('id', booking.employer_id).maybeSingle()
-    if (!employer || employer.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!employer || employer.user_id !== user.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     if (booking.status !== 'accepted') {
       return NextResponse.json({ error: `Payment is due once a shift is accepted (this one is ${booking.status}).` }, { status: 400 })
     }
@@ -63,12 +63,12 @@ export async function POST(req: NextRequest) {
     // both the website and the app send every agency payment to this route,
     // and this route had no Connect support - so agency-payouts.ts was dead
     // code and every professional who had completed Connect onboarding still
-    // waited on a manual bank transfer while WHC held their money between the
+    // waited on a manual bank transfer while Talent House held their money between the
     // property's payment and settlement. That client-money exposure was the
     // exact thing Connect was adopted to remove.
     //
     // A destination charge sends the shift money straight to the
-    // professional at the moment of payment and leaves WHC only its own fee.
+    // professional at the moment of payment and leaves Talent House only its own fee.
     // Nothing about the amounts changes: the property pays gross + fee either
     // way, and the professional receives 100% of the agreed shift value
     // either way. What changes is who is holding it in between.
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           currency: 'gbp',
           product_data: {
             name: 'Talent House Collective - Agency Shift Booking',
-            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${money.hours}h (${formatPence(money.grossPence)}) + ${feePctLabel}% WHC fee (${formatPence(money.feePence)}). The professional receives the full ${formatPence(money.grossPence)} agreed shift amount${useConnect ? ' - paid straight to their account by Stripe' : ' after the completed shift'}.`,
+            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${money.hours}h (${formatPence(money.grossPence)}) + ${feePctLabel}% Talent House fee (${formatPence(money.feePence)}). The professional receives the full ${formatPence(money.grossPence)} agreed shift amount${useConnect ? ' - paid straight to their account by Stripe' : ' after the completed shift'}.`,
           },
           unit_amount: money.totalPence,
         },

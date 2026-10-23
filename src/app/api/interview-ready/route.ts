@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { askForJson } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const INTERVIEW_MODEL = process.env.OPENAI_INTERVIEW_MODEL || process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 const MAX_CV_SIZE = 10 * 1024 * 1024
 
 const clean = (value: unknown) => String(value || '').trim()
@@ -30,33 +30,16 @@ function parseJson(text: string) {
   return null
 }
 
-async function generateJson(prompt: string, maxOutputTokens = 1800) {
-  if (!OPENAI_API_KEY) return null
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 5500)
-  try {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: INTERVIEW_MODEL,
-        reasoning: { effort: 'low' },
-        input: prompt,
-        max_output_tokens: maxOutputTokens,
-      }),
-    })
-    if (!response.ok) {
-      console.error('Interview Ready OpenAI error', response.status, (await response.text().catch(() => '')).slice(0, 400))
-      return null
-    }
-    return parseJson(extractResponseText(await response.json()))
-  } catch (error) {
-    console.error('Interview Ready OpenAI fallback', error instanceof Error ? error.message : error)
+async function generateJson(prompt: string, maxOutputTokens = 2900) {
+  // Null on any failure, because Interview Ready has a written fallback and a
+  // candidate preparing for an interview tonight is better served by the
+  // fallback than by an error. The reason is logged, not shown.
+  const result = await askForJson<any>({ label: 'interview ready', prompt, maxTokens: maxOutputTokens })
+  if (!result.ok) {
+    console.error('[Interview Ready]', result.error)
     return null
-  } finally {
-    clearTimeout(timeout)
   }
+  return result.data
 }
 
 async function extractCvText(supabase: any, cvUrl: string | null, userId: string) {
@@ -130,10 +113,10 @@ function companyFacts(employer: any, externalName: string) {
   if (facilities.length) facts.push({ label: 'Spa facilities / services', value: facilities.slice(0, 12).join(', ') })
   const groupName = clean(e.hotel_group_name || e.group_name || e.parent_brand)
   const gaps: string[] = []
-  if (!groupName) gaps.push('Hotel group / independent status is not yet verified in the WHC property profile.')
-  if (!(e.room_count || e.hotel_rooms || e.number_of_rooms)) gaps.push('Hotel bedroom count is not yet verified in the WHC property profile.')
-  if (!(e.spa_opened_year || e.spa_opening_year)) gaps.push('Spa opening date is not yet verified in the WHC property profile.')
-  if (!brands.length) gaps.push('Spa product house / treatment brand information is not yet verified in the WHC property profile.')
+  if (!groupName) gaps.push('Hotel group / independent status is not yet verified in the Talent House property profile.')
+  if (!(e.room_count || e.hotel_rooms || e.number_of_rooms)) gaps.push('Hotel bedroom count is not yet verified in the Talent House property profile.')
+  if (!(e.spa_opened_year || e.spa_opening_year)) gaps.push('Spa opening date is not yet verified in the Talent House property profile.')
+  if (!brands.length) gaps.push('Spa product house / treatment brand information is not yet verified in the Talent House property profile.')
   return {
     name: clean(e.property_name || e.company_name || externalName) || 'The employer',
     group_name: groupName,
@@ -240,7 +223,7 @@ function fallback(candidate: any, job: any, employer: any, style: any, cvText: s
     cv_match: {
       why_you_match: strengths.length ? strengths.map(item => `Your profile already evidences ${item}; prepare one real example that proves it.`) : ['Your profile provides the starting point. Pull out examples that directly answer the responsibilities in this job description.'],
       strongest_evidence: strengths,
-      underused_evidence: cvText ? ['Look for CV statements that describe responsibility but not the outcome. Add the genuine scale, result or learning when you know it.'] : ['Your CV file could not be read on this attempt. Your WHC profile and the job description are still being used; re-uploading the CV will allow deeper evidence coaching.'],
+      underused_evidence: cvText ? ['Look for CV statements that describe responsibility but not the outcome. Add the genuine scale, result or learning when you know it.'] : ['Your CV file could not be read on this attempt. Your Talent House profile and the job description are still being used; re-uploading the CV will allow deeper evidence coaching.'],
       gaps_or_risks: gaps,
       talk_about_this: focus.slice(0, 5).map(item => `Prepare one real example showing your capability in ${item}.`),
       cv_improvements: ['Make evidence relevant to this exact role easy to spot.', 'Turn responsibilities into verified outcomes where you genuinely know the result.'],
@@ -287,7 +270,7 @@ function fallback(candidate: any, job: any, employer: any, style: any, cvText: s
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json().catch(() => ({}))
@@ -299,26 +282,79 @@ export async function POST(req: NextRequest) {
 
     const credits = Math.max(0, Number(candidate.interview_ready_credits || 0))
     if (mode === 'prepare' && credits < 1) {
+      // A subscriber who has spent this month's credits has nothing to buy -
+      // theirs come back on renewal, and telling them to upgrade is both
+      // useless and slightly insulting. Everybody else has somewhere to go,
+      // and it is Membership: Billing's only offer to a free account is
+      // Featured Talent, which grants no Interview Ready credits.
+      const tier = String(candidate.membership_tier || '').toLowerCase()
+      const subscriber = tier === 'standard' || tier === 'pro'
+      const renewsAt = candidate.membership_renews_at || null
       return NextResponse.json({
-        error: 'You have used your Interview Ready allowance. Upgrade or add more access to continue.',
+        error: subscriber
+          ? renewsAt
+            ? `You have used this month's Interview Ready credits. More arrive on ${new Date(renewsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`
+            : 'You have used this month\u2019s Interview Ready credits. More arrive when your membership renews.'
+          : 'You have used your Interview Ready allowance. A membership adds credits every month.',
         code: 'FEATURE_LOCKED',
-        upgradeHref: '/talent/billing',
+        tier: tier || 'free',
+        renewsAt,
+        upgradeHref: subscriber && tier === 'pro' ? null : '/talent/membership',
       }, { status: 403 })
     }
 
     const jobId = typeof body.jobId === 'string' ? body.jobId : ''
     let job: any = null
     let employer: any = null
+    let jobLookupFailed = false
+
     if (jobId) {
-      const { data, error } = await supabase.from('job_listings').select('*, employer_profiles(*)').eq('id', jobId).maybeSingle()
-      if (error) console.error('Interview Ready job query', error.message)
+      // The role and the property are fetched separately, on purpose.
+      //
+      // This was one query with employer_profiles(*) embedded in it. That
+      // table has its own row level security and a talent user does not
+      // satisfy it, so the embed failed and took the role down with it: the
+      // page showed "Selected: Director of Spa" and the answer came back
+      // "Choose a role or enter a target role". The role was chosen. It was
+      // the property the query could not read, and the error said nothing
+      // about that.
+      // Every column of the role, and no join. The dossier reads the
+      // required skills, systems, brands and qualifications off it, so a
+      // narrowed select here would quietly thin the output instead of
+      // failing, which is the same bug one degree quieter.
+      const { data, error } = await supabase.from('job_listings')
+        .select('*').eq('id', jobId).maybeSingle()
+      if (error) {
+        console.error('Interview Ready job query', error.message)
+        jobLookupFailed = true
+      }
       job = data
-      employer = Array.isArray(data?.employer_profiles) ? data.employer_profiles[0] : data?.employer_profiles
+
+      // Property facts are a bonus, never a blocker. Everything this returns
+      // is already optional: companyFacts names what is missing rather than
+      // inventing it, so a property nobody can read produces a dossier with
+      // its gaps stated, which is the behaviour that was designed.
+      if (job?.employer_id) {
+        const { data: property, error: propertyError } = await supabase
+          .from('employer_profiles').select('*').eq('id', job.employer_id).maybeSingle()
+        if (propertyError) console.error('Interview Ready property query', propertyError.message)
+        employer = property || null
+      }
     }
 
     const customRole = clean(body.targetRole).slice(0, 180)
     const customDescription = clean(body.jobDescription).slice(0, 10000)
     const externalName = clean(body.companyName).slice(0, 180)
+
+    // Said as what actually happened. Telling somebody to choose a role when
+    // they have chosen one sends them round the same form again.
+    if (!job && jobId) {
+      return NextResponse.json({
+        error: jobLookupFailed
+          ? 'We could not read that role just now. Try again, or paste it in as an external role below.'
+          : 'That role is no longer listed. Choose another, or enter it as an external role below.',
+      }, { status: 400 })
+    }
     if (!job && !customRole) return NextResponse.json({ error: 'Choose a role or enter a target role.' }, { status: 400 })
 
     const role = job || { job_title: customRole, job_description: customDescription, required_role_level: customRole }
@@ -341,18 +377,40 @@ export async function POST(req: NextRequest) {
         try_again: clean(ai.try_again),
         follow_up: clean(ai.follow_up),
       } : {
-        score: 60,
-        strong: 'You have given a real answer in your own words.',
+        // No score when nothing read the answer.
+        //
+        // This returned sixty, with generic coaching beside it, whenever the
+        // model was unavailable - and sixty out of a hundred on your interview
+        // answer reads as a judgement, not an outage. Somebody could rewrite a
+        // good answer on the strength of a number that was a constant. The
+        // general advice is still worth having and is still offered; it is now
+        // labelled as general advice rather than dressed up as a mark.
+        score: null,
+        unavailable: true,
+        strong: 'The review could not run just now, so this is not a score of your answer.',
         improve: 'Make the situation, your personal action and the outcome easier to separate.',
         missing: 'Add the most relevant factual result, scale or learning if you have it.',
-        try_again: 'Try again with one specific example and finish with what changed because of your actions.',
+        try_again: 'Try again in a moment for a proper review, or finish with what changed because of your actions.',
         follow_up: 'What was the measurable guest, team, commercial or operational outcome?',
       })
     }
 
     const base = fallback(candidate, role, employer, style, cvText, externalName)
+    // Spent with the service role, on the row belonging to the signed-in user.
+    //
+    // This was the user's own client, and a talent account cannot write its
+    // own credit balance: row level security forbids it, correctly, because a
+    // column somebody can set for themselves is not an allowance, it is a
+    // suggestion. So the update failed and the honest answer, "we could not
+    // confirm your allowance", was returned to somebody the sidebar was
+    // telling they had one credit left.
+    //
+    // Two things keep this safe. candidate.id came from a row already matched
+    // on the authenticated user, so this can only ever touch their own
+    // profile. And the compare-and-set on the old balance survives, so two
+    // requests racing still spend one credit between them rather than two.
     const nextCredits = credits - 1
-    const { data: consumed, error: consumeError } = await supabase
+    const { data: consumed, error: consumeError } = await createAdminClient()
       .from('candidate_profiles')
       .update({ interview_ready_credits: nextCredits })
       .eq('id', candidate.id)

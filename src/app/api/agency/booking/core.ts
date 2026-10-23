@@ -22,7 +22,7 @@ async function employerHasAgencyPlus(admin: any, employerId: string | null | und
 
 export async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
   const plus = await employerHasAgencyPlus(admin, employerId)
-  return agencyFeePctForShiftPlus(shiftDate, todayInLondon(), plus)
+  return agencyFeePctForShiftPlus(shiftDate, londonToday(), plus)
 }
 
 // The fee in basis points, which is what the money maths actually uses.
@@ -32,7 +32,7 @@ export async function feePctForEmployerShift(admin: any, employerId: string | nu
 // charged less.
 export async function feeBpsForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
   const plus = await employerHasAgencyPlus(admin, employerId)
-  return agencyFeeBpsForShift(shiftDate, todayInLondon(), plus)
+  return agencyFeeBpsForShift(shiftDate, londonToday(), plus)
 }
 
 // The stored whole-pound fee for a shift, computed in integers end to end.
@@ -44,7 +44,8 @@ import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
 import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
-import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
+import { productAvailableIn, unavailableReason } from '@/lib/countries'
+import { londonDateOffset, londonToday, shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
 // waits: 4 hours for same-day (urgent) shifts, 48 hours otherwise.
@@ -57,10 +58,6 @@ const STANDARD_EXPIRY_MS = 48 * 60 * 60 * 1000
 const CASCADE_WINDOW_MS = 30 * 60 * 1000
 const CASCADE_TOTAL_MS = URGENT_EXPIRY_MS
 const CASCADE_MAX_QUEUE = 10
-
-function todayInLondon(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
-}
 
 function isExpired(booking: any): boolean {
   return Boolean(booking.expires_at && new Date(booking.expires_at).getTime() < Date.now())
@@ -312,7 +309,7 @@ async function maintenanceSweep(admin: any) {
     admin.from('employer_profiles').update({ preferred_employer: false }).eq('preferred_employer', true).not('preferred_until', 'is', null).lt('preferred_until', grace),
   ])
 
-  const todayLondon = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+  const todayLondon = londonToday()
 
   // ── Post-shift review requests ──
   // The day after a paid shift, both sides get one nudge to review each
@@ -367,7 +364,7 @@ async function maintenanceSweep(admin: any) {
     }
   } catch { /* review nudges are never fatal */ }
 
-  // ── Insurance expiry chasing (WHC Verified) ──
+  // ── Insurance expiry chasing (Talent House Verified) ──
   try {
     // Expired → badge paused, therapist told how to get it back
     const { data: lapsed } = await admin.from('candidate_profiles')
@@ -382,7 +379,7 @@ async function maintenanceSweep(admin: any) {
         .eq('id', c.id).eq('whc_verified', true)
       if (c.user_id) {
         try {
-          await createNotification(c.user_id, 'general', 'WHC Verified badge paused',
+          await createNotification(c.user_id, 'general', 'Talent House Verified badge paused',
             `Your insurance expired on ${c.insurance_expiry_date} so your badge is paused. Upload your renewal from the Verification page and it comes straight back after review.`, '/talent/verification')
           const { data: u } = await admin.auth.admin.getUserById(c.user_id)
           if (u?.user?.email) await sendInsuranceExpiryEmail(u.user.email, c.full_name || 'there', c.insurance_expiry_date, true)
@@ -390,7 +387,7 @@ async function maintenanceSweep(admin: any) {
       }
     }
     // Expiring within 30 days → chased at most once every 10 days
-    const soon = new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+    const soon = londonDateOffset(30)
     const { data: expiring } = await admin.from('candidate_profiles')
       .select('id, user_id, full_name, insurance_expiry_date, insurance_chased_at')
       .eq('whc_verified', true)
@@ -404,7 +401,7 @@ async function maintenanceSweep(admin: any) {
       if (c.user_id) {
         try {
           await createNotification(c.user_id, 'general', 'Your insurance expires soon',
-            `Your insurance expires on ${c.insurance_expiry_date}. Upload your renewal from the Verification page and your WHC Verified badge carries straight on.`, '/talent/verification')
+            `Your insurance expires on ${c.insurance_expiry_date}. Upload your renewal from the Verification page and your Talent House Verified badge carries straight on.`, '/talent/verification')
           const { data: u } = await admin.auth.admin.getUserById(c.user_id)
           if (u?.user?.email) await sendInsuranceExpiryEmail(u.user.email, c.full_name || 'there', c.insurance_expiry_date, false)
         } catch { /* non-fatal */ }
@@ -553,10 +550,28 @@ export async function POST(req: NextRequest) {
     ])
 
     // ── create: employer sends an offer to a candidate ──
-    // Rates are HOURLY. The therapist receives rate × hours in full; WHC's
+    // Rates are HOURLY. The therapist receives rate × hours in full; Talent House's
     // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
+      // Approval, checked before anybody's phone rings.
+      //
+      // Both booking actions checked only preferred_employer, so anyone who
+      // registered a property and paid £150 could send shifts to real people
+      // at an address nobody had vetted - and an employer whose approval an
+      // administrator had revoked could carry on booking. The mobile twin has
+      // always checked this; the web route the live site uses did not.
+      if (emp.approval_status !== 'approved') {
+        return NextResponse.json({ error: 'Your employer account must be approved before booking Agency Talent.' }, { status: 403 })
+      }
+      // Agency Cover is the one product line with a border on it. Supplying
+      // somebody into a shift makes Talent House an employment business,
+      // licensed country by country, so a property outside the UK cannot book
+      // cover however much it would like to. Roles, Residency and Consultancy
+      // are open to it.
+      if (!productAvailableIn('agency', emp.country_code || emp.country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
       // Agency cover is a Preferred Employer benefit (£150/year registration)
       if (!emp.preferred_employer) {
         return NextResponse.json({ error: 'Agency bookings are for registered Preferred Employers. Register from your Agency Bookings page (£150/year) to book cover.' }, { status: 403 })
@@ -576,7 +591,7 @@ export async function POST(req: NextRequest) {
 
       const { data: targetCand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name, user_id, phone, sms_opt_in, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles')
+        .select('id, full_name, user_id, phone, sms_opt_in, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles, country_code, location_country')
         .eq('id', body.candidateId)
         .maybeSingle()
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
@@ -600,7 +615,7 @@ export async function POST(req: NextRequest) {
       const platformFee = await shiftFeePounds(admin, emp.id, String(body.shiftDate), rate, effectiveHours)
 
       // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
-      const urgent = String(body.shiftDate) === todayInLondon()
+      const urgent = String(body.shiftDate) === londonToday()
       const expiresAt = new Date(Date.now() + (urgent ? URGENT_EXPIRY_MS : STANDARD_EXPIRY_MS)).toISOString()
 
       // Standing bookings: the same offer repeated weekly on the same weekday,
@@ -706,15 +721,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, booking, created: createdCount })
     }
 
-    // ── urgent_cascade: the property asks for cover and WHC finds someone ──
+    // ── urgent_cascade: the property asks for cover and Talent House finds someone ──
     // Builds a distance-sorted queue of available therapists and offers the
     // shift to them one at a time (30-minute windows) until someone accepts.
     if (action === 'urgent_cascade') {
       if (!emp) return NextResponse.json({ error: 'Only employers can request urgent cover' }, { status: 403 })
+      if (emp.approval_status !== 'approved') {
+        return NextResponse.json({ error: 'Your employer account must be approved before booking Agency Talent.' }, { status: 403 })
+      }
+      // The same country gate 'create' applies. Supplying cover makes Talent
+      // House an employment business, licensed country by country, and this
+      // action broadcasts to the whole register rather than to one named
+      // person - so it was the more exposed of the two, not the less.
+      if (!productAvailableIn('agency', emp.country_code || emp.country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
       if (!emp.preferred_employer) {
         return NextResponse.json({ error: 'Urgent cover is for registered Preferred Employers. Register from your Agency Bookings page (£150/year).' }, { status: 403 })
       }
-      const shiftDate = String(body.shiftDate || todayInLondon())
+      const shiftDate = String(body.shiftDate || londonToday())
       const shiftStartTime = String(body.shiftStartTime || '')
       const shiftEndTime = String(body.shiftEndTime || '')
       if (!validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
@@ -876,7 +901,7 @@ export async function POST(req: NextRequest) {
     const shiftDate = booking.shift_date || 'the agreed date'
 
     // ── dispute: the property reports a problem with a PAID booking ──
-    // (no-show, left early, quality). Payout freezes until WHC resolves it;
+    // (no-show, left early, quality). Payout freezes until Talent House resolves it;
     // any refund is minus the 10% admin fee, decided case-by-case in Admin.
     if (action === 'dispute') {
       if (!isEmployerParty) {
@@ -886,7 +911,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Issues can be reported on paid bookings only.' }, { status: 400 })
       }
       if (booking.dispute_status === 'open') {
-        return NextResponse.json({ error: 'An issue is already open on this booking - WHC is reviewing it.' }, { status: 400 })
+        return NextResponse.json({ error: 'An issue is already open on this booking - Talent House is reviewing it.' }, { status: 400 })
       }
       const reason = String(body.reason || '').trim()
       if (!reason) return NextResponse.json({ error: 'Please describe what happened.' }, { status: 400 })
@@ -906,7 +931,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Issue reported on a booking',
-        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Wellness House Collective reviews it - you'll be notified of the outcome.`,
+        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Talent House Collective reviews it - you'll be notified of the outcome.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })
@@ -935,7 +960,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Standing booking accepted',
-        `${actorName} has accepted all ${acceptedRows.length} shifts in your standing booking (weekly from ${booking.shift_date}) at £${booking.rate} per hour. Pay each shift from your Agency Bookings page to confirm it - WHC pays the therapist after each shift.`,
+        `${actorName} has accepted all ${acceptedRows.length} shifts in your standing booking (weekly from ${booking.shift_date}) at £${booking.rate} per hour. Pay each shift from your Agency Bookings page to confirm it - Talent House pays the therapist after each shift.`,
         '/employer/agency',
       )
       return NextResponse.json({ success: true, accepted: acceptedRows.length })
@@ -1011,8 +1036,8 @@ export async function POST(req: NextRequest) {
       const effHours = booking.hours && booking.hours > 0 ? booking.hours : 8
       const totalDue = agencyShiftMoney({ ratePounds: booking.rate, hours: effHours, storedFeePounds: updated.platform_fee }).totalPounds
       const acceptBody = isCandidateParty
-        // Candidate accepted → the property now pays WHC in full to confirm
-        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the WHC fee) from your Agency Bookings page. WHC pays the therapist after the shift.`
+        // Candidate accepted → the property now pays Talent House in full to confirm
+        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the Talent House fee) from your Agency Bookings page. Talent House pays the therapist after the shift.`
         : `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. The booking is confirmed once payment is made.`
       await notifyOtherParty(
         admin, otherUserId, user.id,

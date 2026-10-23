@@ -1,0 +1,275 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import {
+  CONSULTANCY_SPECIALISMS, ENGAGEMENT_TYPES, isFeatured, missingForPublication,
+  parseEngagementTypes, parseProjects, parseSpecialisms, projectClientLabel,
+} from '../src/lib/consultancy'
+
+const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+
+// Most serious consultancy work is under NDA. A consultant who cannot name the
+// client would otherwise have to leave their best project out entirely, so the
+// property type stands in for the name - but the name must never travel with it.
+test('a confidential client is never named', () => {
+  const project = parseProjects([{ title: 'Pre-opening', client: 'The Savoy', confidential: true }])[0]
+  assert.equal(projectClientLabel(project), 'Confidential - The Savoy',
+    'the descriptor a consultant typed is shown, and it is on them to keep it generic')
+  const named = parseProjects([{ title: 'Retail reset', client: 'The Grand', confidential: false }])[0]
+  assert.equal(projectClientLabel(named), 'The Grand')
+  assert.equal(projectClientLabel(parseProjects([{ title: 'X' }])[0]), 'Private client')
+})
+
+// Resolved on the server, so a confidential engagement cannot be read out of
+// the response by anyone who opens the network tab.
+test('the public API resolves client labels before sending them', () => {
+  const route = read('src/app/api/consultancy/public/route.ts')
+  assert.match(route, /client: projectClientLabel\(project\)/,
+    'the raw client field must not leave the server')
+  assert.ok(!route.includes('is_live, approval_status,'), 'internal state is not part of the public shape')
+  const columns = route.slice(route.indexOf('const columns'), route.indexOf('\n\n', route.indexOf('const columns')))
+  for (const hidden of ['approval_notes', 'view_count', 'enquiry_count']) {
+    assert.ok(!columns.includes(hidden), `${hidden} is the consultant's business, not the public's`)
+  }
+})
+
+// jsonb, so a row could hold an older shape or something typed by hand.
+test('only projects with a title survive, and never more than twelve', () => {
+  const parsed = parseProjects([
+    { title: 'Real project', outcome: 'Utilisation up 14 points' },
+    { client: 'No title here' },
+    'nonsense', null, 42,
+  ])
+  assert.equal(parsed.length, 1)
+  assert.equal(parsed[0].outcome, 'Utilisation up 14 points')
+  assert.equal(parseProjects(Array.from({ length: 40 }, (_, i) => ({ title: `P${i}` }))).length, 12)
+  assert.deepEqual(parseProjects('not an array'), [])
+})
+
+test('specialisms and engagement types outside the taxonomy are dropped', () => {
+  const specialisms = parseSpecialisms(['Retail strategy & buying', 'Making things up', 'Retail strategy & buying'])
+  assert.deepEqual(specialisms, ['Retail strategy & buying'], 'unknown values and duplicates go')
+  assert.deepEqual(parseEngagementTypes(['project', 'invented', 'project']), ['project'])
+  assert.ok(CONSULTANCY_SPECIALISMS.length >= 12, 'the list has to cover the work properties actually buy')
+  assert.ok(ENGAGEMENT_TYPES.every(type => type.hint), 'every engagement type needs plain wording')
+})
+
+// An empty entry in a showcase directory damages the consultant as much as the
+// platform. This is the check behind the publish button, and behind the route.
+test('a listing cannot go public until there is something to show', () => {
+  const missing = missingForPublication({})
+  for (const field of ['Practice or trading name', 'Headline', 'At least one specialism', 'At least one project']) {
+    assert.ok(missing.some(item => item.includes(field.split(' ')[0])), `${field} must be required`)
+  }
+  const ready = missingForPublication({
+    practice_name: 'Doyle Spa Consulting',
+    headline: 'Pre-opening and commercial turnaround',
+    summary: 'A'.repeat(130),
+    specialisms: ['Pre-opening & mobilisation'],
+    projects: [{ title: 'A real project' }],
+  })
+  assert.deepEqual(ready, [])
+  // A one-word summary is not a summary.
+  assert.ok(missingForPublication({
+    practice_name: 'X', headline: 'Y', summary: 'Short',
+    specialisms: ['Pre-opening & mobilisation'], projects: [{ title: 'P' }],
+  }).some(item => item.includes('summary')))
+})
+
+// A form can be bypassed; the route cannot.
+test('the publish check runs on the server as well as the button', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  assert.match(route, /if \(wantsLive\)/)
+  assert.match(route, /missingForPublication\(update\)/, 'the same rule the form uses')
+})
+
+// A lapsed payment must not leave somebody at the top of the directory for ever.
+test('a featured placement expires', () => {
+  const now = new Date('2026-09-03T00:00:00Z')
+  assert.equal(isFeatured({ featured: true, featured_until: '2026-10-01T00:00:00Z' }, now), true)
+  assert.equal(isFeatured({ featured: true, featured_until: '2026-08-01T00:00:00Z' }, now), false)
+  assert.equal(isFeatured({ featured: false, featured_until: '2027-01-01T00:00:00Z' }, now), false)
+  assert.equal(isFeatured({ featured: true }, now), true, 'no end date means it was given, not sold')
+})
+
+// The product only works if the directory fills up, and it will not fill up if
+// listing costs money. Revenue comes from the ones who want to be seen first.
+test('listing is free and only the placement is sold', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  assert.ok(!/payment|checkout|stripe|membership_tier/i.test(route), 'nothing about publishing may be gated on paying')
+  const checkout = read('src/app/api/commercial/checkout/route.ts')
+  assert.match(checkout, /consultancy_featured/, 'the paid slot goes through the shared checkout')
+})
+
+// Buying a second month while the first is running must extend it, not restart
+// it, or the buyer loses days they already paid for.
+test('a second featured month extends rather than restarts', () => {
+  const lib = read('src/lib/commercial-fulfilment.ts')
+  const branch = lib.slice(lib.indexOf("product === 'consultancy_featured'"))
+  const body = branch.slice(0, branch.indexOf("} else if"))
+  assert.match(body, /existingUntil && existingUntil > now \? existingUntil : now/)
+})
+
+// An open contact form on a public directory is a spray gun unless it is held.
+test('enquiries need a real brief and are rate limited', () => {
+  const route = read('src/app/api/consultancy/enquiry/route.ts')
+  assert.match(route, /message\.length < 30/, 'a two-word enquiry wastes the consultant\'s time')
+  assert.match(route, /RATE_LIMIT_MAX/, 'one account cannot message the whole directory at once')
+  assert.match(route, /consultancy\.user_id === user\.id/, 'you cannot enquire about your own listing')
+  assert.match(route, /eq\('is_live', true\)/, 'a withdrawn listing takes no enquiries')
+})
+
+// Editing an approved listing used to set it back to pending, which pulled it
+// from the public directory until somebody re-read it. Correcting a typo cost a
+// consultant their place in the directory, and what they learn from that is to
+// stop editing.
+test('editing a live listing does not take it offline', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  assert.match(route, /existing\?\.approval_status === 'approved'/)
+  assert.match(route, /review_requested_at/, 'the edit is flagged for a re-read')
+  assert.ok(!/approval_status: 'pending'/.test(route), 'and never sets the listing back to pending')
+})
+
+// The directory had no visible way in: the only route to a listing was a
+// sidebar link inside the talent portal, which a consultant reading the public
+// page could not see and would not think to look for.
+test('a consultant reading the directory can find the way in', () => {
+  const page = read('src/app/consultancy/page.tsx')
+  const links = page.match(/href="\/consultancy\/join"/g) || []
+  assert.ok(links.length >= 2, 'the invitation appears at the top and again at the end of the list')
+  assert.match(page, /Free to list/, 'the price has to be the first thing said, because it is the reason to act')
+  // It goes to a page that explains the thing, not to a form or a sign-in wall.
+  const join = read('src/app/consultancy/join/page.tsx')
+  assert.match(join, /Free to list\. No commission/, 'the terms are answered before anything is asked for')
+  assert.match(join, /role=consultant/, 'and the sign-in door is the consultancy one')
+})
+
+// An empty directory and an over-filtered one look identical and are not the
+// same problem: one needs listings, the other needs the filters cleared.
+test('an empty directory and an over-filtered one say different things', () => {
+  const page = read('src/app/consultancy/page.tsx')
+  assert.match(page, /profiles\.length === 0 \?/, 'the two cases are told apart')
+  assert.match(page, /The directory is just opening/)
+  assert.match(page, /Clear filters/, 'the filtered case offers the way out of it')
+})
+
+// A spa designer signing up was handed Agency Shifts, Shift Resolution, Before
+// You Arrive, Interview Ready and a profile asking which treatments they
+// perform. None of it applies, and all of it says "you are in the wrong place".
+test('a consultant gets a workspace for consultancy, not for shifts', () => {
+  const shell = read('src/components/DashboardShell.tsx')
+  const start = shell.indexOf('  consultant: [')
+  assert.ok(start > 0, 'there has to be a consultant workspace')
+  const nav = shell.slice(start, shell.indexOf('  ],', start))
+  for (const absent of ['Agency Shifts', 'Shift Resolution', 'Before You Arrive', 'Interview Ready', 'Residency', 'Go Featured']) {
+    assert.ok(!nav.includes(absent), `${absent} does not belong in a consultant's sidebar`)
+  }
+  assert.match(nav, /My Practice/, 'the listing is their profile')
+  assert.match(shell, /accountFocus === 'consultant' \? navItems\.consultant/, 'the nav actually switches')
+})
+
+// The trimmed workspace is inferred, so it must be reversible in one click by
+// the person it was inferred about.
+test('the trimmed workspace can be switched back', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  assert.match(route, /export async function PATCH/, 'the switch is theirs to make')
+  assert.match(route, /body\.account_focus === 'consultant' \? 'consultant' : null/)
+  // It lives in Settings, with the other account-level choices. On the
+  // consultancy page it invited somebody who came to consult to take on a jobs
+  // dashboard they never asked for.
+  const settings = read('src/app/talent/settings/page.tsx')
+  assert.match(settings, /Show roles and agency work too/, 'the way back exists')
+  assert.match(settings, /Simplify to consultancy only/, 'and so does the way in')
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.ok(!/Show everything/.test(page), 'but it is not advertised under a listing')
+})
+
+// Inferring it from an already-active talent account would take agency shifts
+// away from somebody who is using them.
+test('an active talent account is never quietly trimmed', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  const inference = route.slice(route.indexOf('const untouched'), route.indexOf('account_focus: \'consultant\''))
+  for (const signal of ['role_level', 'agency_available', 'services_offered']) {
+    assert.ok(inference.includes(signal), `${signal} must rule the inference out`)
+  }
+  assert.match(inference, /!talent\.account_focus/, 'a choice already made is never overwritten')
+})
+
+// The action bar was `sticky bottom-4` as the last element on the page, which
+// puts it at the foot of the viewport while the page is scrolled to the top -
+// so it sat on top of Specialisms and Selected work, and the form appeared to
+// end after the first section. A consultant filled in one section, saw a
+// greyed-out Publish button, and had no idea the rest existed.
+test('nothing floats over the rest of the listing form', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.ok(!/sticky bottom-/.test(page), 'a sticky footer covers the sections below it')
+})
+
+// A consultant arriving cold from the public directory has never seen one of
+// these listings and does not know what a good one contains.
+test('the form says what it wants before asking for it', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.match(page, /Three steps, about ten minutes/, 'how long this takes, up front')
+  for (const step of ['Step 1 &middot; The practice', 'Step 2 &middot; Specialisms', 'Step 3 &middot; Selected work']) {
+    assert.ok(page.includes(step), `${step} must be numbered so it maps to the steps shown`)
+  }
+  assert.match(page, /is a description\./, 'the difference between a description and an outcome is shown, not described')
+  assert.match(page, /No projects yet/, 'an empty section has to say what belongs in it')
+})
+
+// Two account types, three doors. A consultant reading "Talent" or "Hotel"
+// picks neither and concludes there is no room for them here.
+test('consultancy has its own sign-in door', () => {
+  const login = read('src/app/login/page.tsx')
+  assert.match(login, /'talent' \| 'employer' \| 'consultant'/, 'the door is its own choice')
+  // Behind it the account is a talent account - the door is a label, not a
+  // third kind of user, and the API must never be told otherwise.
+  assert.match(login, /const role: 'talent' \| 'employer' = door === 'employer' \? 'employer' : 'talent'/)
+  assert.match(login, /door === 'consultant' \? '\/talent\/consultancy' : ''/, 'it lands on the listing, not a jobs dashboard')
+  assert.match(login, /focus=consultant/, 'and registering through it sets the account up for consultancy')
+})
+
+// Inferring the workspace later means somebody is handed agency shifts and a
+// treatment menu first, and only stops being handed them once they have
+// finished a listing.
+test('registering through the consultancy door sets the workspace immediately', () => {
+  const page = read('src/app/register/talent/page.tsx')
+  assert.match(page, /params\.get\('focus'\) === 'consultant'/)
+  assert.match(page, /account_focus: 'consultant'/)
+  assert.match(page, /router\.push\('\/talent\/consultancy'\)/, 'they land on the thing they came to do')
+  // The intent has to survive a round trip through a confirmation email.
+  assert.match(page, /registered=1&confirm=1&role=consultant/)
+})
+
+// A consultant who has filled the form in and is waiting for review could not
+// see what they had made - the only link to the public page appeared once it
+// was already published, which is too late to be useful.
+test('a draft can be previewed by the person who wrote it', () => {
+  const route = read('src/app/api/consultancy/public/route.ts')
+  // And by nobody else: an unpublished listing must still 404 for a stranger,
+  // or a draft could be found by guessing an id.
+  assert.match(route, /user\.id !== data\.user_id/)
+  assert.match(route, /preview: true/)
+  const listing = read('src/app/consultancy/[id]/page.tsx')
+  assert.match(listing, /nobody else can see this/, 'a preview must never be mistaken for the live page')
+  assert.match(listing, /\{!preview &&/, 'and the enquiry form is meaningless against your own draft')
+})
+
+// Preview saves first, because it reads from the database - previewing unsaved
+// work would show the last version and quietly mislead.
+test('preview saves without changing whether the listing is published', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  const fn = page.slice(page.indexOf('async function preview()'), page.indexOf('async function save('))
+  assert.match(fn, /save\(Boolean\(profile\?\.is_live\), \{ silent: true \}\)/,
+    'passing false here would take a live listing down every time somebody looked at it')
+})
+
+// Featured only appeared once a listing was already live, so the only people
+// who ever saw the offer were the ones who had stopped looking at the page.
+test('the featured placement is offered as a product, not hidden', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.match(page, /Featured placement/, 'it has a card of its own')
+  assert.match(page, /Thirty days at the top of the directory/, 'and says what it buys')
+  assert.match(page, /nothing is hidden from a property without it/, 'and what it does not')
+  assert.match(page, /Available once your listing is live/, 'with the one condition stated rather than left as a dead button')
+})

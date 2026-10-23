@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: 'gbp',
           product_data: {
-            name: 'Spa Platform - Residency Booking',
+            name: 'Talent House Collective - Residency Booking',
             description: `${booking.days_required} working days at £${Number(booking.agreed_day_rate || booking.proposed_day_rate).toFixed(0)}/day. Residency £${gross.toFixed(2)} + 10% platform fee £${fee.toFixed(2)}.`,
           },
           unit_amount: totalPence,

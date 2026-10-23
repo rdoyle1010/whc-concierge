@@ -9,7 +9,36 @@ export type CommercialFulfilmentResult = {
   message?: string
 }
 
-const KNOWN_PRODUCTS = ['talent_standard', 'talent_pro', 'featured_talent_7', 'featured_talent_30', 'employer_pro', 'employer_group', 'residency_featured']
+const KNOWN_PRODUCTS = ['talent_standard', 'talent_pro', 'featured_talent_7', 'featured_talent_30', 'employer_pro', 'employer_group', 'residency_featured', 'consultancy_featured']
+
+/**
+ * Write a paid checkout into the purchase ledger.
+ *
+ * The ledger is what a receipt is printed from and what the revenue page
+ * counts, so anything missing from it cannot be receipted and does not appear
+ * in the month's takings. Deliberately NOT recorded here are the products
+ * already banked in their own tables - academy courses (course_enrolments),
+ * agency shifts (agency_bookings), residency placements (residency_bookings)
+ * and advertising (ad_placements). Adding those would double the month.
+ *
+ * Idempotent on stripe_session_id, so a webhook replay is harmless.
+ */
+export async function recordCommercialPurchase(admin: any, session: Stripe.Checkout.Session, productKey: string, userId: string) {
+  if (!userId || !productKey) return
+  const { error } = await admin.from('commercial_purchases').upsert({
+    user_id: userId,
+    product_key: productKey,
+    stripe_session_id: session.id,
+    stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null,
+    amount_pence: session.amount_total || 0,
+    status: 'paid',
+    metadata: session.metadata || {},
+  }, { onConflict: 'stripe_session_id' })
+  // A failed ledger write must not undo fulfilment - the buyer has paid and
+  // should get what they bought. It is logged so it can be reconciled against
+  // Stripe rather than disappearing.
+  if (error) console.error('[ledger] purchase not recorded', productKey, session.id, error.message)
+}
 
 function fail(status: number, error: string, product: string, role: string): CommercialFulfilmentResult {
   return { ok: false, status, error, product, role }
@@ -87,10 +116,28 @@ export async function fulfilCommercialPurchase(admin: any, stripe: Stripe, sessi
     if (!profile) return fail(404, 'Employer profile not found', product, role)
     const { error } = await admin.from('employer_profiles').update({ membership_tier: tier, membership_started_at: now.toISOString(), membership_renews_at: renewsAt, membership_stripe_subscription_id: subscriptionId, ...customerColumns, membership_cancel_at_period_end: Boolean(sub?.cancel_at_period_end), annual_job_allowance: tier === 'group' ? 20 : 0, annual_jobs_used: 0 }).eq('id', profile.id)
     if (error) return fail(500, `Membership update failed: ${error.message}`, product, role)
+  } else if (product === 'consultancy_featured') {
+    // The payment is already banked, so a listing that cannot be found must
+    // never come back as a bare 404 - the buyer is told it is recorded and
+    // Talent House applies it by hand.
+    const recordedMessage = 'Your payment is recorded. Your Consultancy listing could not be updated automatically - please contact Talent House and we will apply your Featured placement.'
+    const days = Number(session.metadata?.featured_days || 30)
+    const { data: listing } = await admin.from('consultancy_profiles')
+      .select('id, featured_until').eq('user_id', userId).maybeSingle()
+    if (!listing) return { ok: true, status: 200, product, role, message: recordedMessage }
+
+    // Buying a second month while the first is still running extends it rather
+    // than restarting it, or the buyer loses the days they already paid for.
+    const existingUntil = listing.featured_until ? new Date(listing.featured_until) : null
+    const start = existingUntil && existingUntil > now ? existingUntil : now
+    const until = new Date(start.getTime() + days * 86400000)
+    const { error } = await admin.from('consultancy_profiles')
+      .update({ featured: true, featured_until: until.toISOString() }).eq('id', listing.id)
+    if (error) return fail(500, `Consultancy featured update failed: ${error.message}`, product, role)
   } else if (product === 'residency_featured') {
     // The payment is already in the ledger, so a missing profile or listing
     // must never surface as a bare 404 - tell the member it is recorded.
-    const recordedMessage = 'Your payment is recorded. Your Residency listing could not be updated automatically - please contact WHC and we will apply your Featured placement.'
+    const recordedMessage = 'Your payment is recorded. Your Residency listing could not be updated automatically - please contact Talent House and we will apply your Featured placement.'
     const { data: profile } = await admin.from('candidate_profiles').select('id').eq('user_id', userId).maybeSingle()
     if (!profile) return { ok: true, status: 200, product, role, message: recordedMessage }
 
@@ -117,8 +164,19 @@ export async function fulfilCommercialPurchase(admin: any, stripe: Stripe, sessi
     if (updateError) return fail(500, `Residency listing update failed: ${updateError.message}`, product, role)
   }
 
-  await admin.from('commercial_purchases')
+  // The stamp that says this session has been fulfilled, and whether it landed.
+  //
+  // Stripe redelivers a webhook on any non-2xx, and the featured window above
+  // extends from the existing featured_until rather than from now. So a stamp
+  // that silently failed to write meant the next delivery ran the whole thing
+  // again and added another thirty days for one payment. Writing it unchecked
+  // is the one place in this function where losing an error costs money.
+  const { error: stampError } = await admin.from('commercial_purchases')
     .update({ metadata: { ...(session.metadata || {}), fulfilled_at: now.toISOString() } })
     .eq('stripe_session_id', session.id)
+  if (stampError) {
+    console.error('[fulfilment] delivered but not stamped:', session.id, stampError.message)
+    return fail(500, `Fulfilled but could not record it, so this may be delivered twice: ${stampError.message}`, product, role)
+  }
   return { ok: true, status: 200, product, role }
 }

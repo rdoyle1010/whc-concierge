@@ -107,6 +107,7 @@ const PRODUCT_HOUSES = [
   { name: 'Temple Spa', tier: 'professional', sort_order: 26 },
   { name: 'VOYA', tier: 'luxury', sort_order: 27 },
   { name: 'Ishga', tier: 'luxury', sort_order: 28 },
+  { name: 'Carol Joy London', tier: 'ultra_luxury', sort_order: 29 },
 ]
 
 const CERTIFICATIONS = [

@@ -4,7 +4,6 @@
 
 import type { AcademyCourse } from '../academy'
 import type { CourseExtras } from '../academy-extras'
-import type { CourseContent } from '../academy-types'
 
 import * as espa from './espa-masterclass'
 import * as elemis from './elemis-masterclass'
@@ -34,18 +33,25 @@ import * as decleor from './decleor-masterclass'
 import * as imageSkincare from './image-skincare-masterclass'
 import * as medik8 from './medik8-masterclass'
 import * as murad from './murad-masterclass'
+import * as carolJoyLondon from './carol-joy-london-masterclass'
+import * as skinRocks from './skin-rocks-masterclass'
+import * as sothys from './sothys-masterclass'
+import * as evolveOrganicBeauty from './evolve-organic-beauty-masterclass'
+import * as myBlend from './myblend-masterclass'
 import * as cancerCare from './cancer-care-awareness'
 import * as menopause from './menopause-aware-spa'
 import * as pregnancy from './pregnancy-postnatal-spa'
 import * as spaManager from './spa-manager-programme'
 import * as spaDirector from './spa-director-programme'
 
-type Pack = { course: AcademyCourse; extras: CourseExtras; content: CourseContent }
+// Content is deliberately absent: it lives in the .content files beside each
+// pack so that importing a course title does not import its lessons too.
+type Pack = { course: AcademyCourse; extras: CourseExtras }
 
 const PACKS: Pack[] = [
-  espa, elemis, dermalogica, comfortZone, aromatherapyAssociates, naturaBisse, voya, bamford, wildsmith, templeSpa, oneElevenSkin, biologiqueRecherche, sisley, laMer, valmont, groundWellbeing, kamaAyurveda, clarins, sodashi, ilaSpa, susanneKaufmann, ishga, thalgo, guinot, decleor, imageSkincare, medik8, murad, cancerCare, menopause, pregnancy, spaManager, spaDirector,
+  espa, elemis, dermalogica, comfortZone, aromatherapyAssociates, naturaBisse, voya, bamford, wildsmith, templeSpa, oneElevenSkin, biologiqueRecherche, sisley, laMer, valmont, groundWellbeing, kamaAyurveda, clarins, sodashi, ilaSpa, susanneKaufmann, ishga, thalgo, guinot, decleor, imageSkincare, medik8, murad, carolJoyLondon, skinRocks, sothys, evolveOrganicBeauty, myBlend, cancerCare, menopause, pregnancy, spaManager, spaDirector,
 ] as unknown as Pack[]
 
 export const MORE_COURSES: AcademyCourse[] = PACKS.map(p => p.course)
 export const MORE_EXTRAS: Record<string, CourseExtras> = Object.fromEntries(PACKS.map(p => [p.course.slug, p.extras]))
-export const MORE_CONTENT: Record<string, CourseContent> = Object.fromEntries(PACKS.map(p => [p.course.slug, p.content]))
+// MORE_CONTENT moved to ./content - see the note there.

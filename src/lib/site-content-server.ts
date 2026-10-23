@@ -26,7 +26,7 @@ function applyLegacyImages(content: WebsiteContent, rows: LegacyImage[]): Websit
     next.hero.slides = heroes.slice(0, 8).map((row, index) => ({
       image: {
         url: row.image_url || next.hero.slides[index]?.image.url || '',
-        alt: row.heading || next.hero.slides[index]?.image.alt || 'Wellness House Collective',
+        alt: row.heading || next.hero.slides[index]?.image.alt || 'Talent House Collective',
         focalX: 50,
         focalY: 50,
       },
@@ -67,9 +67,11 @@ async function readWebsiteContent(key: string): Promise<WebsiteContent> {
 const getCachedPublishedWebsiteContent = unstable_cache(
   () => readWebsiteContent(WEBSITE_PUBLISHED_KEY),
   ['website-content-published-v1'],
-  // Tagged so the admin publish action can revalidate it instantly instead
-  // of waiting out the 60-second window.
-  { revalidate: 60, tags: ['website-content'] }
+  // An hour, for the same reason as platform-access: this is read in the root
+  // layout, and the lowest revalidate in a render becomes the route's. The
+  // tag is what makes a brand publish land, and it is revalidated the moment
+  // the admin publishes, so nobody waits on this number.
+  { revalidate: 3600, tags: ['website-content'] }
 )
 
 export async function getWebsiteContent(useDraft = false): Promise<WebsiteContent> {

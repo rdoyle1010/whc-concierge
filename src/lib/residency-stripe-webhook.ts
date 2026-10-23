@@ -67,7 +67,7 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
           candidate.user_id,
           'general',
           'Residency confirmed - payment received',
-          `Your Residency with ${propertyName} is confirmed. The agreed booking is now secured through Spa Platform.`,
+          `Your Residency with ${propertyName} is confirmed. The agreed booking is now secured through Talent House Collective.`,
           '/talent/residency',
         )
       }
@@ -76,7 +76,7 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
           employer.user_id,
           'general',
           'Residency payment received',
-          'Your Residency booking with the specialist is confirmed and secured through Spa Platform.',
+          'Your Residency booking with the specialist is confirmed and secured through Talent House Collective.',
           '/employer/residency',
         )
         await createNotification(employer.user_id, 'general', 'Complete your Property Fact File', 'Your confirmed specialist receives a Before You Arrive pack built from your Property Fact File - the more complete it is, the better their arrival goes.', '/employer/property-fact-file')

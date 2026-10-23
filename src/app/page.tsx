@@ -10,14 +10,28 @@ import Navbar from '@/components/Navbar'
 import SponsoredAd from '@/components/SponsoredAd'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
+import { cheapestSingle, formatPrice } from '@/lib/documents/pricing'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
+import { readConfigString } from '@/lib/platform-access'
 
-export const revalidate = 60
+// An hour, not a minute. Every read below is tagged, so publishing a role or
+// approving a property drops this page at once rather than up to sixty seconds
+// later - which means the window no longer has to be short, and a visitor gets
+// a prerendered homepage instead of paying for ten database round trips.
+export const revalidate = 3600
 
+// Both businesses, in the tab.
+//
+// This said careers and only careers, while the revenue is a library of spa
+// operating documents. A spa director who searched for a risk assessment
+// template landed on a careers platform and left, which is most of the answer
+// to why nobody could tell what this was.
 export const metadata: Metadata = {
-  title: { absolute: 'Talent House Collective | Spa and Wellness Careers' },
-  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
+  title: { absolute: 'Talent House Collective | Spa Documents and Wellness Careers' },
+  description: 'Spa operating documents written for luxury properties: SOPs, risk assessments, '
+    + `policies, job descriptions and checklists, from ${formatPrice(cheapestSingle())}. And the `
+    + 'recruitment platform that matches spa professionals to exceptional properties on real skills.',
   alternates: { canonical: 'https://talenthousecollective.co.uk' },
 }
 
@@ -35,6 +49,8 @@ type LiveNumbers = {
   properties: number
   reviews: number
   certificates: number
+  /** Whether an administrator has judged these worth showing to a stranger. */
+  show: boolean
 }
 
 type VerifiedReview = {
@@ -82,30 +98,36 @@ const getFeaturedRoles = unstable_cache(async (): Promise<FeaturedRole[]> => {
   } catch {
     return []
   }
-}, ['homepage-featured-roles-v2'], { revalidate: 60 })
+}, ['homepage-featured-roles-v2'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.jobs] })
 
 // The homepage's proof is the live state of the platform, not a claim. Each
 // count is real; a figure only appears once it is greater than zero.
 const getLiveNumbers = unstable_cache(async (): Promise<LiveNumbers> => {
-  const empty: LiveNumbers = { roles: 0, properties: 0, reviews: 0, certificates: 0 }
+  const empty: LiveNumbers = { roles: 0, properties: 0, reviews: 0, certificates: 0, show: false }
   try {
     const admin = createAdminClient()
-    const [roles, properties, reviews, certificates] = await Promise.all([
+    const [roles, properties, reviews, certificates, setting] = await Promise.all([
       admin.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).eq('status', 'active'),
       admin.from('employer_profiles').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
       admin.from('reviews').select('id', { count: 'exact', head: true }).gte('rating', 1).lte('rating', 5),
       admin.from('course_enrollments').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null),
+      // The same one switch the sign-in and registration pages read. Three
+      // surfaces were each deciding for themselves whether a number was worth
+      // showing, which is how a launch week front page came to advertise one
+      // role, one property and one review.
+      admin.from('platform_config').select('value').eq('key', 'login_live_numbers').maybeSingle(),
     ])
     return {
       roles: roles.count || 0,
       properties: properties.count || 0,
       reviews: reviews.count || 0,
       certificates: certificates.count || 0,
+      show: readConfigString(setting.data?.value).toLowerCase() === 'on',
     }
   } catch {
     return empty
   }
-}, ['homepage-live-numbers-v1'], { revalidate: 300 })
+}, ['homepage-live-numbers-v1'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.proof, PUBLIC_CACHE_TAGS.jobs] })
 
 // Real reviews only - written by professionals after verified placements and
 // completed shifts. When none exist yet, the section renders nothing.
@@ -136,31 +158,18 @@ const getVerifiedReviews = unstable_cache(async (): Promise<VerifiedReview[]> =>
         rating: Number(row.rating),
         comment: String(row.text).trim(),
         createdAt: row.created_at || null,
-        source: row.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
+        source: row.booking_id ? 'Completed Talent House agency shift' : 'Talent House placement',
         // Published by role, never by name. Nobody consented to having their
         // legal name attached, on the open web, to a public opinion of a
         // named former employer.
-        reviewerName: reviewer?.role_level || 'Verified WHC professional',
+        reviewerName: reviewer?.role_level || 'Verified Talent House professional',
         reviewerRole: null,
       }
     })
   } catch {
     return []
   }
-}, ['homepage-verified-reviews-v1'], { revalidate: 300 })
-
-async function canPreviewDraft() {
-  try {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return false
-    const admin = createAdminClient()
-    const { data } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-    return data?.role === 'admin'
-  } catch {
-    return false
-  }
-}
+}, ['homepage-verified-reviews-v1'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.proof] })
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">{children}</p>
@@ -169,6 +178,12 @@ function Eyebrow({ children }: { children: ReactNode }) {
 // A quiet ruled strip of what is actually live on the platform right now.
 // Figures come straight from the database and only render when above zero.
 function NumbersStrip({ numbers }: { numbers: LiveNumbers }) {
+  // "1 live role, 1 approved property, 1 verified staff review" does not read
+  // as a young platform to somebody arriving for the first time. It reads as
+  // an empty one, on the page doing the most work to persuade them otherwise.
+  // Off until an administrator turns it on, from the same setting that
+  // governs the sign-in and registration pages.
+  if (!numbers.show) return null
   const items = [
     numbers.roles > 0 ? { label: numbers.roles === 1 ? 'Live role' : 'Live roles', value: numbers.roles } : null,
     numbers.properties > 0 ? { label: numbers.properties === 1 ? 'Approved property' : 'Approved properties', value: numbers.properties } : null,
@@ -178,9 +193,9 @@ function NumbersStrip({ numbers }: { numbers: LiveNumbers }) {
   if (!items.length) return null
 
   return (
-    <section aria-label="Live on WHC today" className="border-b border-border bg-white">
+    <section aria-label="Live on Talent House today" className="border-b border-border bg-white">
       <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-        <Eyebrow>Live on WHC today</Eyebrow>
+        <Eyebrow>Live on Talent House today</Eyebrow>
         <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
           {items.map(item => (
             <div key={item.label} className="border-t border-border pt-3">
@@ -200,7 +215,7 @@ function RoutesSection() {
   const routes = [
     {
       title: "I'm hiring",
-      copy: 'Post roles to matched, vetted professionals, book flexible cover by the hour, or have WHC run the whole search.',
+      copy: 'Post roles to matched, vetted professionals, book flexible cover by the hour, or have Talent House run the whole search.',
       href: '/register?role=employer',
       cta: 'Find exceptional people',
     },
@@ -216,14 +231,30 @@ function RoutesSection() {
       href: '/academy',
       cta: 'Explore the Academy',
     },
+    // The door that was not here.
+    //
+    // The library is the part of this business that takes money, and the only
+    // way to it from the home page was the sixth of eight items in the nav.
+    // Somebody who arrived needing a risk assessment read three cards about
+    // jobs and left. The words in this one are the words they searched for.
+    {
+      title: 'I need the documents my spa is expected to have',
+      // Read from the price list, not typed. It said thirty-nine pounds for
+      // a day after the entry price became ten, on the front page, in the one
+      // card that exists to send somebody to the shop.
+      copy: 'Standard operating procedures, risk assessments, policies, job descriptions and daily '
+        + `checklists, written for luxury spas and ready for your name. From ${formatPrice(cheapestSingle())} for one.`,
+      href: '/standards',
+      cta: 'See the library',
+    },
   ]
   return (
     <section className="border-b border-black/10 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">Talent House Collective</p>
-        <h2 className="site-heading mt-2 max-w-3xl text-[26px] font-semibold leading-tight md:text-[32px]">The professional platform for spa and wellness careers.</h2>
-        <p className="mt-2 max-w-2xl text-[14px] leading-6 text-secondary">Find exceptional people. Build better careers. Develop stronger spa businesses.</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <h2 className="site-heading mt-2 max-w-3xl text-[26px] font-semibold leading-tight md:text-[32px]">Run the spa, and staff it.</h2>
+        <p className="mt-2 max-w-2xl text-[14px] leading-6 text-secondary">The documents a luxury spa is expected to have in writing, and the people to run it. Choose the door you came for.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {routes.map(route => (
             <Link key={route.title} href={route.href} className="group flex flex-col border border-border bg-white p-6 transition-colors hover:border-accent">
               <h3 className="text-[18px] font-semibold text-ink">{route.title}</h3>
@@ -271,7 +302,17 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
 // is featured.
 type FeaturedEntry = { id: string; title: string; meta: string; href: string }
 const getFeaturedPlacements = unstable_cache(async (): Promise<{ properties: FeaturedEntry[]; professionals: FeaturedEntry[] }> => {
-  const admin = createAdminClient()
+  // The queries below are guarded, but the client that runs them was not:
+  // createAdminClient throws when its configuration is missing, and it sat
+  // outside the try. Featured placements are sold inventory on the homepage -
+  // the busiest page on the site - and a database wobble took the whole page
+  // down to an error screen rather than quietly dropping a panel.
+  let admin: ReturnType<typeof createAdminClient>
+  try {
+    admin = createAdminClient()
+  } catch {
+    return { properties: [], professionals: [] }
+  }
   try {
     const [{ data: employers }, { data: candidates }] = await Promise.all([
       admin.from('employer_profiles')
@@ -302,14 +343,78 @@ const getFeaturedPlacements = unstable_cache(async (): Promise<{ properties: Fea
       })
     return { properties, professionals }
   } catch { return { properties: [], professionals: [] } }
-}, ['homepage-featured-placements-v1'], { revalidate: 300 })
+}, ['homepage-featured-placements-v1'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.proof] })
+
+// The two things she is selling, on the page where people arrive.
+//
+// Properties and Brands are in the header, but a header link sends somebody
+// to a directory, and a directory argues for itself only once it is full.
+// This argues for the proposition instead, which works on day one: a hotel
+// deciding whether to be listed and a product house deciding whether to
+// advertise both need to be told why, not shown a list of who else already
+// has.
+//
+// Deliberately not dressed as a count of anything. Nothing here says how many
+// properties or brands are on the platform, because that number is small and
+// saying it would undo the argument the copy is making.
+function SellingBand() {
+  const cards = [
+    {
+      eyebrow: 'For properties',
+      heading: 'Be somewhere they are already looking',
+      body: 'The people worth hiring are rarely on job boards. They are here keeping their qualifications, '
+        + 'brand training and treatment record somewhere it counts, whether or not they are looking. Put your '
+        + 'spa in front of them, and be found by the ones who would never answer an advert.',
+      action: 'List your property',
+      href: '/register/employer',
+      secondary: 'See what it costs',
+      secondaryHref: '/pricing',
+    },
+    {
+      eyebrow: 'For product houses',
+      heading: 'In front of the people who specify you',
+      body: 'A spa director chooses the house her team trains with, and a therapist carries that training for '
+        + 'the rest of her career. Both are on this platform. A brand page puts your house, your training and '
+        + 'your standards where those two decisions are actually made.',
+      action: 'Advertise with us',
+      href: '/advertise',
+      secondary: 'See the brands',
+      secondaryHref: '/brands',
+    },
+  ]
+
+  return (
+    <section className="border-b border-border bg-white" aria-label="Work with Talent House">
+      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
+        <Eyebrow>Work with us</Eyebrow>
+        <div className="mt-7 grid gap-x-14 gap-y-10 md:grid-cols-2">
+          {cards.map(card => (
+            <div key={card.eyebrow} className="border-t border-[#222321] pt-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted">{card.eyebrow}</p>
+              <h2 className="site-heading mt-2 text-[24px] font-semibold leading-tight md:text-[28px]">{card.heading}</h2>
+              <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-secondary">{card.body}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-5">
+                <Link href={card.href} className="border border-[#222321] bg-[#222321] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.1em] text-white">
+                  {card.action}
+                </Link>
+                <Link href={card.secondaryHref} className="text-[12px] font-semibold text-ink underline underline-offset-4">
+                  {card.secondary}
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
 function FeaturedPlacementsSection({ placements }: { placements: { properties: FeaturedEntry[]; professionals: FeaturedEntry[] } }) {
   if (!placements.properties.length && !placements.professionals.length) return null
   return (
-    <section className="border-b border-border bg-[#f3f0eb]">
+    <section className="border-b border-border bg-[#ede8df]">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
-        <Eyebrow>Featured on WHC</Eyebrow>
+        <Eyebrow>Featured on Talent House</Eyebrow>
         <div className="mt-6 grid gap-x-14 gap-y-8 md:grid-cols-2">
           {placements.properties.length > 0 && (
             <div>
@@ -357,9 +462,9 @@ function VerifiedReviewsSection({ content, reviews }: { content: WebsiteContent;
   return (
     <section className="border-b border-border bg-white">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
-        <Eyebrow>Verified on WHC</Eyebrow>
+        <Eyebrow>Verified on Talent House</Eyebrow>
         <h2 className="site-heading mt-2 text-[26px] font-semibold leading-tight md:text-[32px]">{content.testimonials.heading}</h2>
-        <p className="mt-4 max-w-2xl text-[12px] italic leading-6 text-muted">Reviews on WHC come only from verified placements and completed shifts.</p>
+        <p className="mt-4 max-w-2xl text-[12px] italic leading-6 text-muted">Reviews on Talent House come only from verified placements and completed shifts.</p>
         <div className="mt-10 grid gap-x-14 gap-y-12 md:grid-cols-3">
           {reviews.map(review => (
             <article key={review.id} className="border-t border-border pt-6">
@@ -408,12 +513,23 @@ function CalloutSection({ content }: { content: WebsiteContent }) {
   )
 }
 
-type HomePageProps = { searchParams?: Promise<{ websitePreview?: string | string[] }> }
+// The homepage is the most visited page on the site and the most cacheable,
+// and it was the only public page rendered from scratch on every request.
+//
+// It accepted ?websitePreview=draft so an administrator could see unpublished
+// website copy. In this version of Next, a page that reads searchParams is
+// dynamic - always, with no exception - so that one admin convenience took
+// the homepage out of the CDN and put a serverless function in front of every
+// first-time visitor, cold, five database round trips deep. /about and
+// /academy sat beside it being served as static files.
+//
+// The preview moved to /preview/home, which is dynamic and admin-gated
+// because it should be. This is static again.
+export default async function HomePage() {
+  return renderHome(false)
+}
 
-export default async function HomePage(props: HomePageProps) {
-  const searchParams = await props.searchParams
-  const previewRequested = searchParams?.websitePreview === 'draft'
-  const previewingDraft = previewRequested && (await canPreviewDraft())
+export async function renderHome(previewingDraft: boolean) {
   const [content, featuredRoles, liveNumbers, verifiedReviews, featuredPlacements] = await Promise.all([
     getWebsiteContent(previewingDraft),
     getFeaturedRoles(),
@@ -445,6 +561,7 @@ export default async function HomePage(props: HomePageProps) {
       <RoutesSection />
       <SponsoredAd placement="homepage_spotlight" />
       {content.sections.filter(section => section.visible).map(section => <div key={section.id}>{sections[section.id]}</div>)}
+      <SellingBand />
       <FeaturedPlacementsSection placements={featuredPlacements} />
     </main>
     <Footer siteContent={content} />

@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
+import { DEFAULT_WEBSITE_CONTENT } from '@/lib/site-content-values'
+import type { WebsiteContent } from '@/lib/site-content'
+import { slideCta } from '@/lib/hero-slide-cta'
 
 export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
   const slides = content.hero.slides
   const [current, setCurrent] = useState(0)
-  const [paused, setPaused] = useState(false)
 
   useEffect(() => {
     if (current >= slides.length) setCurrent(0)
@@ -19,52 +20,60 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     setCurrent(index)
   }, [])
 
-  const next = useCallback(() => {
-    setCurrent(value => (value + 1) % slides.length)
-  }, [slides.length])
-
-  // Keep the first hero stable during the critical loading window. The
-  // carousel still rotates, but only after the page has had time to settle.
-  useEffect(() => {
-    if (paused || slides.length < 2) return
-    const timer = window.setInterval(next, 12000)
-    return () => window.clearInterval(timer)
-  }, [paused, next, slides.length])
+  // It does not rotate on its own any more.
+  //
+  // Three slides on a twelve second timer meant almost everybody read slide
+  // one and left, so in practice the site had one hero and two arguments
+  // nobody saw, while the code carried the cost and the complexity of three.
+  // Worse, whichever slide happened to be showing decided what the business
+  // appeared to be. The dots still work, so a second argument is a click away
+  // for anybody who wants it, and the first screen says one thing on purpose.
 
   // Preload only the next slide, well after the critical Lighthouse window.
   // This preserves a smooth later transition without pulling another large
   // source image into the initial page load.
-  useEffect(() => {
-    if (slides.length < 2) return
-    const timer = window.setTimeout(() => {
-      if (document.visibilityState !== 'visible') return
-      const upcoming = slides[(current + 1) % slides.length]
-      const image = new window.Image()
-      image.decoding = 'async'
-      image.src = upcoming.image.url
-    }, 10000)
-    return () => window.clearTimeout(timer)
-  }, [current, slides])
+  // The next slide used to be preloaded here by hand, ten seconds in. The
+  // intent was right and the effect was nil: it fetched the raw original from
+  // storage, while the carousel renders the resized /_next/image variant. So it
+  // downloaded a couple of megabytes the carousel would never use, warmed no
+  // cache the carousel reads, and did it on every slide change.
+  //
+  // next/image already fetches the variant it needs, and the slide interval is
+  // long enough to cover it.
 
   const slide = slides[current] || slides[0]
 
   return (
-    <div className="relative w-full min-h-[620px] h-[calc(100vh-76px)] overflow-hidden bg-accent"
-      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    // Sized to what it holds, not to the window.
+    //
+    // This was the full viewport less the navigation bar, so the four doors
+    // underneath it, including the only route to the document library, were
+    // below the fold on every visit on every screen. A hero that fills the
+    // window is a hero that hides the page. Roughly two thirds leaves the top
+    // of the next section visible, which is what tells somebody there is one.
+    <div className="relative w-full min-h-[460px] h-[66vh] max-h-[680px] overflow-hidden bg-accent">
       <div key={current} className="absolute inset-0 animate-fade-in">
-        <Image
-          src={slide.image.url}
-          alt={slide.image.alt}
-          fill
-          sizes="100vw"
-          priority={current === 0}
-          fetchPriority={current === 0 ? 'high' : 'auto'}
-          quality={72}
-          className="object-cover"
-          style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
-        />
+        {/* Nothing rather than an empty src.
+            next/image throws on an empty string, and before the defaults were
+            emptied this could not happen because there was always a stock
+            photograph to fall back on. The panel behind is already the brand
+            charcoal, so a slide with no picture reads as a colour field rather
+            than a hole. */}
+        {slide.image.url ? (
+          <Image
+            src={slide.image.url}
+            alt={slide.image.alt}
+            fill
+            sizes="100vw"
+            priority={current === 0}
+            fetchPriority={current === 0 ? 'high' : 'auto'}
+            quality={72}
+            className="object-cover"
+            style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
+          />
+        ) : null}
         {/* Charcoal legibility gradient - the destination-page idiom. */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,27,26,.92) 0%, rgba(28,27,26,.48) 50%, rgba(28,27,26,.16) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(34,35,33,.92) 0%, rgba(34,35,33,.5) 50%, rgba(34,35,33,.18) 100%)' }} />
       </div>
 
       <div className="absolute inset-0 z-10 flex items-end">
@@ -73,17 +82,44 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">{slide.eyebrow}</p>
             <h1 className="site-heading !text-white text-[40px] md:text-[58px] lg:text-[68px] leading-[1.03] tracking-[-.04em] font-medium mb-6">{slide.heading}</h1>
             <p className="mb-9 max-w-2xl text-[15px] md:text-[17px] leading-[1.7] text-white/85">{slide.text}</p>
-            <Link href={content.hero.primaryHref} className="site-button site-accent inline-block bg-white px-7 py-3.5 text-[13px] font-semibold">
-              {content.hero.primaryLabel}
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              {(() => {
+                // One door per argument. Every slide used to send everybody to
+                // Post a Role, including the ones written for therapists.
+                const cta = slideCta(slide, current, { label: content.hero.primaryLabel, href: content.hero.primaryHref })
+                return (
+                  <Link href={cta.href} className="site-button site-accent inline-block bg-white px-7 py-3.5 text-[13px] font-semibold">
+                    {cta.label}
+                  </Link>
+                )
+              })()}
+              {/* The library, on the first screen, whatever the slides say.
+                  This is structural rather than content on purpose. The hero
+                  copy is hers to edit and she has edited it, so a default
+                  written in this repository does not necessarily reach the
+                  live page. The part of the business that takes the money
+                  cannot depend on that: until now its only route from the
+                  home page was the sixth of eight items in the navigation,
+                  under a word nobody searches for. */}
+              <Link href="/standards"
+                className="inline-block border border-white/70 px-7 py-3.5 text-[13px] font-semibold text-white hover:bg-white/10">
+                See the documents
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {slides.length > 1 && <div className="absolute bottom-8 left-6 lg:left-[calc((100vw-1280px)/2+2rem)] z-20 flex items-center gap-2">
+        {/* The rule the eye sees is still two pixels tall. The button around it
+            is forty-four, which is the smallest thing a thumb reliably hits -
+            these were two pixels of tappable area on a phone, which is to say
+            nobody has ever changed a hero slide on a phone. */}
         {slides.map((_, index) => <button key={index} type="button" onClick={() => showSlide(index)}
-          className="h-[2px] transition-all duration-300" style={{ width: index === current ? 44 : 24, background: index === current ? '#ffffff' : 'rgba(255,255,255,.4)' }}
-          aria-label={'Go to hero slide ' + (index + 1)} aria-current={index === current ? 'true' : undefined} />)}
+          className="flex h-11 items-center transition-opacity duration-300"
+          aria-label={'Go to hero slide ' + (index + 1)} aria-current={index === current ? 'true' : undefined}>
+          <span className="block h-[2px] transition-all duration-300" style={{ width: index === current ? 44 : 24, background: index === current ? '#ffffff' : 'rgba(255,255,255,.4)' }} />
+        </button>)}
       </div>}
     </div>
   )

@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Honeypot from '@/components/Honeypot'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { AGENCY_PLATFORM_FEE_PCT, COMPANY_TYPES, EMPLOYER_MEMBERSHIPS, JOB_TIERS, RECRUITMENT_SERVICE_RATE } from '@/lib/constants'
+import { MARKETING_CONSENT_WORDING } from '@/lib/consent-wording'
+import { LAUNCH_OFFER_EMPLOYER, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
 
 const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
 const percent = (rate: number) => `${(rate * 100).toFixed(rate * 100 % 1 === 0 ? 0 : 1)}%`
@@ -14,7 +17,20 @@ export default function EmployerRegisterPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const [honeypot, setHoneypot] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState('')
+  // Where they were going before they were asked to make an account. This
+  // page read no parameters at all, though the sign-in page and the brand
+  // pages both send it one.
+  const [back, setBack] = useState('')
+
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('redirect') || ''
+    // Same-origin only. An open redirect on a registration form sends new
+    // accounts to whatever a link says.
+    if (wanted.startsWith('/') && !wanted.startsWith('//')) setBack(wanted)
+  }, [])
 
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '',
@@ -36,9 +52,12 @@ export default function EmployerRegisterPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        company: honeypot,
         email: form.email,
         password: form.password,
         role: 'employer',
+        marketingOptIn,
+        agreedTerms: form.agreed_terms === true,
         displayName: form.company_name,
       }),
     })
@@ -88,7 +107,14 @@ export default function EmployerRegisterPage() {
       return
     }
 
-    router.push(init.requiresEmailConfirmation ? '/login?registered=1&confirm=1' : '/employer/dashboard')
+    // Back to whatever sent them here, if anything did. This page read no
+    // parameters at all, so every deep link into employer signup landed on a
+    // dashboard instead of the role, the pack or the property page the person
+    // was actually looking at.
+    const carry = back ? `&redirect=${encodeURIComponent(back)}` : ''
+    router.push(init.requiresEmailConfirmation
+      ? `/login?registered=1&confirm=1${carry}`
+      : (back || '/employer/dashboard'))
   }
 
   const commercialRows = [
@@ -96,12 +122,12 @@ export default function EmployerRegisterPage() {
     { label: 'Featured Job', value: `${JOB_TIERS.Platinum.display} for ${JOB_TIERS.Platinum.days} days`, note: 'Priority placement and a relevant talent email.' },
     { label: 'Employer Pro', value: `Standard Jobs at ${pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)}`, note: `${pounds(EMPLOYER_MEMBERSHIPS.pro.price)} a year.` },
     { label: 'Employer Group', value: `${EMPLOYER_MEMBERSHIPS.group.includedJobs} Standard Jobs included`, note: `${pounds(EMPLOYER_MEMBERSHIPS.group.price)} a membership year.` },
-    { label: 'Agency cover', value: `${percent(AGENCY_PLATFORM_FEE_PCT)} WHC fee`, note: 'The professional keeps 100% of the agreed rate; the property pays the rate plus the WHC fee.' },
+    { label: 'Agency cover', value: `${percent(AGENCY_PLATFORM_FEE_PCT)} Talent House fee`, note: 'The professional keeps 100% of the agreed rate; the property pays the rate plus the Talent House fee.' },
     { label: 'Managed recruitment', value: `${percent(RECRUITMENT_SERVICE_RATE)} of first-year salary`, note: 'With a replacement guarantee.' },
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <div className="border-b border-border px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <Wordmark />
         <Link href="/login?role=employer" className="text-sm text-muted hover:text-ink">Already registered?</Link>
@@ -115,6 +141,14 @@ export default function EmployerRegisterPage() {
         <div className="mt-12 grid lg:grid-cols-12 gap-12 xl:gap-16">
           {/* The form */}
           <div className="lg:col-span-7">
+            {launchOfferOpen() && (
+              <div className="mb-6 border border-border bg-surface px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">Opening month</p>
+                <p className="mt-1.5 text-[13px] leading-5 text-secondary">{LAUNCH_OFFER_EMPLOYER}</p>
+                <p className="mt-1.5 text-[11px] text-muted">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
+              </div>
+            )}
+
             {error && <div role="alert" className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
             <section aria-labelledby="emp-section-property">
@@ -131,7 +165,7 @@ export default function EmployerRegisterPage() {
             <section aria-labelledby="emp-section-account" className="mt-10">
               <p id="emp-section-account" className="border-t border-border pt-4 text-[10px] uppercase tracking-[0.18em] font-semibold text-muted">The account</p>
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-email">Email *</label><input id="emp-email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" /></div>
+                <div className="sm:col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-email">Email *</label><Honeypot value={honeypot} onChange={setHoneypot} /><input id="emp-email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" /></div>
                 <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-password">Password *</label><input id="emp-password" type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" autoComplete="new-password" /></div>
                 <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-confirm">Confirm *</label><input id="emp-confirm" type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" autoComplete="new-password" /></div>
                 <div className="sm:col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5" htmlFor="emp-work-email">Work Email (for verification)</label><input id="emp-work-email" type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /><p className="mt-1.5 text-[11px] text-muted">An email at your property&apos;s own domain speeds up approval.</p></div>
@@ -145,20 +179,28 @@ export default function EmployerRegisterPage() {
                 <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-ink hover:bg-surface">Read the full Terms &amp; Conditions - Employer</summary>
                 <div className="border-t border-border px-4 py-4 text-[12px] text-secondary leading-relaxed">
                   <p className="mb-2">By registering a property on Talent House Collective, you agree to the following:</p>
-                  <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC reserves the right to remove misleading listings.</p>
-                  <p className="mb-2">2. <strong>Account review:</strong> Employer accounts may be reviewed and approved by WHC before protected Talent or Agency features become available.</p>
+                  <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. Talent House reserves the right to remove misleading listings.</p>
+                  <p className="mb-2">2. <strong>Account review:</strong> Employer accounts may be reviewed and approved by Talent House before protected Talent or Agency features become available.</p>
                   <p className="mb-2">3. <strong>Job posting fees:</strong> Standard Jobs are {JOB_TIERS.Bronze.display} for {JOB_TIERS.Bronze.days} days and Featured Jobs are {JOB_TIERS.Platinum.display} for {JOB_TIERS.Platinum.days} days. Employer Pro currently receives {pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)} Standard Jobs and Employer Group currently includes up to {EMPLOYER_MEMBERSHIPS.group.includedJobs} Standard Jobs per membership year. Fees are generally non-refundable once a paid listing is published.</p>
-                  <p className="mb-2">4. <strong>Agency bookings:</strong> The professional keeps 100% of the agreed shift value. The property pays that agreed value plus a {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% WHC platform fee through the Platform. WHC manages the professional payout after the completed shift, subject to any cancellation, dispute or adjustment process.</p>
+                  <p className="mb-2">4. <strong>Agency bookings:</strong> The professional keeps 100% of the agreed shift value. The property pays that agreed value plus a {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% Talent House platform fee through the Platform. Talent House manages the professional payout after the completed shift, subject to any cancellation, dispute or adjustment process.</p>
                   <p className="mb-2">5. <strong>Candidate data:</strong> You agree to handle Talent personal data in accordance with applicable data-protection law and our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. Information accessed through the Platform must not be shared with unauthorised third parties.</p>
                   <p className="mb-2">6. <strong>Professional conduct:</strong> You agree to treat Talent fairly and professionally. Discriminatory, misleading or abusive practices are prohibited.</p>
-                  <p className="mb-2">7. <strong>Payments:</strong> Online Platform payments are processed securely through Stripe or another payment provider shown at checkout. You remain responsible for employment salary and compensation terms you advertise unless WHC expressly contracts otherwise.</p>
-                  <p>8. <strong>Full terms:</strong> Your use of WHC is also subject to the current full Terms of Service linked below.</p>
+                  <p className="mb-2">7. <strong>Payments:</strong> Online Platform payments are processed securely through Stripe or another payment provider shown at checkout. You remain responsible for employment salary and compensation terms you advertise unless Talent House expressly contracts otherwise.</p>
+                  <p>8. <strong>Full terms:</strong> Your use of Talent House is also subject to the current full Terms of Service linked below.</p>
                 </div>
               </details>
 
               <label className="mt-5 flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.agreed_terms} onChange={(e) => update('agreed_terms', e.target.checked)} className="w-4 h-4 border-border text-ink focus:ring-ink mt-0.5" />
                 <span className="text-[13px] text-secondary">I have read and agree to the <Link href="/terms" className="underline text-ink">Terms &amp; Conditions</Link> and <Link href="/privacy" className="underline text-ink">Privacy Policy</Link></span>
+              </label>
+
+              {/* Separate from the terms box above, and unticked. Bundling
+                  marketing into a terms acceptance is not valid consent, and
+                  a pre-ticked box is not consent at all. */}
+              <label className="mt-4 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} className="w-4 h-4 border-border text-ink focus:ring-ink mt-0.5" />
+                <span className="text-[12px] leading-5 text-secondary">{MARKETING_CONSENT_WORDING} Optional, and separate from the emails needed to run your account.</span>
               </label>
 
               <button type="button" onClick={handleSubmit} disabled={loading || !form.agreed_terms} className="btn-primary w-full mt-7 disabled:opacity-40">{loading ? 'Creating account...' : 'Submit for Approval'}</button>
@@ -168,9 +210,9 @@ export default function EmployerRegisterPage() {
 
           {/* The commercial intelligence - out of the small print, in plain sight */}
           <aside className="lg:col-span-5" aria-labelledby="emp-charges-heading">
-            <div className="bg-[#1c1b1a] p-8 xl:p-10 lg:sticky lg:top-8">
+            <div className="bg-charcoal p-8 xl:p-10 lg:sticky lg:top-8">
               <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-semibold">In plain sight</p>
-              <h2 id="emp-charges-heading" className="mt-3 text-white text-[24px] leading-tight tracking-[-0.02em] font-serif font-semibold">How WHC charges</h2>
+              <h2 id="emp-charges-heading" className="mt-3 text-white text-[24px] leading-tight tracking-[-0.02em] font-serif font-semibold">How Talent House charges</h2>
               <p className="mt-3 text-[13px] leading-6 text-white/60">No hidden commercial terms. The numbers below are the same ones written into the agreement you accept on this page.</p>
 
               <dl className="mt-8">

@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { ACADEMY } from '@/lib/academy'
-import { coursesForSkill } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 
 const COURSE_TITLES = new Map(ACADEMY.map(course => [course.slug, course.title]))
 const courseTitle = (slug: string) =>
@@ -57,7 +57,7 @@ function buildFit(candidate: any, job: any) {
   const missingSkills = missingFrom(job.required_skills, skillsPool)
   if (missingSkills.length) {
     const covering = academyFor(missingSkills)
-    gaps.push({ area: 'Treatments & skills', items: missingSkills, advice: covering ? `WHC Academy covers this: "${covering}" - or in-house training and shadowing.` : 'Usually closed with in-house training or shadowing during the first weeks.' })
+    gaps.push({ area: 'Treatments & skills', items: missingSkills, advice: covering ? `Talent House Academy covers this: "${covering}" - or in-house training and shadowing.` : 'Usually closed with in-house training or shadowing during the first weeks.' })
   }
 
   const missingQuals = missingFrom(job.required_qualifications, candidate.qualifications || [])
@@ -69,7 +69,7 @@ function buildFit(candidate: any, job: any) {
   const missingBrands = missingFrom(job.required_brands, candidate.product_houses || [])
   if (missingBrands.length) {
     const covering = academyFor(missingBrands)
-    gaps.push({ area: 'Product houses', items: missingBrands, advice: covering ? `WHC Academy covers this: "${covering}" - brand familiarisation before day one.` : 'Brand houses run their own product training; experience with comparable houses shortens it.' })
+    gaps.push({ area: 'Product houses', items: missingBrands, advice: covering ? `Talent House Academy covers this: "${covering}" - brand familiarisation before day one.` : 'Brand houses run their own product training; experience with comparable houses shortens it.' })
   }
 
   const requiredYears = Number(job.min_years_experience || 0)
@@ -87,6 +87,9 @@ function buildFit(candidate: any, job: any) {
     // The same factor-by-factor breakdown the talent sees when they match -
     // both sides of a placement should be reading from one algorithm.
     breakdown: match.breakdown || null,
+    // And the working behind each factor, so a hiring director can defend the
+    // score rather than take it on faith.
+    evidence: match.evidence || null,
     progression: match.progression || null,
     gaps,
   }
@@ -94,7 +97,7 @@ function buildFit(candidate: any, job: any) {
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: employer } = await admin.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()

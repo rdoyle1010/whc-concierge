@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSiteLogo } from '@/components/SiteBrandProvider'
-import { safeLogoUrl } from '@/lib/site-content'
+import { safeLogoUrl } from '@/lib/site-content-values'
 
 // The brand artwork is shared by public, registration and dashboard
 // navigation, and is uploaded in Website & Brand rather than shipped in the
@@ -21,11 +21,11 @@ export default function Wordmark({
   const box = compact ? 'h-[42px] w-[168px]' : 'h-[48px] w-[192px]'
   const mark = (
     <span
-      className={`relative block shrink-0 overflow-hidden ${box} ${contain ? '' : 'bg-[#1c1b1a]'} ${dark || contain ? '' : 'ring-1 ring-black/5'}`}
+      className={`relative block shrink-0 overflow-hidden ${box} ${contain ? '' : 'bg-[#222321]'} ${dark || contain ? '' : 'ring-1 ring-black/5'}`}
     >
       <Image
         src={safeLogoUrl(logo.url)}
-        alt={logo.alt || 'Wellness House Collective'}
+        alt={logo.alt || 'Talent House Collective'}
         fill
         priority
         sizes={compact ? '168px' : '192px'}

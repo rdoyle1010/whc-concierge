@@ -141,7 +141,7 @@ export function careerValue(candidate: any, academyCompletions: number): CareerV
   if (developmentTotal > 0) {
     const score = developmentTotal >= 8 ? 4 : developmentTotal >= 5 ? 3 : developmentTotal >= 3 ? 2 : 1
     const parts: string[] = []
-    if (completions) parts.push(plural(completions, 'verified WHC Academy completion'))
+    if (completions) parts.push(plural(completions, 'verified Talent House Academy completion'))
     if (qualifications.length) parts.push(plural(qualifications.length, 'qualification'))
     dimensions.push({
       dimension: 'Professional development',

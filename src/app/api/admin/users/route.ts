@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
+import { sendApprovalEmail, sendRejectionEmail, sendWelcomeEmail } from '@/lib/emails'
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { startMarketingOptIn } from '@/lib/privacy-consent'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Delegated to the shared admin guard, which enforces two-step
 // verification as well as the admin role.
@@ -10,16 +13,192 @@ async function requireAdmin() {
   return adminRequestUser()
 }
 
+// Talent profiles carry no email column - a professional's address lives in
+// auth.users, which the browser cannot read. So the admin list showed "no email
+// on profile" for everybody and it looked as though people had signed up
+// without one. They had not: Supabase will not create an account without an
+// email, so every account has one. It was only ever invisible here.
+async function emailsForUsers(userIds: string[]) {
+  const admin = createAdminClient()
+  const pairs = await Promise.all(
+    userIds.slice(0, 200).map(async id => {
+      try {
+        const { data } = await admin.auth.admin.getUserById(id)
+        return [id, data?.user?.email || null] as const
+      } catch {
+        return [id, null] as const
+      }
+    }),
+  )
+  return Object.fromEntries(pairs)
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json()
   const { type, id, action, reason } = body as {
     type: 'candidate' | 'employer'
     id: string
-    action: 'approve' | 'reject'
+    action: 'approve' | 'reject' | 'emails' | 'email_log' | 'reachability_check' | 'resend'
     reason?: string
+  }
+
+  // Looking up addresses needs no profile id, so it is answered before the
+  // approve/reject validation below.
+  if (action === 'emails') {
+    const ids = Array.isArray(body.user_ids) ? body.user_ids.filter((v: unknown) => typeof v === 'string') : []
+    return NextResponse.json({ emails: await emailsForUsers(ids) })
+  }
+
+  // "Did they get an email?" used to end in a guess. Now it ends in a row.
+  if (action === 'email_log') {
+    const address = String(body.email || '').trim().toLowerCase()
+    const userId = typeof body.user_id === 'string' ? body.user_id : null
+    if (!address && !userId) return NextResponse.json({ log: [] })
+    const logClient = createAdminClient()
+    let query = logClient.from('email_log').select('id, kind, subject, status, error, created_at').order('created_at', { ascending: false }).limit(20)
+    query = address && userId
+      ? query.or(`recipient.ilike.${address},user_id.eq.${userId}`)
+      : address ? query.ilike('recipient', address) : query.eq('user_id', userId as string)
+    const { data, error } = await query
+    // The table arrives with a migration. Until it is run, say so plainly
+    // rather than showing an empty list that reads as "nothing was sent".
+    if (error) return NextResponse.json({ log: [], unavailable: true })
+    return NextResponse.json({ log: data || [] })
+  }
+
+  // "Is their email actually working?" used to have no answer short of
+  // deleting the account and making them sign up again, which destroys a
+  // profile to test a mail server. This sends one real message down the real
+  // path to their own address and records the result in the email log, so
+  // the question ends in evidence rather than a guess.
+  //
+  // The message is written to be worth receiving. A bare test email from a
+  // platform somebody barely knows reads as a phishing attempt.
+  // Send one of the handful of emails people actually chase, again.
+  //
+  // "I never got it" had no answer but a shrug. Not every sender belongs
+  // here: an interview invitation or an offer is tied to one application at
+  // one moment, and resending a two-month-old offer creates a real question
+  // about which offer is live. Those stay on the application, where the
+  // context is. These five stand alone and are the ones somebody rings up
+  // about.
+  if (action === 'resend') {
+    const userId = typeof body.user_id === 'string' ? body.user_id : ''
+    const template = String(body.template || '')
+    if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+
+    const client = createAdminClient()
+    const { data: authUser } = await client.auth.admin.getUserById(userId)
+    const address = authUser?.user?.email
+    if (!address) return NextResponse.json({ error: 'There is no email address on this account.' }, { status: 400 })
+
+    const [{ data: candidate }, { data: employer }] = await Promise.all([
+      client.from('candidate_profiles').select('full_name, approval_status').eq('user_id', userId).maybeSingle(),
+      client.from('employer_profiles').select('property_name, company_name, approval_status').eq('user_id', userId).maybeSingle(),
+    ])
+    const name = candidate?.full_name || employer?.property_name || employer?.company_name || 'there'
+    const approved = (candidate?.approval_status || employer?.approval_status) === 'approved'
+
+    try {
+      if (template === 'welcome') {
+        await sendWelcomeEmail(address, name)
+        return NextResponse.json({ success: true, detail: `Welcome email sent to ${address}.` })
+      }
+
+      if (template === 'approval') {
+        // Telling somebody they are approved when they are not is worse than
+        // sending nothing at all.
+        if (!approved) return NextResponse.json({ error: 'This account is not approved, so the approval email would not be true.' }, { status: 400 })
+        await sendApprovalEmail(address, name)
+        return NextResponse.json({ success: true, detail: `Approval email sent to ${address}.` })
+      }
+
+      if (template === 'marketing_confirmation') {
+        const { data: prefs } = await client.from('privacy_preferences')
+          .select('marketing_email_status').eq('user_id', userId).maybeSingle()
+        if (prefs?.marketing_email_status === 'confirmed') {
+          return NextResponse.json({ error: 'They have already confirmed. Sending it again would put them back to pending.' }, { status: 400 })
+        }
+        if (prefs?.marketing_email_status === 'unsubscribed') {
+          return NextResponse.json({ error: 'They have unsubscribed. Asking again by email is not something to do on their behalf.' }, { status: 400 })
+        }
+        const started = await startMarketingOptIn(client, userId, address, 'account_preferences')
+        return started.ok
+          ? NextResponse.json({ success: true, detail: `Confirmation link sent to ${address}. Marketing stays off until they click it.` })
+          : NextResponse.json({ error: started.error || 'The confirmation email could not be sent.' }, { status: 502 })
+      }
+
+      if (template === 'sign_in_link') {
+        // For somebody who never confirmed their address, or cannot get in.
+        // A one-time link both signs them in and settles the confirmation.
+        const { data: link, error: linkError } = await client.auth.admin.generateLink({ type: 'magiclink', email: address })
+        const actionLink = (link as any)?.properties?.action_link
+        if (linkError || !actionLink) {
+          return NextResponse.json({ error: linkError?.message || 'Could not create a sign-in link.' }, { status: 502 })
+        }
+        const result = await sendTransactionalEmail({
+          to: address,
+          subject: 'Your sign-in link for Talent House',
+          kind: 'notification',
+          userId,
+          html: `<div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+            <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
+            <p style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Here is your way in, ${name}</p>
+            <p style="color: #57544c;">This link signs you straight in, and confirms your email address at the same time. It works once and then expires.</p>
+            <p style="margin-top: 24px;"><a href="${actionLink}" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in to Talent House</a></p>
+            <p style="color: #57544c; font-size: 12px; margin-top: 24px;">If you did not ask for this, ignore it and nothing changes.</p>
+          </div>`,
+        })
+        return result.ok
+          ? NextResponse.json({ success: true, detail: `Sign-in link sent to ${address}. It works once.` })
+          : NextResponse.json({ error: result.error || 'The link could not be sent.' }, { status: 502 })
+      }
+    } catch (sendError: any) {
+      return NextResponse.json({ error: sendError?.message || 'The email could not be sent.' }, { status: 500 })
+    }
+
+    return NextResponse.json({ error: 'Unknown template' }, { status: 400 })
+  }
+
+  if (action === 'reachability_check') {
+    const userId = typeof body.user_id === 'string' ? body.user_id : ''
+    if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+
+    const client = createAdminClient()
+    const { data: authUser } = await client.auth.admin.getUserById(userId)
+    const address = authUser?.user?.email
+    if (!address) return NextResponse.json({ error: 'There is no email address on this account.' }, { status: 400 })
+
+    const { data: candidate } = await client.from('candidate_profiles').select('full_name').eq('user_id', userId).maybeSingle()
+    const { data: employer } = await client.from('employer_profiles').select('property_name, company_name').eq('user_id', userId).maybeSingle()
+    const name = candidate?.full_name || employer?.property_name || employer?.company_name || 'there'
+
+    const result = await sendTransactionalEmail({
+      to: address,
+      subject: 'Checking we can reach you',
+      kind: 'notification',
+      userId,
+      html: `<div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+        <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
+        <p style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Just checking this reaches you, ${name}</p>
+        <p style="color: #57544c;">Nothing needs doing. We are confirming that messages from Talent House arrive properly, so that when a property is interested in you, or a shift needs answering, you actually hear about it.</p>
+        <p style="color: #57544c;">If this landed in your junk folder, marking it as safe will keep the ones that matter out of there.</p>
+        <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/login" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in</a></p>
+      </div>`,
+    })
+
+    return NextResponse.json({
+      success: result.ok,
+      status: result.status,
+      to: address,
+      error: result.error || null,
+      detail: result.ok
+        ? `Sent to ${address}. It is in the email log either way, and in Resend if it left the building.`
+        : `Not sent: ${result.error || 'the provider refused it'}. That is the reason they have been hearing nothing.`,
+    })
   }
 
   if (!id || (type !== 'candidate' && type !== 'employer') || (action !== 'approve' && action !== 'reject')) {
@@ -41,6 +220,11 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // An approval decision changes the public site: an approved property appears
+  // in the directory, and its held roles go live in the block below. The public
+  // pages cache for an hour, which is only safe because this runs.
+  revalidatePublic(PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.jobs, PUBLIC_CACHE_TAGS.proof)
+
   // Approving an employer releases any paid roles held back by the approval
   // gate: a held role is a draft that already carries a live paid term.
   if (action === 'approve' && table === 'employer_profiles') {
@@ -53,7 +237,7 @@ export async function POST(req: NextRequest) {
         .gt('expires_at', new Date().toISOString())
         .select('id')
       if (released?.length && data.user_id) {
-        await createNotification(data.user_id, 'general', 'Your paid roles are now live', `Your employer account is approved and ${released.length} paid role${released.length === 1 ? ' is' : 's are'} now live on WHC.`, '/employer/jobs')
+        await createNotification(data.user_id, 'general', 'Your paid roles are now live', `Your employer account is approved and ${released.length} paid role${released.length === 1 ? ' is' : 's are'} now live on Talent House.`, '/employer/jobs')
       }
     } catch (e: any) { console.error('Releasing held roles failed:', e?.message) }
   }

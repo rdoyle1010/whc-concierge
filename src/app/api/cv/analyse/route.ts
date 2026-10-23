@@ -3,12 +3,24 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { analyseCvText, type CvSuggestions } from '@/lib/cv-analysis'
+import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
+import { claimAllowance, releaseAllowance, recordSpend } from '@/lib/ai-allowance-server'
 
 export const runtime = 'nodejs'
 
 const MAX_CV_SIZE = 10 * 1024 * 1024
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const CV_MODEL = process.env.OPENAI_CV_MODEL || process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
+
+// Twenty-six, because that is what the host enforces.
+//
+// This said sixty, and sixty is not a number this platform can ask for: a
+// synchronous function is killed at twenty-six seconds whatever the code
+// claims. Underneath it the model was given forty-five, so the AI half of
+// "Analyse CV with Talent House AI" could not finish even in principle. It
+// timed out on essentially every attempt and fell back to plain extraction,
+// which on screen read "AI was unavailable" - true, and telling nobody
+// anything. The reader it now calls gives up at eighteen, inside the ceiling,
+// with time left to answer properly.
+export const maxDuration = 26
 
 async function extractText(buffer: Buffer, extension: string): Promise<string> {
   if (extension === 'pdf') {
@@ -38,47 +50,108 @@ function parseJson(text: string) {
 }
 const uniq = (values: unknown, limit = 20) => Array.from(new Set((Array.isArray(values) ? values : []).map(v => String(v).trim()).filter(Boolean))).slice(0, limit)
 
-async function aiEnhanceCv(text: string, deterministic: CvSuggestions): Promise<CvSuggestions | null> {
-  if (!OPENAI_API_KEY) return null
-  const prompt = `You are analysing a CV for Wellness House Collective, a spa and wellness recruitment platform.
-Rules:
-- Extract only evidence genuinely supported by the CV text. Never invent employers, results, qualifications, dates, job titles or responsibilities.
-- Do not change the person's current/actual seniority just because they appear ready for progression.
-- Identify transferable leadership/commercial evidence that may support a step-up role.
-- Keep careerEvidence short, factual and paraphrased. Do not quote personal contact details.
-- businessSkills must use only these labels where supported: Reception & Front of House, Revenue Management, Stock Control, Team Leadership, Staff Training, Rota Management, KPI Reporting, Health & Safety, COSHH Management, Budget Management, Client Consultation, Upselling & Retail, Social Media, Event Coordination, Membership Management.
-- progressionSignals should explain readiness evidence but must not state that the person automatically qualifies.
-- Return JSON only.
-Deterministic extraction already found: ${JSON.stringify(deterministic)}
-CV text: ${text.slice(0, 18000)}
-Return exactly: {"businessSkills":["..."],"careerEvidence":["..."],"progressionSignals":["..."]}`
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 7000)
-  try {
-    const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', signal:controller.signal, headers:{Authorization:`Bearer ${OPENAI_API_KEY}`,'Content-Type':'application/json'}, body:JSON.stringify({model:CV_MODEL,reasoning:{effort:'low'},input:prompt,max_output_tokens:1200}) })
-    if (!response.ok) { console.error('CV AI analysis error', response.status); return null }
-    const parsed = parseJson(extractResponseText(await response.json())); if (!parsed) return null
-    return { ...deterministic, businessSkills:uniq([...(deterministic.businessSkills||[]),...uniq(parsed.businessSkills)],20), careerEvidence:uniq(parsed.careerEvidence,8), progressionSignals:uniq(parsed.progressionSignals,6), evidence:uniq([...(deterministic.evidence||[]),'AI reviewed transferable leadership and commercial evidence'],20), aiEnhanced:true }
-  } catch (error) { console.error('CV AI analysis fallback', error instanceof Error ? error.message : error); return null } finally { clearTimeout(timeout) }
+// Why the AI half did not run, when it did not run. Returned alongside the
+// suggestions so the screen can say something a person can act on.
+let lastAiFailure = ''
+
+/**
+ * The same reader the concierge queue uses, in the professional's own account.
+ *
+ * It used to be a second, narrower reader on a different provider that added
+ * three fields to a deterministic pass. That left a profile at eighty per
+ * cent with no headline and no About you, which is exactly the state somebody
+ * gives up in, and it meant a person filling in her own profile got a worse
+ * reading than one an administrator built for her. There is no version of
+ * that which is right.
+ *
+ * So: one reader, one taxonomy, one set of fields. The deterministic pass
+ * stays underneath it as a floor, because it costs nothing and it still finds
+ * the obvious when the model cannot be reached at all.
+ */
+let lastSpend: { input: number; output: number } | null = null
+
+async function aiReadCv(text: string, deterministic: CvSuggestions): Promise<CvSuggestions | null> {
+  lastSpend = null
+  lastAiFailure = ''
+  if (!cvReadingConfigured()) {
+    lastAiFailure = 'Talent House AI is not switched on for this deployment.'
+    return null
+  }
+
+  const result = await readCv({ kind: 'text', text })
+  if (!result.ok) { lastAiFailure = result.error; return null }
+  lastSpend = result.spend
+
+  const reading: CvReading = result.reading
+  const merge = (a: string[] | undefined, b: string[] | undefined, limit: number) =>
+    uniq([...(a || []), ...(b || [])], limit)
+
+  return {
+    ...deterministic,
+    // The reading leads, and the deterministic pass fills its gaps rather
+    // than the other way round: one is reading a CV, the other is matching
+    // words against a list.
+    roleLevel: reading.role_level && reading.role_level !== 'Unknown' ? reading.role_level : deterministic.roleLevel,
+    experienceYears: reading.experience_years ?? deterministic.experienceYears,
+    services: merge(reading.treatment_skills, deterministic.services, 60),
+    productHouses: merge(reading.product_houses, deterministic.productHouses, 40),
+    qualifications: merge(reading.qualifications, deterministic.qualifications, 40),
+    systems: merge(reading.systems_experience, deterministic.systems, 30),
+    businessSkills: merge(reading.business_skills, deterministic.businessSkills, 20),
+    careerEvidence: uniq(deterministic.careerEvidence, 8),
+    headline: reading.headline,
+    bio: reading.bio,
+    languages: uniq(reading.languages, 12),
+    currentEmployer: reading.current_employer,
+    location: reading.location,
+    hotelBrands: uniq(reading.hotel_brands, 30),
+    gaps: uniq(reading.gaps, 8),
+    evidence: uniq([...(deterministic.evidence || []), 'Talent House AI read the whole CV'], 20),
+    aiEnhanced: true,
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies()
     const auth = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies:{ getAll(){return cookieStore.getAll()}, setAll(){} } })
-    const { data:{ user } } = await auth.auth.getUser(); if (!user) return NextResponse.json({error:'Unauthorised'},{status:401})
+    const { data:{ user } } = await auth.auth.getUser(); if (!user) return NextResponse.json({error: 'Please sign in to continue. If you have just signed in, refresh the page.'},{status:401})
     const body = await req.json().catch(()=>({})); const profileId = typeof body.profileId === 'string' ? body.profileId : ''
     if (!profileId) return NextResponse.json({error:'Profile is required'},{status:400})
-    if (body.aiConsent !== true) return NextResponse.json({error:'Please confirm that you want WHC AI to analyse your CV.'},{status:400})
+    if (body.aiConsent !== true) return NextResponse.json({error:'Please confirm that you want Talent House AI to analyse your CV.'},{status:400})
 
     const admin=createAdminClient(); const {data:profile}=await admin.from('candidate_profiles').select('user_id, cv_url').eq('id',profileId).single()
-    if(!profile||profile.user_id!==user.id)return NextResponse.json({error:'Forbidden'},{status:403}); if(!profile.cv_url)return NextResponse.json({error:'Upload a CV first'},{status:400})
+    if(!profile||profile.user_id!==user.id)return NextResponse.json({error: 'You do not have access to that. If that looks wrong, sign in with the account that does.'},{status:403}); if(!profile.cv_url)return NextResponse.json({error:'Upload a CV first'},{status:400})
     const fileUrl=new URL(profile.cv_url,'https://whc.local'), bucket=fileUrl.searchParams.get('bucket'), path=fileUrl.searchParams.get('path')
     if(bucket!=='talent-documents'||!path||!path.startsWith(`${user.id}/`)||path.includes('..'))return NextResponse.json({error:'CV storage reference is invalid'},{status:400})
     const extension=path.split('.').pop()?.toLowerCase()||''; if(!['pdf','docx'].includes(extension))return NextResponse.json({error:'For CV analysis, please use a PDF or modern Word .docx file.'},{status:400})
     const {data:file,error}=await admin.storage.from(bucket).download(path); if(error||!file)return NextResponse.json({error:'CV could not be read'},{status:500}); if(file.size>MAX_CV_SIZE)return NextResponse.json({error:'CV is too large to analyse'},{status:400})
     const text=await extractText(Buffer.from(await file.arrayBuffer()),extension); if(text.trim().length<80)return NextResponse.json({error:'Very little readable text was found. If this is a scanned CV, upload a text-based PDF or Word .docx file.'},{status:422})
-    const deterministic=analyseCvText(text), suggestions=await aiEnhanceCv(text,deterministic)||deterministic
-    try { await admin.from('consent_events').insert({user_id:user.id,consent_type:'ai_cv_analysis',action:'accepted',policy_version:'2026-08',wording:'User requested WHC AI CV analysis. CV text is processed for suggestions and is not added to the profile without approval.',source:'talent_profile_cv_analysis'}) } catch {}
-    return NextResponse.json({suggestions})
+    const deterministic=analyseCvText(text)
+
+    // An exhausted allowance does not refuse the upload, it drops to the
+    // plain reading this route already falls back to whenever the model is
+    // unavailable. Somebody who has used their three reads still gets their
+    // CV parsed; they just do not get the good version, and they are told
+    // which it was rather than left to wonder.
+    const {data:tier}=await admin.from('candidate_profiles').select('membership_tier').eq('id',profileId).maybeSingle()
+    const claim = await claimAllowance(admin, user.id, 'cv_reading', (tier as any)?.membership_tier ?? null)
+
+    let suggestions = deterministic
+    if (!claim.ok) {
+      lastAiFailure = claim.error
+    } else {
+      suggestions = await aiReadCv(text, deterministic) || deterministic
+      if (suggestions.aiEnhanced && lastSpend) {
+        await recordSpend(admin, user.id, 'cv_reading', lastSpend)
+      } else {
+        // A read that fell back has not had its turn.
+        await releaseAllowance(admin, user.id, claim, 'cv_reading')
+      }
+    }
+    try { await admin.from('consent_events').insert({user_id:user.id,consent_type:'ai_cv_analysis',action:'accepted',policy_version:'2026-08',wording:'User requested Talent House AI CV analysis. CV text is processed for suggestions and is not added to the profile without approval.',source:'talent_profile_cv_analysis'}) } catch {}
+    // The reason travels with the answer. "AI was unavailable" on its own
+    // sends somebody to check a key that was never the problem.
+    return NextResponse.json({ suggestions, aiFailure: suggestions.aiEnhanced ? null : (lastAiFailure || null) })
   } catch { return NextResponse.json({error:'CV analysis failed. Please try a different PDF or Word .docx file.'},{status:500}) }
 }

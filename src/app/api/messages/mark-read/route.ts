@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
     )
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { partnerId } = await req.json()
     if (!partnerId) return NextResponse.json({ error: 'partnerId required' }, { status: 400 })

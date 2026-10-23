@@ -11,9 +11,8 @@ import {
   type WebsiteHistoryEntry,
 } from '@/lib/site-content'
 import { getWebsiteContent } from '@/lib/site-content-server'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 const DEFAULT_CONTACT_PAGE_SIZE = 25
 const MAX_CONTACT_PAGE_SIZE = 100
 const CONTACT_STATUSES = new Set(['open', 'replied', 'closed', 'investigating', 'resolved', 'dismissed'])
@@ -54,7 +53,7 @@ async function saveConfigValue(
 
 export async function GET(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const kind = req.nextUrl.searchParams.get('kind')
   const admin = createAdminClient()
@@ -135,9 +134,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// The keys that decide whether anyone can sign in. Writing one of these has
+// to clear the cache in front of it or the change lands up to 30 seconds late,
+// per server instance.
+const ACCESS_KEYS = new Set(['platform_access', 'platform_preview_code'])
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   try {
@@ -164,6 +168,15 @@ export async function POST(req: NextRequest) {
       const { key, value } = body
       if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
       await saveConfigValue(admin, key, String(value ?? ''))
+      // Closing the doors reads through a 30 second cache, and on Netlify each
+      // lambda instance holds its own copy - so without this the setting looks
+      // broken: one refresh shows the waiting list, the next shows the form,
+      // and an administrator reasonably concludes the switch does nothing.
+      if (ACCESS_KEYS.has(String(key))) revalidateTag('platform-access', 'max')
+      // Same trap: the billing identity is read through a cache with its own
+      // tag, so without this a saved company number goes on missing from
+      // receipts for five minutes and looks like the form did nothing.
+      if (String(key) === 'billing_identity') revalidateTag('billing-identity', 'max')
       return NextResponse.json({ success: true })
     }
 
@@ -248,33 +261,32 @@ export async function POST(req: NextRequest) {
       if (!q.email) return NextResponse.json({ error: 'This enquiry has no email address to reply to.' }, { status: 400 })
       const replyText = String(body.message || '').trim()
       if (!replyText) return NextResponse.json({ error: 'Please write a reply.' }, { status: 400 })
-      if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
-
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: q.email,
-          subject: `Re: your message to Wellness House Collective`,
-          html: `
+      const res = await sendTransactionalEmail({
+        to: q.email,
+        kind: 'contact',
+        subject: `Re: your message to Talent House Collective`,
+        html: `
             <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
               <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Talent House Collective</p>
               <p style="color: #374151; white-space: pre-wrap;">${replyText.replace(/</g, '&lt;')}</p>
-              <hr style="border: none; border-top: 1px solid #e0dad2; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #6e6a66;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
+              <hr style="border: none; border-top: 1px solid #dcd4c8; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #6e6a60;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
             </div>`,
-        }),
       })
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '')
-        console.error(`[Admin reply email FAILED ${res.status}] ${detail.slice(0, 300)}`)
-        return NextResponse.json({ error: 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
-      }
+      if (!res.ok) return NextResponse.json({ error: res.error || 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
       const markStatus = CONTACT_STATUSES.has(String(body.markStatus)) ? body.markStatus : 'replied'
-      await admin.from('contact_queries')
+      // Checked, because the email has already gone. A silent failure here
+      // leaves the enquiry looking unanswered and she writes to the same
+      // person twice.
+      const { error: markError } = await admin.from('contact_queries')
         .update({ status: markStatus, admin_reply: replyText, replied_at: new Date().toISOString() })
         .eq('id', q.id)
+      if (markError) {
+        return NextResponse.json({
+          success: true,
+          warning: 'Your reply was sent, but we could not mark the enquiry as answered. It will still look unanswered in the list.',
+        })
+      }
       return NextResponse.json({ success: true })
     }
 

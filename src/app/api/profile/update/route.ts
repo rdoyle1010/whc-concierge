@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { profileUpdateSchema, validateRequest } from '@/lib/validations'
-import { geocodePostcode } from '@/lib/geo'
+import { geocodeLocation } from '@/lib/geo'
 import { recordSalary } from '@/lib/analytics'
 
 const ALLOWED_COLUMNS = new Set([
+  // Languages with fluency, and the language a CV is written in. Never
+  // nationality: it is a protected characteristic and not a hiring criterion,
+  // and a column here would put it on a profile properties browse.
+  'language_skills','cv_language',
   'full_name','phone','postcode','location','location_country','has_car','role_level','headline','bio','experience_years',
+  // Where they are, and where they will work. Agency stays UK-only; Roles,
+  // Residency and Consultancy travel, and open_to_countries is what makes a
+  // therapist in Leeds findable for a resort in the Maldives.
+  'country_code','open_to_countries',
   'day_rate_min','day_rate_max','hourly_rate','willing_to_relocate','availability_status','right_to_work','languages','availability_date',
   'services_offered','product_houses','qualifications','systems_experience','business_skills','career_evidence','travel_availability','travel_radius_miles',
   'has_insurance','employment_types_wanted','skills','certificates_urls','profile_completion_pct','profile_completion_score','profile_image_url','cv_url',
@@ -16,6 +24,10 @@ const ALLOWED_COLUMNS = new Set([
   // Private Career Mode (20260831190000) - the retry loop below drops the two
   // new columns harmlessly if the live database has not been migrated yet.
   'show_first_name_only','private_mode','private_hide_photo',
+  // Where she works now (20260910110000), and her decision about whether an
+  // employer may see it. Both go through the same retry loop, so a profile
+  // still saves before the migration has run.
+  'current_employer','current_employer_visible',
 ])
 
 function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> {
@@ -29,9 +41,15 @@ function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> 
 // save - the profile just stays text-matched until the postcode is corrected.
 async function withCoordinates(clean: Record<string, unknown>): Promise<Record<string, unknown>> {
   const postcode = typeof clean.postcode === 'string' ? clean.postcode.trim() : ''
-  if (!postcode) return clean
+  const country = typeof clean.country_code === 'string' ? clean.country_code
+    : typeof clean.location_country === 'string' ? clean.location_country : null
+  // Abroad there is no postcode to give, and a therapist in Muscat would have
+  // been left off every distance-aware list on the platform for not having
+  // one. The town is what they have, and it is enough.
+  const place = postcode || (typeof clean.location === 'string' ? clean.location.trim() : '')
+  if (!place && !country) return clean
   try {
-    const coords = await geocodePostcode(postcode)
+    const coords = await geocodeLocation(place, country)
     if (coords) return { ...clean, latitude: coords.latitude, longitude: coords.longitude }
   } catch {}
   return clean
@@ -40,7 +58,7 @@ async function withCoordinates(clean: Record<string, unknown>): Promise<Record<s
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json()
     const validation = validateRequest(profileUpdateSchema, body)
@@ -49,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const { data: profile } = await admin.from('candidate_profiles').select('user_id,salary_expectation_min,salary_expectation_max,role_level').eq('id', profileId).single()
-    if (!profile || profile.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!profile || profile.user_id !== user.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const safeData = stripToAllowed(data)
     if (!Object.keys(safeData).length) return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })

@@ -30,8 +30,8 @@ const STATUS_LABELS: Record<RecruitmentRequest['status'], string> = {
 const STATUS_STYLES: Record<RecruitmentRequest['status'], string> = {
   new: 'bg-blue-50 text-blue-700',
   reviewing: 'bg-amber-50 text-amber-700',
-  search_active: 'bg-[#e9e4dd] text-[#1c1b1a]',
-  shortlist_sent: 'bg-[#1c1b1a] text-white',
+  search_active: 'bg-[#e3dcd1] text-[#222321]',
+  shortlist_sent: 'bg-[#222321] text-white',
   placed: 'bg-green-50 text-green-700',
   closed: 'bg-gray-100 text-secondary',
 }
@@ -72,7 +72,7 @@ export default function EmployerRecruitmentPage() {
       const json = await res.json()
       if (!res.ok) { setError(json.error || 'Could not send your request.'); return }
       setRequests(current => [json.request, ...current])
-      setNotice('Request sent. WHC will come back to you within one working day.')
+      setNotice('Request sent. Talent House will come back to you within one working day.')
       setJobTitle(''); setRoleLevel(''); setSalaryMin(''); setSalaryMax(''); setLocation(''); setTimeline(''); setBrief('')
     } catch {
       setError('Could not send your request. Please try again.')
@@ -85,28 +85,28 @@ export default function EmployerRecruitmentPage() {
     <DashboardShell role="employer">
       <div className="max-w-3xl">
         <p className="dashboard-eyebrow">Recruitment service</p>
-        <h1 className="dashboard-title">Let WHC run the search</h1>
+        <h1 className="dashboard-title">Let Talent House run the search</h1>
         <p className="dashboard-intro mb-6 max-w-2xl">
-          For roles you would rather not run yourself, WHC manages the whole search: we work your brief against the verified
+          For roles you would rather not run yourself, Talent House manages the whole search: we work your brief against the verified
           register, screen for qualifications, brands and commercial fit, and send you a shortlist worth interviewing.
           You pay only on placement.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
           <div className="dashboard-card">
-            <ShieldCheck size={18} className="text-[#1c1b1a] mb-2" />
+            <ShieldCheck size={18} className="text-[#222321] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Pay on placement</p>
             <p className="text-[12px] text-secondary leading-relaxed">12.5% of first-year salary for managed recruitment; 15-20% for executive search. Nothing up front.</p>
           </div>
           <div className="dashboard-card">
-            <Award size={18} className="text-[#1c1b1a] mb-2" />
+            <Award size={18} className="text-[#222321] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Replacement guarantee</p>
             <p className="text-[12px] text-secondary leading-relaxed">If the placement leaves within 8 weeks, we run the search again at no charge.</p>
           </div>
           <div className="dashboard-card">
-            <Users size={18} className="text-[#1c1b1a] mb-2" />
+            <Users size={18} className="text-[#222321] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Specialist pool</p>
-            <p className="text-[12px] text-secondary leading-relaxed">Every candidate comes from the WHC register: spa, wellness and luxury hospitality only.</p>
+            <p className="text-[12px] text-secondary leading-relaxed">Every candidate comes from the Talent House register: spa, wellness and luxury hospitality only.</p>
           </div>
         </div>
 
@@ -114,8 +114,8 @@ export default function EmployerRecruitmentPage() {
           <h2 className="font-serif text-lg font-semibold text-ink mb-4">Start a search</h2>
 
           <div className="inline-flex border border-border rounded-lg overflow-hidden mb-5">
-            <button type="button" onClick={() => setService('managed')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'managed' ? 'bg-[#1c1b1a] text-white' : 'text-secondary hover:text-ink'}`}>Managed recruitment</button>
-            <button type="button" onClick={() => setService('executive')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'executive' ? 'bg-[#1c1b1a] text-white' : 'text-secondary hover:text-ink'}`}>Executive search</button>
+            <button type="button" onClick={() => setService('managed')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'managed' ? 'bg-[#222321] text-white' : 'text-secondary hover:text-ink'}`}>Managed recruitment</button>
+            <button type="button" onClick={() => setService('executive')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'executive' ? 'bg-[#222321] text-white' : 'text-secondary hover:text-ink'}`}>Executive search</button>
           </div>
           <p className="text-[12px] text-secondary mb-5">
             {service === 'managed'
@@ -162,7 +162,7 @@ export default function EmployerRecruitmentPage() {
           {notice && <p role="status" className="text-[12.5px] text-green-700 font-medium mb-3 inline-flex items-center gap-1.5"><Check size={14} /> {notice}</p>}
 
           <button type="button" onClick={submit} disabled={submitting} className="btn-primary text-[13px]">
-            {submitting ? 'Sending...' : 'Send the brief to WHC'}
+            {submitting ? 'Sending...' : 'Send the brief to Talent House'}
           </button>
           <p className="text-[11px] text-muted mt-3">No cost and no commitment at this stage - sending a brief starts a conversation, not a contract.</p>
         </div>
@@ -172,7 +172,7 @@ export default function EmployerRecruitmentPage() {
           {loading ? (
             <p className="text-[13px] text-secondary">Loading...</p>
           ) : requests.length === 0 ? (
-            <p className="text-[13px] text-secondary">No searches yet. Send a brief above and WHC takes it from there.</p>
+            <p className="text-[13px] text-secondary">No searches yet. Send a brief above and Talent House takes it from there.</p>
           ) : (
             <div className="space-y-3">
               {requests.map(request => (

@@ -6,7 +6,7 @@ import DashboardShell from '@/components/DashboardShell'
 import CandidatePortfolio from '@/components/CandidatePortfolio'
 import { createClient } from '@/lib/supabase/client'
 import { careerValue } from '@/lib/career-value'
-import { courseTitle } from '@/lib/academy'
+import { courseTitle } from '@/lib/academy-titles'
 import { ArrowLeft, ArrowRight, Eye } from 'lucide-react'
 
 type Enrolment = { course_slug: string; completed_at: string }
@@ -30,7 +30,7 @@ function portfolioGaps(profile: any, completions: number): string[] {
   if (empty(profile.languages)) gaps.push('Add your languages')
   if (empty(profile.desired_roles) && empty(profile.employment_types_wanted)) gaps.push('Tell employers the roles you want next')
   if (empty(profile.awards)) gaps.push('Add any awards you have won')
-  if (completions === 0) gaps.push('Complete a WHC Academy course for a verified credential')
+  if (completions === 0) gaps.push('Complete a Talent House Academy course for a verified credential')
   return gaps
 }
 
@@ -73,7 +73,7 @@ export default function TalentProfilePreviewPage() {
       if (error) ({ data: reviewRows } = await buildReviewQuery(false))
       setReviews((reviewRows || []) as unknown as Review[])
 
-      // Manual verification marks granted by WHC admins. Served through the
+      // Manual verification marks granted by Talent House admins. Served through the
       // talent API (the table is service-role only); an absent table or a
       // failed request simply means no manual badges.
       try {
@@ -140,6 +140,12 @@ export default function TalentProfilePreviewPage() {
                 </Link>
               ))}
             </div>
+            {/* The wizard is the fast way to fill all of these at once, and it
+                was only linked from the edit page - so the one screen that
+                lists what is missing offered no way to fix it. */}
+            <Link href="/talent/onboarding" className="mt-5 inline-flex items-center gap-2 text-[13px] font-semibold text-ink underline">
+              Fill these in with the Skills Wizard <ArrowRight size={14} />
+            </Link>
           </section>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { formatSalary } from '@/lib/money'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
@@ -11,7 +12,15 @@ import SponsoredAd from '@/components/SponsoredAd'
 import JobMatchPanel from '@/components/JobMatchPanel'
 import TrackView from '@/components/TrackView'
 
-export const revalidate = 60
+import { externalUrl } from '@/lib/external-url'
+import { SITE_URL } from '@/lib/site-url'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+
+// An hour, not a minute. The reads behind this page are tagged, so an edit
+// drops the cached copy at once instead of it expiring on a timer - which is
+// what made a short window necessary and what made nearly every visit a cold
+// render on a site this quiet.
+export const revalidate = 3600
 
 const SITE = 'https://talenthousecollective.co.uk'
 type Job = Record<string, any>
@@ -22,7 +31,13 @@ const getJob = cache(async (id: string): Promise<Job | null> => {
     .from('job_listings')
     .select('*, employer_profiles(*)')
     .eq('id', id)
+    // An advert is paid for by the month, and nothing ever takes one down: no
+    // scheduled job flips is_live, and the admin health check already counts
+    // "live but expired" as a warning. The public jobs list filters expiry
+    // inside get_public_jobs_page; these two did not, so a term that had run
+    // out stayed visible and clickable, and Repost had no purpose.
     .eq('is_live', true)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .maybeSingle()
   if (error || !data) return null
   return data as Job
@@ -32,6 +47,24 @@ function stripPlain(s: string) { return s.replace(/<[^>]+>/g, '').replace(/\s+/g
 function prettyChip(s: string) { return String(s).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }
 function hasAny(values: unknown[]) {
   return values.some(v => Array.isArray(v) ? v.length > 0 : typeof v === 'string' ? v.trim().length > 0 : Boolean(v))
+}
+
+// In JSX, {0 && <Thing/>} renders the number nought, not nothing. Every
+// numeric fact on this page was written that way, so a property that had not
+// filled in its team size or treatment rooms published a page with bare
+// zeroes scattered down it. These return a boolean, and the count comes with
+// its own plural.
+function count(value: unknown): number | null {
+  const n = Number(value)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+function text(value: unknown): string | null {
+  const s = String(value ?? '').trim()
+  return s ? s : null
+}
+function people(value: unknown): string | null {
+  const n = count(value)
+  return n === null ? null : `${n} ${n === 1 ? 'person' : 'people'}`
 }
 
 const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
@@ -51,7 +84,9 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   return {
     title: { absolute: `${titleText} - ${propertyName} | Talent House Collective` }, description,
     alternates: { canonical: url },
-    openGraph: { title: `${titleText} - ${propertyName}`, description, url, type: 'article', ...(image ? { images: [image] } : {}) },
+    openGraph: {
+    ...OG_DEFAULTS, title: `${titleText} - ${propertyName}`, description, url, type: 'article', ...(image ? { images: [image] } : {}),
+  },
     twitter: { title: `${titleText} - ${propertyName}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },
   }
 }
@@ -65,7 +100,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
   const propertyName = employer.property_name || employer.company_name || 'Property'
   const titleText = job.job_title || job.title || 'Role'
   const description = String(job.job_description || job.description || '')
-  const salaryRange = job.salary_min && job.salary_max ? `£${Number(job.salary_min).toLocaleString()} - £${Number(job.salary_max).toLocaleString()}` : null
+  const salaryRange = formatSalary(job.salary_min, job.salary_max, job.salary_currency, { abbreviate: false })
   const propertyPhoto = Array.isArray(employer.property_photos) && employer.property_photos.length ? employer.property_photos[0] : null
   const reviewScore = Number(employer.review_score || 0)
   const reviewCount = Number(employer.review_count || 0)
@@ -76,33 +111,67 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
     description: description ? `<p>${stripPlain(description).slice(0, 5000)}</p>` : '',
     datePosted: job.posted_date || job.created_at || new Date().toISOString(),
     employmentType: EMPLOYMENT_TYPE_MAP[String(job.contract_type || '').toLowerCase()] || 'FULL_TIME',
-    hiringOrganization: { '@type': 'Organization', name: employer.company_name || propertyName, ...(employer.website ? { sameAs: employer.website } : {}) },
+    hiringOrganization: { '@type': 'Organization', name: employer.company_name || propertyName, ...(externalUrl(employer.website) ? { sameAs: externalUrl(employer.website) } : {}) },
     jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: job.location || employer.location || employer.city || undefined, addressCountry: 'GB' } },
   }
-  if (job.application_deadline) jobPostingLd.validThrough = job.application_deadline
-  if (job.salary_min && job.salary_max) jobPostingLd.baseSalary = { '@type': 'MonetaryAmount', currency: 'GBP', value: { '@type': 'QuantitativeValue', minValue: Number(job.salary_min), maxValue: Number(job.salary_max), unitText: 'YEAR' } }
+  // validThrough decides how long Google keeps a paid advert in the jobs panel.
+  // Without it the posting is dropped roughly thirty days after datePosted,
+  // whether or not the role is still live - and this page already knows the
+  // real expiry, because the query above filters on it. Only the deadline was
+  // being passed, which most adverts do not set, so most adverts quietly fell
+  // out of the panel a month in while still being paid for.
+  const expiry = job.application_deadline || job.expires_at
+  if (expiry) jobPostingLd.validThrough = new Date(expiry).toISOString()
+  jobPostingLd.url = `${SITE_URL}/jobs/${job.id}`
+  jobPostingLd.directApply = true
+  jobPostingLd.identifier = { '@type': 'PropertyValue', name: 'Talent House Collective', value: String(job.id) }
+  if (job.salary_min && job.salary_max) jobPostingLd.baseSalary = {
+    '@type': 'MonetaryAmount',
+    currency: job.salary_currency || 'GBP',
+    value: {
+      '@type': 'QuantitativeValue',
+      minValue: Number(job.salary_min),
+      maxValue: Number(job.salary_max),
+      // Agency and residency work is quoted by the hour or the day. Declaring
+      // an hourly rate as a yearly salary tells Google this role pays fourteen
+      // pounds a year.
+      unitText: /hour/i.test(String(job.salary_display_text || '')) ? 'HOUR'
+        : /\bday|daily\b/i.test(String(job.salary_display_text || '')) ? 'DAY'
+        : 'YEAR',
+    },
+  }
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Roles', item: `${SITE_URL}/jobs` },
+      { '@type': 'ListItem', position: 2, name: propertyName, item: `${SITE_URL}/jobs/${job.id}` },
+      { '@type': 'ListItem', position: 3, name: titleText, item: `${SITE_URL}/jobs/${job.id}` },
+    ],
+  }
 
   return <>
     <Navbar />
     <TrackView kind="job" id={String(job.id)} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
     <main className="pt-[76px] bg-white">
-      <section className="border-b border-[#e0dad2] bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-4"><Link href="/jobs" className="text-[12px] text-[#57534e] hover:text-[#1c1b1a]">← All roles</Link></div>
+      <section className="border-b border-[#dcd4c8] bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-4"><Link href="/jobs" className="text-[12px] text-[#57544c] hover:text-[#222321]">← All roles</Link></div>
       </section>
 
       <section className="bg-white">
         <div className="max-w-6xl mx-auto px-6 py-10 md:py-14 grid lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-start">
           <div>
-            <span className="inline-flex rounded-full bg-[#e9e4dd] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#57534e]">{job.tier === 'Platinum' ? 'Featured role' : 'Standard role'}</span>{job.is_residency_role && <span className="ml-2 inline-flex rounded-full bg-[#e9e4dd] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#1c1b1a]">Residency</span>}
-            <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-.045em] text-[#1c1b1a] mt-4">{titleText}</h1>
-            <Link href={employer.id ? `/properties/${employer.id}` : '#'} className="inline-flex items-center gap-2 mt-4 text-[17px] font-semibold text-[#1c1b1a] hover:underline">
+            <span className="inline-flex rounded-full bg-[#e3dcd1] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#57544c]">{job.tier === 'Platinum' ? 'Featured role' : 'Standard role'}</span>{job.is_residency_role && <span className="ml-2 inline-flex rounded-full bg-[#e3dcd1] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#222321]">Residency</span>}
+            <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-.045em] text-[#222321] mt-4">{titleText}</h1>
+            <Link href={employer.id ? `/properties/${employer.id}` : '#'} className="inline-flex items-center gap-2 mt-4 text-[17px] font-semibold text-[#222321] hover:underline">
               <Building2 size={17}/>{propertyName}<ArrowRight size={14}/>
             </Link>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[13px] text-[#57534e]">
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[13px] text-[#57544c]">
               {(job.location || employer.location) && <span className="inline-flex items-center gap-1.5"><MapPin size={14}/>{job.location || employer.location}</span>}
-              {employer.star_rating && <span className="inline-flex items-center gap-1.5"><Star size={14} fill="currentColor"/>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star property`}</span>}
-              {reviewScore > 0 && <span className="inline-flex items-center gap-1.5"><BadgeCheck size={14}/>{reviewScore.toFixed(1)} WHC rating{reviewCount ? ` · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : ''}</span>}
+              {count(employer.star_rating) && <span className="inline-flex items-center gap-1.5"><Star size={14} fill="currentColor"/>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star property`}</span>}
+              {reviewScore > 0 && <span className="inline-flex items-center gap-1.5"><BadgeCheck size={14}/>{reviewScore.toFixed(1)} Talent House rating{reviewCount ? ` · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : ''}</span>}
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
               {salaryRange && <Fact label="Salary" value={salaryRange}/>} 
@@ -112,28 +181,28 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
             </div>
           </div>
 
-          <aside className="lg:sticky lg:top-24 border border-[#e0dad2] rounded-[20px] p-5 bg-white shadow-sm">
-            <p className="text-[10px] uppercase tracking-[.14em] text-[#6e6a66]">Interested in this role?</p>
-            <p className="text-[13px] leading-6 text-[#57534e] mt-2">Apply through WHC so the property can review your full professional profile and match information.</p>
+          <aside className="lg:sticky lg:top-24 border border-[#dcd4c8] rounded-[20px] p-5 bg-white shadow-sm">
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#6e6a60]">Interested in this role?</p>
+            <p className="text-[13px] leading-6 text-[#57544c] mt-2">Apply through Talent House so the property can review your full professional profile and match information.</p>
             <div className="mt-5"><JobApplyButtons roleId={String(job.id)} /></div>
           </aside>
         </div>
       </section>
 
-      {(propertyPhoto || employer.id) && <section className="border-y border-[#e0dad2] bg-[#f3f0eb]">
+      {(propertyPhoto || employer.id) && <section className="border-y border-[#dcd4c8] bg-[#ede8df]">
         <div className="max-w-6xl mx-auto px-6 py-8 grid md:grid-cols-[220px_1fr_auto] gap-6 items-center">
-          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#e0dad2] flex items-center justify-center"><Building2 size={30} className="text-[#6e6a66]"/></div>}
+          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img decoding="async" src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#dcd4c8] flex items-center justify-center"><Building2 size={30} className="text-[#6e6a60]"/></div>}
           <div>
-            <p className="text-[10px] uppercase tracking-[.14em] text-[#57534e]">The property</p>
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#57544c]">The property</p>
             <h2 className="text-[28px] mt-2">{propertyName}</h2>
-            {employer.tagline && <p className="text-[13px] text-[#57534e] mt-2">{employer.tagline}</p>}
-            <div className="flex flex-wrap gap-4 mt-4 text-[12px] text-[#57534e]">
-              {employer.num_treatment_rooms && <span className="inline-flex items-center gap-1.5"><BedDouble size={14}/>{employer.num_treatment_rooms} treatment rooms</span>}
-              {employer.team_size && <span className="inline-flex items-center gap-1.5"><Users size={14}/>{employer.team_size} team members</span>}
+            {employer.tagline && <p className="text-[13px] text-[#57544c] mt-2">{employer.tagline}</p>}
+            <div className="flex flex-wrap gap-4 mt-4 text-[12px] text-[#57544c]">
+              {count(employer.num_treatment_rooms) && <span className="inline-flex items-center gap-1.5"><BedDouble size={14}/>{employer.num_treatment_rooms} treatment rooms</span>}
+              {count(employer.team_size) && <span className="inline-flex items-center gap-1.5"><Users size={14}/>{people(employer.team_size)}</span>}
               {employer.property_type && <span className="inline-flex items-center gap-1.5"><Building2 size={14}/>{prettyChip(String(employer.property_type))}</span>}
             </div>
           </div>
-          <div className="flex md:flex-col gap-2">{employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary text-center">View full property profile</Link>}{employer.website && <a href={employer.website} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Property website <ExternalLink size={13}/></a>}</div>
+          <div className="flex md:flex-col gap-2">{employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary text-center">View full property profile</Link>}{externalUrl(employer.website) && <a href={externalUrl(employer.website)!} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Property website <ExternalLink size={13}/></a>}</div>
         </div>
       </section>}
 
@@ -148,27 +217,27 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           {hasAny([job.commercial_responsibility, job.key_kpis, job.membership_size, job.opening_hours]) &&
             <JobSection eyebrow="The commercial picture" title="Commercial responsibility">
               {job.commercial_responsibility && <Prose text={job.commercial_responsibility}/>}
-              {Array.isArray(job.key_kpis) && job.key_kpis.length > 0 && <div className={job.commercial_responsibility ? 'mt-6' : ''}><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a66] mb-3">The numbers this role owns</p><ul className="space-y-2">{job.key_kpis.map((kpi: string) => <li key={kpi} className="text-[13px] leading-6 text-[#57534e] pl-3 border-l-2 border-[#1c1b1a]">{kpi}</li>)}</ul></div>}
-              {(job.membership_size || job.opening_hours) && <div className="grid sm:grid-cols-2 gap-3 mt-6">{job.membership_size && <Fact label="Membership" value={String(job.membership_size)}/>} {job.opening_hours && <Fact label="Opening hours" value={String(job.opening_hours)}/>}</div>}
+              {Array.isArray(job.key_kpis) && job.key_kpis.length > 0 && <div className={job.commercial_responsibility ? 'mt-6' : ''}><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a60] mb-3">The numbers this role owns</p><ul className="space-y-2">{job.key_kpis.map((kpi: string) => <li key={kpi} className="text-[13px] leading-6 text-[#57544c] pl-3 border-l-2 border-[#222321]">{kpi}</li>)}</ul></div>}
+              {(job.membership_size || job.opening_hours) && <div className="grid sm:grid-cols-2 gap-3 mt-6">{text(job.membership_size) && <Fact label="Membership" value={String(job.membership_size)}/>} {job.opening_hours && <Fact label="Opening hours" value={String(job.opening_hours)}/>}</div>}
             </JobSection>}
 
           {hasAny([employer.num_treatment_rooms, employer.spa_size, employer.facilities, employer.product_houses_used || employer.product_houses, employer.team_size]) &&
             <JobSection eyebrow="The spa" title={`Inside the spa at ${propertyName}`}>
-              {(employer.num_treatment_rooms || employer.spa_size || employer.team_size) && <div className="grid sm:grid-cols-3 gap-3">{employer.num_treatment_rooms && <Fact label="Treatment rooms" value={String(employer.num_treatment_rooms)}/>} {employer.spa_size && <Fact label="Spa size" value={String(employer.spa_size)}/>} {employer.team_size && <Fact label="Spa team" value={`${employer.team_size} people`}/>}</div>}
-              {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a66] mb-3">Facilities</p><div className="flex flex-wrap gap-1.5">{employer.facilities.map((facility: string) => <span key={facility} className="text-[12px] bg-[#f3f0eb] text-[#57534e] px-3 py-1.5">{facility}</span>)}</div></div>}
-              {(() => { const partners = employer.product_houses_used || employer.product_houses; return Array.isArray(partners) && partners.length > 0 ? <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a66] mb-3">Product partners</p><div className="flex flex-wrap gap-1.5">{partners.map((house: string) => <span key={house} className="text-[12px] border border-[#e0dad2] bg-white text-[#1c1b1a] px-3 py-1.5">{house}</span>)}</div></div> : null })()}
+              {(employer.num_treatment_rooms || employer.spa_size || employer.team_size) && <div className="grid sm:grid-cols-3 gap-3">{count(employer.num_treatment_rooms) && <Fact label="Treatment rooms" value={String(employer.num_treatment_rooms)}/>} {text(employer.spa_size) && <Fact label="Spa size" value={String(employer.spa_size)}/>} {count(employer.team_size) && <Fact label="Spa team" value={people(employer.team_size)!}/>}</div>}
+              {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a60] mb-3">Facilities</p><div className="flex flex-wrap gap-1.5">{employer.facilities.map((facility: string) => <span key={facility} className="text-[12px] bg-[#ede8df] text-[#57544c] px-3 py-1.5">{facility}</span>)}</div></div>}
+              {(() => { const partners = employer.product_houses_used || employer.product_houses; return Array.isArray(partners) && partners.length > 0 ? <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a60] mb-3">Product partners</p><div className="flex flex-wrap gap-1.5">{partners.map((house: string) => <span key={house} className="text-[12px] border border-[#dcd4c8] bg-white text-[#222321] px-3 py-1.5">{house}</span>)}</div></div> : null })()}
             </JobSection>}
 
           {(job.reporting_line || job.team_size) && <JobSection eyebrow="The team" title="Team & reporting">
-            <div className="grid sm:grid-cols-2 gap-3">{job.reporting_line && <Fact label="Reporting line" value={String(job.reporting_line)}/>} {job.team_size && <Fact label="Team size" value={`${job.team_size} in this team`}/>}</div>
+            <div className="grid sm:grid-cols-2 gap-3">{job.reporting_line && <Fact label="Reporting line" value={String(job.reporting_line)}/>} {count(job.team_size) && <Fact label="Team size" value={people(job.team_size)!}/>}</div>
           </JobSection>}
 
           {hasAny([salaryRange, job.three_things, job.perks, job.benefits, ...packageItems]) && <JobSection eyebrow="The package" title="Salary & benefits">
             {salaryRange && <div className="grid sm:grid-cols-2 gap-3 mb-6"><Fact label="Salary" value={salaryRange}/>{job.offers_accommodation && <Fact label="Accommodation" value="Provided"/>}</div>}
             {Array.isArray(job.three_things) && job.three_things.length > 0 && <TickList items={job.three_things}/>}
-            {Array.isArray(job.benefits) && job.benefits.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a66] mb-3">Benefits</p><TickList items={job.benefits}/></div>}
-            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a66] mb-3">Perks</p><TickList items={job.perks}/></div>}
-            {packageItems.length > 0 && <div className="flex flex-wrap gap-2 mt-6">{packageItems.map((item: any) => <span key={String(item)} className="bg-[#f3f0eb] px-3 py-1.5 text-[12px] text-[#57534e]">{String(item)}</span>)}</div>}
+            {Array.isArray(job.benefits) && job.benefits.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a60] mb-3">Benefits</p><TickList items={job.benefits}/></div>}
+            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a60] mb-3">Perks</p><TickList items={job.perks}/></div>}
+            {packageItems.length > 0 && <div className="flex flex-wrap gap-2 mt-6">{packageItems.map((item: any) => <span key={String(item)} className="bg-[#ede8df] px-3 py-1.5 text-[12px] text-[#57544c]">{String(item)}</span>)}</div>}
           </JobSection>}
 
           {hasAny([job.required_skills, job.required_qualifications, job.required_brands, job.required_systems, job.required_management_skills, job.required_role_level, job.min_years_experience]) &&
@@ -190,14 +259,14 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           {job.interview_process && <JobSection eyebrow="The process" title="How interviewing works"><Prose text={job.interview_process}/></JobSection>}
 
           <JobSection eyebrow="The employer" title={`Why ${propertyName}`}>
-            <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start border border-[#e0dad2] rounded-[20px] p-6">
+            <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start border border-[#dcd4c8] rounded-[20px] p-6">
               <div>
-                <p className="text-[14px] leading-7 text-[#57534e]">{employer.about_text || employer.description || employer.tagline || `Explore the full WHC property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
-                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#57534e]">{employer.star_rating && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} WHC staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{employer.spa_size && <span>{employer.spa_size}</span>}{employer.num_treatment_rooms && <span>{employer.num_treatment_rooms} treatment rooms</span>}{employer.team_size && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
-                {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{employer.facilities.map((facility: string) => <span key={facility} className="text-[11px] bg-[#f3f0eb] text-[#57534e] px-2.5 py-1 rounded-full">{facility}</span>)}</div>}
-                {employer.culture_statement && <div className="mt-5"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1b1a] font-semibold mb-1.5">Working here</p><p className="text-[13px] leading-6 text-[#57534e] whitespace-pre-line">{employer.culture_statement}</p></div>}
-                {Array.isArray(employer.staff_benefits) && employer.staff_benefits.length > 0 && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1b1a] font-semibold mb-1.5">Staff benefits</p><div className="flex flex-wrap gap-1.5">{employer.staff_benefits.map((benefit: string) => <span key={benefit} className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{benefit}</span>)}</div></div>}
-                {employer.progression_notes && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1b1a] font-semibold mb-1.5">Progression</p><p className="text-[13px] leading-6 text-[#57534e] whitespace-pre-line">{employer.progression_notes}</p></div>}
+                <p className="text-[14px] leading-7 text-[#57544c]">{employer.about_text || employer.description || employer.tagline || `Explore the full Talent House property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
+                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#57544c]">{count(employer.star_rating) && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} Talent House staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{text(employer.spa_size) && <span>{employer.spa_size}</span>}{count(employer.num_treatment_rooms) && <span>{employer.num_treatment_rooms} treatment rooms</span>}{count(employer.team_size) && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
+                {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{employer.facilities.map((facility: string) => <span key={facility} className="text-[11px] bg-[#ede8df] text-[#57544c] px-2.5 py-1 rounded-full">{facility}</span>)}</div>}
+                {employer.culture_statement && <div className="mt-5"><p className="text-[10px] uppercase tracking-[.14em] text-[#222321] font-semibold mb-1.5">Working here</p><p className="text-[13px] leading-6 text-[#57544c] whitespace-pre-line">{employer.culture_statement}</p></div>}
+                {Array.isArray(employer.staff_benefits) && employer.staff_benefits.length > 0 && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#222321] font-semibold mb-1.5">Staff benefits</p><div className="flex flex-wrap gap-1.5">{employer.staff_benefits.map((benefit: string) => <span key={benefit} className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{benefit}</span>)}</div></div>}
+                {employer.progression_notes && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#222321] font-semibold mb-1.5">Progression</p><p className="text-[13px] leading-6 text-[#57544c] whitespace-pre-line">{employer.progression_notes}</p></div>}
               </div>
               {employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary inline-flex items-center gap-2 whitespace-nowrap">Explore this property <ArrowRight size={13}/></Link>}
             </div>
@@ -206,25 +275,25 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
         <aside className="space-y-4">
           <JobMatchPanel jobId={String(job.id)} />
-          <div className="border border-[#e0dad2] rounded-[18px] p-5">
-            <p className="text-[10px] uppercase tracking-[.14em] text-[#6e6a66]">Role at a glance</p>
-            <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {employer.star_rating && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
+          <div className="border border-[#dcd4c8] rounded-[18px] p-5">
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#6e6a60]">Role at a glance</p>
+            <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {count(employer.star_rating) && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
           </div>
         </aside>
       </section>
 
-      <section className="bg-[#1c1b1a] text-white py-14 px-6"><div className="max-w-4xl mx-auto text-center"><h2 className="text-[30px] text-white">Could this be your next move?</h2><p className="text-[14px] text-white/65 mt-3 mb-7">Apply through WHC and the property will receive your profile, experience and match information in one place.</p><div className="flex justify-center"><JobApplyButtons roleId={String(job.id)} /></div></div></section>
+      <section className="bg-[#ede8df] text-ink py-14 px-6"><div className="max-w-4xl mx-auto text-center"><h2 className="text-[30px] text-ink">Could this be your next move?</h2><p className="text-[14px] text-secondary mt-3 mb-7">Apply through Talent House and the property will receive your profile, experience and match information in one place.</p><div className="flex justify-center"><JobApplyButtons roleId={String(job.id)} /></div></div></section>
     </main>
     <SponsoredAd placement="job_detail_sponsor" />
     <Footer />
   </>
 }
 
-function Prose({ text }: { text: string }) { return <div className="text-[15px] leading-8 text-[#3a3835] whitespace-pre-line">{text}</div> }
+function Prose({ text }: { text: string }) { return <div className="text-[15px] leading-8 text-[#3a3832] whitespace-pre-line">{text}</div> }
 function JobSection({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
-  return <section><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#57534e]">{eyebrow}</p><h2 className="text-[30px] md:text-[36px] mt-2 mb-5">{title}</h2>{children}</section>
+  return <section><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#57544c]">{eyebrow}</p><h2 className="text-[30px] md:text-[36px] mt-2 mb-5">{title}</h2>{children}</section>
 }
-function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-[14px] border border-[#e0dad2] bg-white px-4 py-3"><p className="text-[9px] uppercase tracking-[.12em] text-[#6e6a66]">{label}</p><p className="text-[13px] font-semibold text-[#1c1b1a] mt-1">{value}</p></div> }
-function MiniFact({ icon: Icon, label, value }: { icon: any; label: string; value: string }) { return <div className="flex gap-3"><Icon size={16} className="text-[#57534e] mt-0.5 shrink-0"/><div><p className="text-[10px] uppercase tracking-[.1em] text-[#6e6a66]">{label}</p><p className="text-[13px] text-[#1c1b1a] mt-0.5">{value}</p></div></div> }
-function ChipList({ label, items }: { label: string; items?: string[] | null }) { if (!Array.isArray(items) || items.length === 0) return null; return <div><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a66] mb-3">{label}</p><div className="flex flex-wrap gap-2">{items.map(item => <span key={item} className="rounded-full border border-[#e0dad2] bg-[#f3f0eb] px-3 py-1.5 text-[12px] text-[#57534e]">{prettyChip(String(item))}</span>)}</div></div> }
-function TickList({ items }: { items: string[] }) { return <div className="grid sm:grid-cols-2 gap-3">{items.map(item => <div key={item} className="flex gap-3 text-[13px] text-[#57534e]"><Check size={15} className="text-[#1c1b1a] mt-0.5 shrink-0"/>{item}</div>)}</div> }
+function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-[14px] border border-[#dcd4c8] bg-white px-4 py-3"><p className="text-[9px] uppercase tracking-[.12em] text-[#6e6a60]">{label}</p><p className="text-[13px] font-semibold text-[#222321] mt-1">{value}</p></div> }
+function MiniFact({ icon: Icon, label, value }: { icon: any; label: string; value: string }) { return <div className="flex gap-3"><Icon size={16} className="text-[#57544c] mt-0.5 shrink-0"/><div><p className="text-[10px] uppercase tracking-[.1em] text-[#6e6a60]">{label}</p><p className="text-[13px] text-[#222321] mt-0.5">{value}</p></div></div> }
+function ChipList({ label, items }: { label: string; items?: string[] | null }) { if (!Array.isArray(items) || items.length === 0) return null; return <div><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6e6a60] mb-3">{label}</p><div className="flex flex-wrap gap-2">{items.map(item => <span key={item} className="rounded-full border border-[#dcd4c8] bg-[#ede8df] px-3 py-1.5 text-[12px] text-[#57544c]">{prettyChip(String(item))}</span>)}</div></div> }
+function TickList({ items }: { items: string[] }) { return <div className="grid sm:grid-cols-2 gap-3">{items.map(item => <div key={item} className="flex gap-3 text-[13px] text-[#57544c]"><Check size={15} className="text-[#222321] mt-0.5 shrink-0"/>{item}</div>)}</div> }

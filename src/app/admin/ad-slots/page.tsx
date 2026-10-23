@@ -7,7 +7,7 @@ import { Megaphone, Plus, Upload, X } from 'lucide-react'
 
 // The advertising control room: every ad slot on the site, grouped by page,
 // each with an on/off switch and an optional pinned advert - plus direct
-// advert placement for brands that come to WHC by email.
+// advert placement for brands that come to Talent House by email.
 
 type Slot = {
   slot_key: string
@@ -216,7 +216,7 @@ export default function AdminAdSlotsPage() {
                     return (
                       <div key={slot.slot_key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-3">
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#1c1b1a]" /> {slot.label}</p>
+                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#222321]" /> {slot.label}</p>
                           <p className="text-[11.5px] text-muted mt-0.5">
                             £{formatPounds(prices[slot.slot_key] ?? slot.monthly_pence)}/month self-serve price
                             {slot.pinned_placement_id ? ` · pinned: ${advertName(slot.pinned_placement_id) || 'unknown advert'}` : candidates.length ? ` · ${candidates.length} advert${candidates.length === 1 ? '' : 's'} available` : ' · no adverts yet'}
@@ -246,7 +246,7 @@ export default function AdminAdSlotsPage() {
                           )}
                           <button type="button" disabled={busy === slot.slot_key}
                             onClick={() => setSlot(slot.slot_key, { enabled: !slot.enabled })}
-                            className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-accent' : 'bg-[#e0dad2]'}`}
+                            className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-accent' : 'bg-[#dcd4c8]'}`}
                             aria-label={slot.enabled ? 'Switch slot off' : 'Switch slot on'}>
                             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${slot.enabled ? 'left-[22px]' : 'left-0.5'}`} />
                           </button>
@@ -266,7 +266,7 @@ export default function AdminAdSlotsPage() {
                   {adverts.map(advert => (
                     <div key={advert.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
                       <div className="flex items-center gap-3 min-w-0">
-                        {advert.logo_url && <img src={advert.logo_url} alt="" className="h-8 w-16 object-contain shrink-0" />}
+                        {advert.logo_url && <img loading="lazy" decoding="async" src={advert.logo_url} alt="" className="h-8 w-16 object-contain shrink-0" />}
                         <div className="min-w-0">
                           <p className="text-[12.5px] font-semibold text-ink truncate">{advert.brand_name} <span className="font-normal text-muted">· {advert.placement.replace(/_/g, ' ')}</span></p>
                           <p className="text-[11px] text-muted">{advert.source === 'direct' ? 'Direct deal' : `Self-serve · ${advert.payment_status}`} · {advert.review_status} · {advert.impression_count || 0} views · {advert.click_count || 0} clicks{advert.end_date ? ` · until ${advert.end_date}` : ''}</p>
@@ -287,7 +287,7 @@ export default function AdminAdSlotsPage() {
         )}
 
         {formOpen && (
-          <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
+          <div className="fixed inset-0 bg-[#161814]/70 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
             <div {...formDialog.panelProps} className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 id="admin-direct-advert-heading" className="font-serif text-lg font-bold text-ink">Place a direct advert</h2>
@@ -329,7 +329,7 @@ export default function AdminAdSlotsPage() {
               </div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Logo</label>
               {logoUrl ? (
-                <p className="text-[12px] text-green-700 mb-3 inline-flex items-center gap-2"><img src={logoUrl} alt="" className="h-8 w-16 object-contain" /> Uploaded <button type="button" onClick={() => setLogoUrl('')} className="underline text-secondary">change</button></p>
+                <p className="text-[12px] text-green-700 mb-3 inline-flex items-center gap-2"><img decoding="async" src={logoUrl} alt="" className="h-8 w-16 object-contain" /> Uploaded <button type="button" onClick={() => setLogoUrl('')} className="underline text-secondary">change</button></p>
               ) : (
                 <label className="btn-secondary inline-flex cursor-pointer items-center gap-1.5 text-[12px] mb-3"><Upload size={13} /> {uploading ? 'Uploading...' : 'Upload logo'}<input type="file" accept="image/*" className="hidden" onChange={uploadLogo} disabled={uploading} /></label>
               )}
@@ -340,7 +340,7 @@ export default function AdminAdSlotsPage() {
                 <div className="mb-3 flex items-center gap-3">
                   {mediaType === 'video'
                     ? <video src={mediaUrl} muted playsInline className="h-16 w-28 object-cover border border-border" />
-                    : <img src={mediaUrl} alt="" className="h-16 w-28 object-cover border border-border" />}
+                    : <img decoding="async" src={mediaUrl} alt="" className="h-16 w-28 object-cover border border-border" />}
                   <span className="text-[12px] text-green-700">{mediaType === 'video' ? 'Video' : 'Image'} uploaded</span>
                   <button type="button" onClick={() => { setMediaUrl(''); setMediaType('logo') }} className="text-[12px] underline text-secondary">remove</button>
                 </div>

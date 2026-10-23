@@ -124,7 +124,15 @@ export function sanitiseTalentRegistration(input: unknown, userId: string) {
     insurance_document_url: insuranceUrl,
     cv_url: cvUrl,
     certificates_urls: certificateUrls.length ? certificateUrls : null,
-    agreed_terms: source.agreed_terms === true,
+    // No agreed_terms. candidate_profiles has no such column, and naming one
+    // that does not exist refuses the whole statement rather than skipping
+    // the field. The route this feeds strips unknown columns on the way past,
+    // which is the only reason it never failed here - and why the belief that
+    // this column existed survived long enough to break the newer route and
+    // cost three registrations on the launch weekend.
+    //
+    // Acceptance is recorded by recordTermsAcceptance, in its own ledger,
+    // which is where it always actually was.
     approval_status: 'approved',
   }
 

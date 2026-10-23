@@ -1,7 +1,14 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
+// The defaults come from the values file, not from public-page-content.
+// That module builds the zod schemas these types are inferred from, so
+// importing a default through it pulled the whole of zod into this page:
+// 62KB gzipped, to render copy that is already in the HTML. Types are
+// erased at compile time, so `import type` from it stays free.
+import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
+import type { PublicPageContent } from '@/lib/public-page-content'
 
 type Role = 'talent' | 'employer'
 
@@ -26,33 +33,45 @@ const employer: Step[] = [
 ]
 
 export default function HowToUsePage(){
+  // Header wording, hers to change without a deploy. Loaded in the browser
+  // so the page itself stays static for everybody, with the code default
+  // showing until it arrives - which is the same words, so nothing flickers.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['how-to-use'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=how-to-use${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   const [role,setRole]=useState<Role>('talent')
   const steps=role==='talent'?talent:employer
 
-  return <main id="main-content" className="min-h-screen bg-white text-[#1c1b1a]">
+  return <main id="main-content" className="min-h-screen bg-parchment text-[#222321]">
     <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
       <div className="mb-12 max-w-3xl">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">How Wellness House works</p>
-        <h1 className="text-4xl font-medium leading-tight text-[#1c1b1a] md:text-6xl">One platform. A much simpler way to move through spa careers and recruitment.</h1>
-        <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">Use the website or the app. Your account and live data stay together, so you can start something in one and continue in the other.</p>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{cms.hero.eyebrow}</p>
+        <h1 className="text-4xl font-medium leading-tight text-[#222321] md:text-6xl">{cms.hero.heading}</h1>
+        <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">{cms.hero.text}</p>
       </div>
 
       <div className="mb-10 inline-flex border border-slate-200 p-1">
-        <button onClick={()=>setRole('talent')} className={`px-5 py-3 text-sm font-semibold ${role==='talent'?'bg-[#1c1b1a] text-white':'text-slate-600'}`}>I’m Talent</button>
-        <button onClick={()=>setRole('employer')} className={`px-5 py-3 text-sm font-semibold ${role==='employer'?'bg-[#1c1b1a] text-white':'text-slate-600'}`}>I’m an Employer</button>
+        <button onClick={()=>setRole('talent')} className={`px-5 py-3 text-sm font-semibold ${role==='talent'?'bg-[#222321] text-white':'text-slate-600'}`}>I’m Talent</button>
+        <button onClick={()=>setRole('employer')} className={`px-5 py-3 text-sm font-semibold ${role==='employer'?'bg-[#222321] text-white':'text-slate-600'}`}>I’m an Employer</button>
       </div>
 
       <div className="grid gap-px overflow-hidden border border-slate-200 bg-slate-200 md:grid-cols-2">
         {steps.map(step=><div key={step.n} className="bg-white p-7 md:p-9">
           <p className="text-xs font-semibold tracking-[0.2em] text-slate-400">{step.n}</p>
-          <h2 className="mt-4 text-xl font-semibold text-[#1c1b1a]">{step.title}</h2>
+          <h2 className="mt-4 text-xl font-semibold text-[#222321]">{step.title}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">{step.copy}</p>
         </div>)}
       </div>
 
-      <div className="mt-12 flex flex-col gap-4 bg-[#f3f0eb] p-7 md:flex-row md:items-center md:justify-between">
-        <div><h2 className="text-lg font-semibold text-[#1c1b1a]">You do not have to learn the platform first.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Start with the next thing you need to do. The app now includes the same 60-second guide from Home whenever you want it.</p></div>
-        <Link href="/" className="shrink-0 bg-[#1c1b1a] px-5 py-3 text-center text-sm font-semibold text-white">Go to Wellness House</Link>
+      <div className="mt-12 flex flex-col gap-4 bg-[#ede8df] p-7 md:flex-row md:items-center md:justify-between">
+        <div><h2 className="text-lg font-semibold text-[#222321]">You do not have to learn the platform first.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Start with the next thing you need to do. The app now includes the same 60-second guide from Home whenever you want it.</p></div>
+        <Link href="/" className="shrink-0 bg-[#222321] px-5 py-3 text-center text-sm font-semibold text-white">Go to Talent House</Link>
       </div>
     </section>
   </main>

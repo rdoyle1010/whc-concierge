@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import EmailAddressPanel from '@/components/EmailAddressPanel'
 import { Save, Download, AlertTriangle } from 'lucide-react'
 import { deletionSummary } from '@/lib/account-deletion'
 
@@ -46,9 +48,9 @@ export default function EmployerSettingsPage() {
 
   useEffect(() => {
     async function loadSmsSettings() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) return
-      const { data } = await supabase.from('employer_profiles').select('id,contact_phone,sms_opt_in').eq('user_id', user.id).maybeSingle()
+      const { data } = await supabase.from('employer_profiles_private').select('id,contact_phone,sms_opt_in').eq('user_id', user.id).maybeSingle()
       if (!data) return
       setEmployerId(data.id)
       setSmsPhone(data.contact_phone || '')
@@ -125,7 +127,7 @@ export default function EmployerSettingsPage() {
 
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user?.email) {
       setLoading(false)
       setMessage('Unable to verify your identity. Please sign in again.')
@@ -184,7 +186,7 @@ export default function EmployerSettingsPage() {
   }
 
   const handleDeletionRequest = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user) return
     await fetch('/api/contact-notify', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -270,6 +272,8 @@ export default function EmployerSettingsPage() {
             <button type="button" onClick={() => saveSmsSettings()} disabled={smsSaving} className="btn-secondary text-[13px] disabled:opacity-50">{smsSaving ? 'Saving...' : 'Save SMS settings'}</button>
           </div>
         </div>
+
+        <EmailAddressPanel />
 
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>

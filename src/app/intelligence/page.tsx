@@ -4,22 +4,30 @@ import { unstable_cache } from 'next/cache'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getWebsiteContent } from '@/lib/site-content-server'
+import PanelBackdrop from '@/components/PanelBackdrop'
+import PanelPicture from '@/components/PanelPicture'
 import { Clock, ArrowRight } from 'lucide-react'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
 
 export const revalidate = 300
 
 const SITE = 'https://talenthousecollective.co.uk'
 
 export const metadata: Metadata = {
-  title: 'WHC Intelligence',
-  description: 'Salary signals, hiring demand and editorial analysis for luxury spa and wellness - drawn from live WHC platform data and published only when the sample clears our credibility thresholds.',
+  // absolute, because the title already names the brand and the root
+  // template would otherwise append it a second time.
+  title: { absolute: 'UK Spa Salary & Hiring Data | Talent House' },
+  description: 'Salary signals and hiring demand for luxury spa and wellness, drawn from live Talent House data.',
   alternates: { canonical: `${SITE}/intelligence` },
   openGraph: {
-    title: 'WHC Intelligence',
+    ...OG_DEFAULTS,
+    title: 'UK Spa Salary & Hiring Data | Talent House',
     description: 'Verifiable industry intelligence for luxury spa and wellness, from a live hiring platform.',
     url: `${SITE}/intelligence`,
     type: 'website',
   },
+  twitter: { card: 'summary_large_image', title: 'UK Spa Salary & Hiring Data | Talent House', description: 'Verifiable industry intelligence for luxury spa and wellness, from a live hiring platform.' },
 }
 
 // House credibility rules - identical to the Career Intelligence API. A salary
@@ -57,7 +65,17 @@ const EDITORIAL_CATEGORIES = [
 ]
 
 const getIntelligenceData = unstable_cache(async () => {
-  const admin = createAdminClient()
+  // Every query below is defensive, but the client that runs them was not:
+  // createAdminClient throws when its configuration is missing, and it sat
+  // outside every try, so the one failure the page could not survive was the
+  // one it never guarded. The page is built to compose around missing data -
+  // it should compose around no database at all.
+  let admin: ReturnType<typeof createAdminClient>
+  try {
+    admin = createAdminClient()
+  } catch {
+    return { liveJobs: [], salaryRows: [], posts: [], generatedAt: new Date().toISOString() }
+  }
 
   // Every query is defensive - an error collapses to an empty list so the
   // page composes around missing data instead of failing.
@@ -169,6 +187,7 @@ function postsForCategory(posts: any[], category: string) {
 
 export default async function IntelligencePage() {
   const { liveJobs, salaryRows, posts, generatedAt } = await getIntelligenceData()
+  const site = await getWebsiteContent()
 
   const dateline = new Date(generatedAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   const seniority = seniorityCounts(liveJobs)
@@ -176,20 +195,25 @@ export default async function IntelligencePage() {
   const salaries = salarySignals(salaryRows)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <Navbar />
 
-      {/* Masthead */}
-      <header className="bg-accent pt-[76px]">
-        <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">WHC Intelligence</p>
-          <h1 className="mt-5 text-white text-[38px] md:text-[58px] leading-[1.05] tracking-[-.04em] max-w-4xl">
-            The numbers behind luxury wellness careers, reported straight.
-          </h1>
-          <p className="mt-6 text-[15px] leading-7 text-white/75 max-w-2xl">
-            Intelligence drawn from a live hiring platform - real roles, advertised salaries and demand as it stands.
-            A figure appears here only once the data clears WHC&apos;s credibility thresholds. Nothing padded, nothing invented.
-          </p>
+      {/* Masthead. The copy has always occupied the left half; the right half
+          is now a picture box Rebecca can fill from Admin -> Pictures, or sell.
+          With nothing in it the masthead renders exactly as it did. */}
+      <header className="bg-charcoal pt-[76px]">
+        <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">UK Spa Salary & Hiring Data | Talent House</p>
+            <h1 className="mt-5 text-white text-[38px] md:text-[58px] leading-[1.05] tracking-[-.04em]">
+              The numbers behind luxury wellness careers, reported straight.
+            </h1>
+            <p className="mt-6 text-[15px] leading-7 text-white/75 max-w-2xl">
+              Intelligence drawn from a live hiring platform - real roles, advertised salaries and demand as it stands.
+              A figure appears here only once the data clears Talent House&apos;s credibility thresholds. Nothing padded, nothing invented.
+            </p>
+          </div>
+          <PanelPicture panel={site.panels.intelligenceHero} placement="intelligence_hero" aspect="aspect-[5/4]" />
         </div>
       </header>
 
@@ -199,7 +223,7 @@ export default async function IntelligencePage() {
           <p className="public-eyebrow">The market this month</p>
           <h2 className="mt-4 text-[26px] md:text-[34px] leading-[1.2] max-w-3xl">{dateline}</h2>
           <p className="mt-4 text-[13px] leading-6 text-secondary max-w-2xl">
-            Source: live WHC platform data, refreshed continuously.
+            Source: live Talent House platform data, refreshed continuously.
           </p>
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-5 gap-x-8 gap-y-6 max-w-5xl">
@@ -306,11 +330,12 @@ export default async function IntelligencePage() {
       {/* Closing CTA - the global newsletter signup bar already appears on
           public pages via the root layout, so this row points to the archive
           rather than duplicating the form. */}
-      <section className="bg-accent">
-        <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
+      <section className="bg-charcoal relative isolate overflow-hidden">
+        <PanelBackdrop panel={site.panels.intelligenceJournal} placement="intelligence_band" />
+        <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[28px] md:text-[36px]">Read the full journal</h2>
           <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">
-            Every article WHC has published - careers, leadership and industry perspective across luxury wellness.
+            Every article Talent House has published - careers, leadership and industry perspective across luxury wellness.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/blog" className="inline-flex items-center gap-2 bg-white text-accent px-6 py-3 text-[13px] font-semibold hover:bg-surface transition-colors">

@@ -1,38 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { HOUSE_RULES } from '@/lib/house-style'
+import { askForText, AI_MODEL } from '@/lib/ai'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
+// Twenty-six seconds, and eighteen for the model inside it.
+//
+// This route declared neither, so it inherited the platform default of ten
+// and the model was given no limit at all. A reasoning model asked to rewrite
+// a job description does not reliably answer in ten seconds, so the function
+// was killed mid-request and returned an error page rather than JSON. On
+// screen that is a writing assistant that "just does not work sometimes",
+// which is the hardest kind of broken to report and the easiest to live with.
+export const maxDuration = 26
 
-function extractText(payload: any): string {
-  if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-    }
-  }
-  return ''
-}
 
+
+// One client, one key, one bill. See src/lib/ai.ts for why there used to be
+// two, and what the six hand-written fetch calls cost in errors nobody could
+// read.
 async function generate(input: string) {
-  if (!OPENAI_API_KEY) throw new Error('AI is not configured yet.')
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, reasoning: { effort: 'low' }, input, max_output_tokens: 700 }),
+  const result = await askForText({
+    label: 'employer communication',
+    system: HOUSE_RULES,
+    prompt: input,
+    maxTokens: 1700,
   })
-  if (!response.ok) {
-    console.error('Recruitment communication AI failed:', response.status, (await response.text().catch(() => '')).slice(0, 400))
-    throw new Error('The AI assistant is temporarily unavailable. Please try again.')
-  }
-  return extractText(await response.json()).trim()
+  if (!result.ok) throw new Error(result.error)
+  return result.text
 }
 
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
+  // Each call is a paid AI request: a limit per account, not per address.
+  const limited = await enforceRateLimit(req as unknown as Request, 'communication-ai', { windowMs: 60 * 60 * 1000, maxRequests: 40, key: user.id })
+  if (limited) {
+    return NextResponse.json({ error: 'That is a lot of AI help in one hour. Give it a little while.' },
+      { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+  }
 
   try {
     const { applicationId, type } = await req.json()
@@ -58,7 +66,7 @@ export async function POST(req: NextRequest) {
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
       admin.from('candidate_profiles').select('id,full_name,headline,role_level,experience_years,qualifications,product_houses,systems_experience,treatment_skills,services_offered').eq('id', application.candidate_id).maybeSingle(),
     ])
-    if (!job || job.employer_id !== employer.id || !candidate) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id || !candidate) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const property = employer.property_name || employer.company_name || 'the property'
     const firstName = (candidate.full_name || 'there').split(' ')[0]
@@ -66,9 +74,9 @@ export async function POST(req: NextRequest) {
       ? `Draft a warm, concise note telling ${firstName} they have been shortlisted and that the property would like to take their application forward. Say that interview details will follow. Do not promise the job.`
       : type === 'offer'
         ? `Draft a warm, celebratory message telling ${firstName} that ${property} would like to offer them the role of ${job.job_title}. Make clear that the formal offer letter or contract containing salary, start date and full employment terms will be sent separately by the employer. Do not invent salary, start date, benefits or contractual terms.`
-        : `Draft a warm, respectful note thanking ${firstName} for applying and explaining that the property will not be taking this application forward. Keep it gracious, never give invented reasons, and encourage them to keep their Spa Platform profile active for future opportunities.`
+        : `Draft a warm, respectful note thanking ${firstName} for applying and explaining that the property will not be taking this application forward. Keep it gracious, never give invented reasons, and encourage them to keep their Talent House Collective profile active for future opportunities.`
 
-    const prompt = `You write recruitment communications for Spa Platform, a premium UK spa, wellness and hospitality talent platform.
+    const prompt = `You write recruitment communications for Talent House Collective, a premium UK spa, wellness and hospitality talent platform.
 
 ${task}
 
@@ -88,7 +96,7 @@ Rules:
 - Return only the message body, no subject line and no markdown.`
 
     const note = await generate(prompt)
-    return NextResponse.json({ note: note.slice(0, 3000), model: MODEL })
+    return NextResponse.json({ note: note.slice(0, 3000), model: AI_MODEL })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'AI assistant unavailable' }, { status: 500 })
   }

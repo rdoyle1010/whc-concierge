@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { agencyResolutionExceedsCollected, bookingPaidByConnect } from '@/lib/agency-payouts'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
+import { getRequestUser } from '@/lib/request-user'
 import { getStripe } from '@/lib/stripe'
 
-async function currentUser() {
-  const store = await cookies()
-  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: { getAll() { return store.getAll() }, setAll() {} },
-  })
-  return (await client.auth.getUser()).data.user
-}
+// Read the session from a cookie or a bearer token, so the phone can reach
+// this too. Shift Resolution existed only on the website, and a shift goes
+// wrong while somebody is standing in a spa holding a phone, not sitting at a
+// laptop - which made the dispute route unreachable at exactly the moment it
+// was needed. getRequestUser applies the same two-step verification rule to a
+// bearer token as to a browser session.
 
 async function partyContext(admin: ReturnType<typeof createAdminClient>, userId: string) {
   const [{ data: candidate }, { data: employer }, { data: profile }] = await Promise.all([
@@ -30,8 +28,8 @@ function roleForCase(row: any, candidate: any, employer: any, profile: any): 'ca
   return null
 }
 
-export async function GET() {
-  const user = await currentUser()
+export async function GET(req: NextRequest) {
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const admin = createAdminClient()
   const { candidate, employer, profile } = await partyContext(admin, user.id)
@@ -67,7 +65,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await currentUser()
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const admin = createAdminClient()
@@ -77,7 +75,7 @@ export async function POST(req: NextRequest) {
     const { data: booking } = await admin.from('agency_bookings').select('*').eq('id', body.bookingId).maybeSingle()
     if (!booking || !['confirmed','completed'].includes(booking.status)) return NextResponse.json({ error: 'This shift cannot have a case opened yet.' }, { status: 400 })
     const role = booking.candidate_id === candidate?.id ? 'candidate' : booking.employer_id === employer?.id ? 'employer' : null
-    if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!role) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     const description = String(body.description || '').trim()
     if (description.length < 5) return NextResponse.json({ error: 'Please explain what happened.' }, { status: 400 })
     const { data: existing } = await admin.from('agency_cases').select('id').eq('booking_id', booking.id).in('status', ['open','awaiting_response','under_review','awaiting_agreement','awaiting_payment']).maybeSingle()
@@ -96,7 +94,11 @@ export async function POST(req: NextRequest) {
       status: 'awaiting_response',
     }).select('*').single()
     if (error) return NextResponse.json({ error: 'Could not open this case.' }, { status: 500 })
-    await admin.from('agency_bookings').update({ dispute_status: 'open', payout_status: 'on_hold', dispute_reason: description }).eq('id', booking.id)
+    // Raising a case is what freezes the money. If this does not land, the
+    // payout sweep can pay the shift out while the dispute is still open.
+    const { error: holdError } = await admin.from('agency_bookings')
+      .update({ dispute_status: 'open', payout_status: 'on_hold', dispute_reason: description }).eq('id', booking.id)
+    if (holdError) return NextResponse.json({ error: 'The case could not be opened against this booking. Please try again, and tell us straight away if it keeps failing.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: data.id, actor_user_id: user.id, actor_role: role, event_type: 'case_opened' })
 
     const [{ data: bookingCandidate }, { data: bookingEmployer }] = await Promise.all([
@@ -111,14 +113,20 @@ export async function POST(req: NextRequest) {
   const { data: row } = await admin.from('agency_cases').select('*, booking:agency_bookings(*)').eq('id', body.caseId).maybeSingle()
   if (!row) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
   const role = roleForCase(row, candidate, employer, profile)
-  if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!role) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   if (body.action === 'respond') {
     if (row.opened_by_user_id === user.id && role !== 'admin') return NextResponse.json({ error: 'The other party needs to respond first.' }, { status: 400 })
     const response = String(body.response || '').trim()
     if (!response) return NextResponse.json({ error: 'Please add your response.' }, { status: 400 })
-    await admin.from('agency_cases').update({ counterparty_response: response, counterparty_response_user_id: user.id, counterparty_responded_at: new Date().toISOString(), status: 'under_review' }).eq('id', row.id)
-    await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: response })
+    // A case is a money dispute, and this thread is the record both sides
+    // argue from. Reporting success on a write that failed loses somebody's
+    // written response and leaves the case looking as though they never
+    // replied, which is the thing the other side is judged on.
+    const { error: responseError } = await admin.from('agency_cases').update({ counterparty_response: response, counterparty_response_user_id: user.id, counterparty_responded_at: new Date().toISOString(), status: 'under_review' }).eq('id', row.id)
+    if (responseError) return NextResponse.json({ error: 'Your response could not be saved. Please try again.' }, { status: 500 })
+    const { error: messageError } = await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: response })
+    if (messageError) return NextResponse.json({ error: 'Your response was recorded on the case but could not be added to the thread. Please tell us before continuing.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: 'response_added' })
     return NextResponse.json({ success: true })
   }
@@ -127,7 +135,8 @@ export async function POST(req: NextRequest) {
     const message = String(body.message || '').trim()
     if (!message) return NextResponse.json({ error: 'Write a message first.' }, { status: 400 })
     if (['resolved','rejected'].includes(row.status)) return NextResponse.json({ error: 'This case is closed.' }, { status: 400 })
-    await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: message.slice(0, 4000) })
+    const { error: messageError } = await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: message.slice(0, 4000) })
+    if (messageError) return NextResponse.json({ error: 'That message could not be sent. Please try again.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: 'message_added' })
     return NextResponse.json({ success: true })
   }
@@ -137,7 +146,12 @@ export async function POST(req: NextRequest) {
     if (row.status !== 'awaiting_agreement') return NextResponse.json({ error: 'There is no resolution waiting for agreement.' }, { status: 400 })
     const now = new Date().toISOString()
     const patch = role === 'candidate' ? { candidate_agreed_at: now, candidate_agreed_by: user.id } : { employer_agreed_at: now, employer_agreed_by: user.id }
-    const { data: updated } = await admin.from('agency_cases').update(patch).eq('id', row.id).select('*').single()
+    // Both parties sign this, and the signature is what releases the money.
+    // The error was never read, so a failed write returned "signed, waiting
+    // for the other side" - and the other side waits for a signature that was
+    // never recorded, on a resolution somebody believes they have agreed to.
+    const { data: updated, error: signError } = await admin.from('agency_cases').update(patch).eq('id', row.id).select('*').single()
+    if (signError || !updated) return NextResponse.json({ error: 'Your signature could not be recorded. Please try again.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: 'resolution_signed' })
 
     const bothAgreed = Boolean(updated?.candidate_agreed_at && updated?.employer_agreed_at)
@@ -148,11 +162,11 @@ export async function POST(req: NextRequest) {
     const payout = Number(updated?.proposed_payout_amount ?? row.booking?.payout_amount ?? 0)
     let refundId: string | null = null
     if (refund > 0) {
-      if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask WHC Admin to amend the proposal.' }, { status: 400 })
+      if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask Talent House Admin to amend the proposal.' }, { status: 400 })
       const stripe = getStripe()
       // Same reasoning as the admin dispute path: on a destination charge the
       // professional was paid when the property paid, so a refund without
-      // reverse_transfer comes out of WHC's own balance while they keep the
+      // reverse_transfer comes out of Talent House's own balance while they keep the
       // shift money.
       const viaConnect = bookingPaidByConnect(row.booking)
       const result = await stripe.refunds.create({
@@ -165,7 +179,15 @@ export async function POST(req: NextRequest) {
       refundId = result.id
     }
 
-    await admin.from('agency_cases').update({
+    // The Stripe refund has already gone by this point, and a refund cannot be
+    // taken back. So these two writes are the only record that it happened: if
+    // either is lost, the money has left the account and the platform believes
+    // it has not - the case reads unresolved, the payout status is wrong, and
+    // whoever picks it up next is working from a false position.
+    //
+    // Nothing here can be rolled back, so the honest response is to record what
+    // did happen and put it in front of a person immediately.
+    const { error: caseError } = await admin.from('agency_cases').update({
       resolution: updated?.proposed_resolution,
       approved_refund_amount: refund,
       approved_extra_amount: extra,
@@ -174,13 +196,27 @@ export async function POST(req: NextRequest) {
       status: extra > 0 ? 'awaiting_payment' : 'resolved',
       resolved_at: extra > 0 ? null : now,
     }).eq('id', row.id)
-    await admin.from('agency_bookings').update({
+    const { error: bookingError } = await admin.from('agency_bookings').update({
       dispute_status: extra > 0 ? 'open' : 'resolved',
       refund_amount: refund || null,
       refunded_at: refund ? now : null,
       payout_amount: payout,
       payout_status: extra > 0 ? 'on_hold' : (payout > 0 ? 'pending' : 'cancelled'),
     }).eq('id', row.booking.id)
+
+    if (caseError || bookingError) {
+      console.error('Agency resolution not fully recorded:', caseError?.message, bookingError?.message)
+      await notifyAdmins(
+        'A resolved Agency case was not fully recorded',
+        `Case ${row.id} was agreed by both sides${refundId ? ` and a £${refund.toFixed(2)} Stripe refund was issued (${refundId})` : ''}, but the record did not save. Check the booking and the case by hand before anything else touches this money.`,
+        '/admin/agency-cases',
+      )
+      return NextResponse.json({
+        error: refundId
+          ? 'The refund was issued but the case record did not save. Talent House has been alerted and will confirm by hand - do not repeat this action.'
+          : 'The resolution did not save. Please try again.',
+      }, { status: 500 })
+    }
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: extra > 0 ? 'agreement_complete_extra_payment_due' : 'agreement_complete', details: { refund, extra, payout, refund_id: refundId } })
     return NextResponse.json({ success: true, bothAgreed: true, awaitingPayment: extra > 0 })
   }

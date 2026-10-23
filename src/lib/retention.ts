@@ -1,6 +1,6 @@
 // Data retention policy (1 September 2026).
 //
-// Every period WHC applies to personal data lives here, in one place, so the
+// Every period Talent House applies to personal data lives here, in one place, so the
 // privacy policy, the admin panel and the sweep route cannot drift apart.
 // Changing a number here changes the policy everywhere it is stated or run.
 //

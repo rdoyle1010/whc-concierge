@@ -29,7 +29,7 @@ async function resolveCompletedPlacement(admin: ReturnType<typeof createAdminCli
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const applicationId = req.nextUrl.searchParams.get('applicationId') || ''
   if (!applicationId) return NextResponse.json({ error: 'Application is required.' }, { status: 400 })
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const applicationId = String(body.applicationId || '')

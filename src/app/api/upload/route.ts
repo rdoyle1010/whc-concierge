@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRegistrationProof } from '@/lib/registration'
 import { getRequestUser } from '@/lib/request-user'
+import { shrinkImage } from '@/lib/image-resize'
 
 const ALLOWED_COLUMNS = new Set([
   'profile_image_url',
@@ -46,7 +47,14 @@ export async function POST(req: NextRequest) {
 
     const sessionUser = await getRequestUser(req)
     const effectiveUserId = sessionUser?.id || registrationProof?.sub
-    if (!effectiveUserId) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    // "Unauthorised" on an upload button tells the person nothing about what
+    // to do next, and the commonest cause by far is a two-step session that
+    // has lapsed rather than anything wrong with the file or the page.
+    if (!effectiveUserId) {
+      return NextResponse.json({
+        error: 'Your session has ended, or your two-step verification has lapsed. Sign in again, complete the authenticator step, and upload once more.',
+      }, { status: 401 })
+    }
 
     if (!file || !bucket || !path) return NextResponse.json({ error: 'Missing file, bucket, or path' }, { status: 400 })
 
@@ -98,14 +106,18 @@ export async function POST(req: NextRequest) {
 
     if (profileId) {
       const { data: profile } = await admin.from('candidate_profiles').select('user_id').eq('id', profileId).single()
-      if (!profile || profile.user_id !== effectiveUserId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (!profile || profile.user_id !== effectiveUserId) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const original = Buffer.from(await file.arrayBuffer())
+    const buffer = await shrinkImage(original, file.type || '')
     const actualBucket = bucket === 'profile-photos' ? 'site-images' : bucket
     const { error: uploadError } = await admin.storage.from(actualBucket).upload(path, buffer, {
       upsert: true,
       contentType: file.type || 'application/octet-stream',
+      // Every upload path in the app is timestamped, so a replacement is a new
+      // URL and this can be cached hard rather than for Supabase's default hour.
+      cacheControl: '31536000',
     })
     if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
 
@@ -113,8 +125,24 @@ export async function POST(req: NextRequest) {
       ? `/api/files?bucket=${encodeURIComponent(actualBucket)}&path=${encodeURIComponent(path)}`
       : admin.storage.from(actualBucket).getPublicUrl(path).data.publicUrl
 
-    if (profileId && column) await admin.from('candidate_profiles').update({ [column]: url }).eq('id', profileId)
-    return NextResponse.json({ url })
+    // The attach was unchecked. A file could upload cleanly, fail to reach the
+    // profile row, and this still returned a URL and a two hundred - so the
+    // member saw "uploaded", closed the page, and the CV or certificate was
+    // simply not on their profile. The file is genuinely in storage, so the
+    // URL is still returned; what changes is that the caller is told the
+    // profile was not updated instead of being told nothing.
+    if (profileId && column) {
+      const { error: attachError } = await admin.from('candidate_profiles').update({ [column]: url }).eq('id', profileId)
+      if (attachError) {
+        console.error('[upload] stored but not attached:', column, profileId, attachError.message)
+        return NextResponse.json({
+          url,
+          attached: false,
+          error: 'The file uploaded but could not be saved to your profile. Please try again.',
+        }, { status: 502 })
+      }
+    }
+    return NextResponse.json({ url, attached: Boolean(profileId && column) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

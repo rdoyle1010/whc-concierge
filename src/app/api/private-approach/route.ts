@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
+import { sendPrivateApproachEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { trackEvent } from '@/lib/analytics'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +33,7 @@ function employerIdFromLink(link: string | null): string | null {
 // GET: pending approaches for the signed-in candidate.
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: candidate } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
@@ -82,7 +85,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const body = await req.json().catch(() => ({}))
@@ -98,17 +101,28 @@ async function handleEmployerRequest(admin: ReturnType<typeof createAdminClient>
   if (!candidateId) return NextResponse.json({ error: 'candidateId required' }, { status: 400 })
 
   const { data: employer } = await admin.from('employer_profiles')
-    .select('id, user_id, property_name, company_name, approval_status')
+    .select(`id, user_id, property_name, company_name, approval_status, ${PREMIUM_COLUMNS}`)
     .eq('user_id', userId)
     .maybeSingle()
   if (!employer) return NextResponse.json({ error: 'Employer account required' }, { status: 403 })
   if (employer.approval_status !== 'approved') return NextResponse.json({ error: 'Your employer account must be approved before requesting introductions' }, { status: 403 })
+  if (!isPremium(employer, 'employer_talent_search')) {
+    return NextResponse.json(
+      { error: 'Approaching a professional directly is a premium feature.', upgradeHref: '/employer/billing' },
+      { status: 402 },
+    )
+  }
 
   const { data: candidate } = await admin.from('candidate_profiles')
-    .select('id, user_id, approval_status, profile_visible')
+    .select('id, user_id, full_name, approval_status, profile_visible, stealth_mode')
     .eq('id', candidateId)
     .maybeSingle()
-  if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false) {
+  // Stealth Mode was missing from this check, which made it the sharpest
+  // failure of the three: the whole promise of Stealth Mode is that no
+  // employer reaches you, and a private approach is exactly an employer
+  // reaching you. Somebody hiding from a current employer could have been
+  // messaged by them.
+  if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false || candidate.stealth_mode === true) {
     return NextResponse.json({ error: 'This professional is not currently available' }, { status: 404 })
   }
 
@@ -141,6 +155,19 @@ async function handleEmployerRequest(admin: ReturnType<typeof createAdminClient>
     approachLink(employer.id),
   )
   if (error) return NextResponse.json({ error: 'Could not send the approach - please try again' }, { status: 500 })
+
+  // The in-app notification is the record. The email is how anybody finds out
+  // it happened: somebody being approached confidentially has, by definition,
+  // not been looking for a job and has no reason to be logged in.
+  try {
+    if (await emailAllowed(admin, candidate.user_id, 'job_alerts')) {
+      const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+      const address = authUser?.user?.email
+      if (address) await sendPrivateApproachEmail(address, candidate.full_name || '', propertyName)
+    }
+  } catch (emailError: any) {
+    console.error('[Private approach email failed]', emailError?.message)
+  }
 
   await trackEvent('confidential_approach_requested', { actorUserId: userId, candidateId: candidate.id, employerId: employer.id })
   return NextResponse.json({ success: true })

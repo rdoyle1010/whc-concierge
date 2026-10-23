@@ -1,11 +1,16 @@
 {
   "expo": {
-    "name": "Talent House Collective",
+    "name": "Talent House",
     "slug": "talent-wellness-house",
     "scheme": "whctalent",
     "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#222321",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -21,7 +26,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Talent House Collective uses your photo library only when you choose property images to add to your employer profile.",
+          "photosPermission": "Talent House uses your photo library only when you choose property images to add to your employer profile.",
           "cameraPermission": false,
           "microphonePermission": false
         }
@@ -36,6 +41,10 @@
     },
     "android": {
       "package": "com.wellnesshousecollective.talent",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#222321"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -45,14 +54,12 @@
               "scheme": "https",
               "host": "talenthousecollective.co.uk",
               "pathPrefix": "/"
-            },
-            {
-              "scheme": "https",
-              "host": "talent.wellnesshousecollective.co.uk",
-              "pathPrefix": "/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },

@@ -5,7 +5,7 @@ import { getRequestUser } from '@/lib/request-user'
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const applicationId = new URL(req.url).searchParams.get('applicationId')
   if (!applicationId) return NextResponse.json({ error: 'Application is required.' }, { status: 400 })
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
   const { data: application } = await admin.from('applications').select('id,candidate_id').eq('id', applicationId).maybeSingle()
-  if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   const { data, error } = await admin.from('application_interviews').select('*').eq('application_id', applicationId).order('round_number', { ascending: true })
   if (error) return NextResponse.json({ error: 'Could not load interview invitations.' }, { status: 500 })
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -44,13 +44,16 @@ export async function POST(req: NextRequest) {
     if (!interview) return NextResponse.json({ error: 'Interview invitation not found.' }, { status: 404 })
 
     const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id').eq('id', interview.application_id).maybeSingle()
-    if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     // None of the proposed times work: keep the invitation open, record the
     // candidate's availability, and ask the employer for new times.
     if (action === 'request_alternative') {
       if (interview.status !== 'proposed') return NextResponse.json({ error: 'This interview has already been confirmed.' }, { status: 409 })
-      await admin.from('application_interviews').update({ candidate_note: candidateNote, updated_at: new Date().toISOString() }).eq('id', interview.id)
+      // selected_slot is cleared alongside the note, as the mobile branch did.
+      // Leaving a stale choice on an invitation the candidate has just said
+      // they cannot make shows the property a time nobody has agreed to.
+      await admin.from('application_interviews').update({ candidate_note: candidateNote, selected_slot: null, updated_at: new Date().toISOString() }).eq('id', interview.id)
       const jobIdAlt = application.role_id || application.job_id
       const { data: jobAlt } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobIdAlt).maybeSingle()
       if (jobAlt?.employer_id) {
@@ -76,7 +79,9 @@ export async function POST(req: NextRequest) {
     }).eq('id', interview.id).eq('status', 'proposed').select('*').maybeSingle()
     if (updateError || !updated) return NextResponse.json({ error: 'Could not confirm this interview time.' }, { status: 409 })
 
-    await admin.from('applications').update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    const { error: stageError } = await admin.from('applications')
+      .update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (stageError) return NextResponse.json({ error: 'Your time was confirmed but the application stage did not move. Please refresh before the interview.' }, { status: 500 })
 
     const jobId = application.role_id || application.job_id
     const { data: job } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()

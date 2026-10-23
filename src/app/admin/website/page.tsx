@@ -17,8 +17,11 @@ import {
 type Tab = 'content' | 'images' | 'brand' | 'navigation' | 'sections' | 'history'
 
 const PANELS = [
-  { path: 'homepageCta' as const, label: 'Homepage closing panel', hint: 'The full-width band that closes the homepage, above the footer.' },
-  { path: 'authPanel' as const, label: 'Sign-in panel', hint: 'The tall panel beside the sign-in and registration forms.' },
+  { path: 'homepageCta' as const, kind: 'backdrop' as const, label: 'Homepage closing panel', hint: 'The full-width band that closes the homepage, above the footer.' },
+  { path: 'authPanel' as const, kind: 'backdrop' as const, label: 'Sign-in panel', hint: 'The tall panel beside the sign-in and registration forms.' },
+  { path: 'intelligenceJournal' as const, kind: 'backdrop' as const, label: 'Intelligence closing panel', hint: 'The full-width band that closes Talent House Intelligence, above the footer.' },
+  { path: 'intelligenceHero' as const, kind: 'picture' as const, label: 'Intelligence masthead picture', hint: 'The picture box beside the Intelligence headline, where the right-hand half used to be empty.' },
+  { path: 'agencyProfessional' as const, kind: 'picture' as const, label: 'Agency professional band picture', hint: 'The picture box above the four steps on the Flexible Work page.' },
 ]
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -114,7 +117,7 @@ export default function WebsiteEditorPage() {
   const openFullPreview = async () => {
     const preview = window.open('', '_blank')
     const saved = await saveDraft()
-    if (saved && preview) preview.location.href = '/?websitePreview=draft'
+    if (saved && preview) preview.location.href = '/preview/home'
     else preview?.close()
   }
 
@@ -174,7 +177,7 @@ export default function WebsiteEditorPage() {
     update('sections', sections)
   }
 
-  const PanelEditor = ({ label, hint, path }: { label: string; hint: string; path: 'homepageCta' | 'authPanel' }) => {
+  const PanelEditor = ({ label, hint, path, kind }: { label: string; hint: string; path: typeof PANELS[number]['path']; kind: 'backdrop' | 'picture' }) => {
     const panel = content.panels[path]
     return (
       <div className="border border-border p-4 bg-white">
@@ -183,25 +186,31 @@ export default function WebsiteEditorPage() {
             <p className="text-[13px] font-medium text-ink">{label}</p>
             <p className="text-[11px] text-muted mt-0.5 max-w-md">{hint}</p>
           </div>
-          <label className="text-[11px] font-medium">Panel shows
-            <select value={panel.mode} onChange={event => update('panels.' + path + '.mode', event.target.value)} className="input-field mt-1.5 min-w-[220px]">
-              <option value="brand">Plain charcoal (as now)</option>
-              <option value="image">Your picture</option>
-              <option value="advert">Sell to a sponsor</option>
-            </select>
+          <label className="flex items-center gap-2 text-[11px] font-medium">
+            <input type="checkbox" checked={panel.mode === 'advert'} onChange={event => update('panels.' + path + '.mode', event.target.checked ? 'advert' : 'image')} />
+            Sell this panel to sponsors
           </label>
         </div>
-        {panel.mode !== 'brand' && (
+        {(
           <div className="mt-4 border-t border-border pt-4">
             <ImageEditor
               label={panel.mode === 'advert' ? 'Fallback picture, shown when no advert is live' : 'Panel picture'}
               path={'panels.' + path + '.image'}
               image={panel.image}
             />
-            <label className="block text-[11px] mt-3">Darkening behind the text: {panel.overlay}%
-              <input type="range" min="0" max="100" value={panel.overlay} onChange={event => update('panels.' + path + '.overlay', Number(event.target.value))} className="w-full mt-2" />
-              <span className="block text-[10px] text-muted mt-1">The panel carries white text, so the picture needs darkening to stay readable. Lower it for a lighter, more visible picture.</span>
-            </label>
+            {panel.image.url && (
+              <button type="button" onClick={() => update('panels.' + path + '.image.url', '')} className="btn-secondary mt-3 text-[11px]">
+                {kind === 'backdrop' ? 'Remove picture (back to plain charcoal)' : 'Remove picture (the box disappears)'}
+              </button>
+            )}
+            {kind === 'backdrop' ? (
+              <label className="block text-[11px] mt-3">Darkening behind the text: {panel.overlay}%
+                <input type="range" min="0" max="100" value={panel.overlay} onChange={event => update('panels.' + path + '.overlay', Number(event.target.value))} className="w-full mt-2" />
+                <span className="block text-[10px] text-muted mt-1">The panel carries white text, so the picture needs darkening to stay readable. Lower it for a lighter, more visible picture.</span>
+              </label>
+            ) : (
+              <p className="text-[10px] text-muted mt-3">Nothing sits on top of this picture, so it shows at full strength. Leave it empty and the box is not drawn at all.</p>
+            )}
           </div>
         )}
       </div>
@@ -213,7 +222,7 @@ export default function WebsiteEditorPage() {
       <div className="grid sm:grid-cols-[180px_1fr] gap-5">
         <div>
           <div className="aspect-video bg-surface overflow-hidden">
-            {image.url && <img src={image.url} alt={image.alt} className="w-full h-full object-cover" style={{ objectPosition: image.focalX + '% ' + image.focalY + '%' }} />}
+            {image.url && <img decoding="async" src={image.url} alt={image.alt} className="w-full h-full object-cover" style={{ objectPosition: image.focalX + '% ' + image.focalY + '%' }} />}
           </div>
           <label className="mt-2 flex items-center justify-center gap-1.5 py-2 border border-border text-[11px] font-medium cursor-pointer hover:bg-surface">
             {busy === 'upload' ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />} Replace photo
@@ -281,6 +290,16 @@ export default function WebsiteEditorPage() {
                       <Field label="Small heading" value={slide.eyebrow} onChange={value => update('hero.slides.' + index + '.eyebrow', value)} />
                       <Field label="Main heading" value={slide.heading} onChange={value => update('hero.slides.' + index + '.heading', value)} />
                       <TextArea label="Paragraph" value={slide.text} onChange={value => update('hero.slides.' + index + '.text', value)} />
+                      {/* One door per argument. Left empty, each slide falls
+                          back to a sensible default for its position: post a
+                          role, create a profile, residencies, the Academy,
+                          consultants. Fill both or neither - a label with no
+                          link is a button that goes nowhere. */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field label="Button text" value={slide.ctaLabel || ''} onChange={value => update('hero.slides.' + index + '.ctaLabel', value)} />
+                        <Field label="Button link" value={slide.ctaHref || ''} onChange={value => update('hero.slides.' + index + '.ctaHref', value)} />
+                      </div>
+                      <p className="text-[11px] leading-5 text-muted">Leave both empty and this slide uses the default for its position.</p>
                     </div>)}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Field label="First button" value={content.hero.primaryLabel} onChange={value => update('hero.primaryLabel', value)} />
@@ -358,9 +377,9 @@ export default function WebsiteEditorPage() {
 
                 <div className="border-t border-border pt-7">
                   <h2 className="text-[17px] font-medium">Dark panels</h2>
-                  <p className="text-[12px] text-muted mt-1 max-w-2xl">The two large charcoal panels on the site. Leave them plain, put a picture behind them, or sell them to a sponsor. A sold panel with no live advert falls back to your picture, so the space is never empty.</p>
+                  <p className="text-[12px] text-muted mt-1 max-w-2xl">The two large charcoal panels on the site. Add a picture and it shows; remove it and the panel goes back to plain charcoal. Tick <span className="font-medium text-ink">Sell this panel to sponsors</span> to put it up for sale - a sponsor&apos;s advert then replaces your picture while their campaign runs, and your picture returns when it ends.</p>
                 </div>
-                {PANELS.map(panel => <PanelEditor key={panel.path} label={panel.label} hint={panel.hint} path={panel.path} />)}
+                {PANELS.map(panel => <PanelEditor key={panel.path} label={panel.label} hint={panel.hint} path={panel.path} kind={panel.kind} />)}
               </div>}
 
               {tab === 'brand' && <div className="space-y-7">
@@ -370,8 +389,8 @@ export default function WebsiteEditorPage() {
                 </div>
                 <div className="border border-border p-4 bg-white grid sm:grid-cols-[220px_1fr] gap-5">
                   <div>
-                    <div className={`h-[64px] w-full overflow-hidden ${content.brand.logo.fit === 'contain' ? 'bg-surface' : 'bg-[#1c1b1a]'}`}>
-                      {content.brand.logo.url && <img src={content.brand.logo.url} alt={content.brand.logo.alt} className={`h-full w-full ${content.brand.logo.fit === 'contain' ? 'object-contain' : 'object-cover'}`} />}
+                    <div className={`h-[64px] w-full overflow-hidden ${content.brand.logo.fit === 'contain' ? 'bg-surface' : 'bg-[#222321]'}`}>
+                      {content.brand.logo.url && <img loading="lazy" decoding="async" src={content.brand.logo.url} alt={content.brand.logo.alt} className={`h-full w-full ${content.brand.logo.fit === 'contain' ? 'object-contain' : 'object-cover'}`} />}
                     </div>
                     <label className="mt-2 flex items-center justify-center gap-1.5 py-2 border border-border text-[11px] font-medium cursor-pointer hover:bg-surface">
                       {busy === 'upload' ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />} Upload logo

@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   ArrowRight, Brain, Briefcase, Building2, CheckCircle2, CircleHelp, FileText,
-  MessageSquareText, RefreshCw, ShieldCheck, Sparkles, Star, Target, Users,
+  Lock, MessageSquareText, RefreshCw, ShieldCheck, Sparkles, Star, Target, Users,
 } from 'lucide-react'
 
 type StyleName = 'Driver' | 'Connector' | 'Planner' | 'Explorer'
@@ -106,8 +107,32 @@ function ReadinessBar({ label, value }: { label: string; value?: number }) {
   const score = Math.max(0, Math.min(100, Number(value) || 0))
   return <div>
     <div className="flex items-center justify-between text-[11px] mb-1.5"><span className="text-secondary">{label}</span><span className="font-medium text-ink">{score}%</span></div>
-    <div className="h-1.5 bg-[#e0dad2] overflow-hidden"><div className="h-full bg-[#1c1b1a]" style={{ width: `${score}%` }} /></div>
+    <div className="h-1.5 bg-[#dcd4c8] overflow-hidden"><div className="h-full bg-[#222321]" style={{ width: `${score}%` }} /></div>
   </div>
+}
+
+// Running out of credits is a decision to put in front of somebody, not an
+// error to report at them. It used to be a line of red text with no link, at
+// the bottom of a form they had just spent ten minutes filling in - and the
+// padlock elsewhere pointed at Billing, whose only offer to a free account is
+// Featured Talent, which grants no Interview Ready credits at all.
+function AllowancePanel({ message, upgradeHref }: { message: string; upgradeHref: string | null }) {
+  return (
+    <div className="mb-8 border border-[#dcd4c8] bg-white p-5">
+      <div className="flex items-start gap-3">
+        <Lock size={17} className="mt-0.5 shrink-0 text-[#222321]" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-ink">{message}</p>
+          {upgradeHref ? <>
+            <p className="mt-1 text-[12px] leading-5 text-muted">Talent Standard is £9.99 a month for a credit every month and 10% off the Academy. Talent Pro is £19.99 for ten, and rolls up to twenty.</p>
+            <Link href={upgradeHref} className="btn-primary mt-4 inline-flex items-center gap-2">See membership plans <ArrowRight size={14} /></Link>
+          </> : (
+            <p className="mt-1 text-[12px] leading-5 text-muted">You are already on the highest allowance, so there is nothing to buy. Your credits refresh at renewal.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function InterviewReadyPage() {
@@ -128,6 +153,7 @@ export default function InterviewReadyPage() {
   const [prep, setPrep] = useState<Prep | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState('')
+  const [locked, setLocked] = useState<{ message: string; upgradeHref: string | null } | null>(null)
   const [tab, setTab] = useState<'dossier' | 'practice'>('dossier')
   const [questionIndex, setQuestionIndex] = useState(0)
   const [practiceAnswer, setPracticeAnswer] = useState('')
@@ -138,7 +164,7 @@ export default function InterviewReadyPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: prof } = await supabase.from('candidate_profiles').select('id,full_name,headline,cv_url').eq('user_id', user.id).maybeSingle()
+      const { data: prof } = await supabase.from('candidate_profiles').select('id,full_name,headline,cv_url,membership_tier,interview_ready_credits,membership_renews_at').eq('user_id', user.id).maybeSingle()
       setProfile(prof)
       const now = new Date().toISOString()
       const { data: liveJobs } = await supabase.from('job_listings')
@@ -159,13 +185,37 @@ export default function InterviewReadyPage() {
 
   const selectStyle = (index: number, style: StyleName) => setAnswers(prev => { const next = [...prev]; next[index] = style; return next })
 
+  // Six choices, a pasted job description, then a padlock is a rotten way to
+  // find out. The allowance is shown before any of it is filled in.
+  const credits = Math.max(0, Number(profile?.interview_ready_credits || 0))
+  const tier = String(profile?.membership_tier || '').toLowerCase()
+  const subscriber = tier === 'standard' || tier === 'pro'
+  const renewsAt = profile?.membership_renews_at
+    ? new Date(profile.membership_renews_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+    : null
+  const outOfCredits = Boolean(profile) && credits < 1 && !prep
+  const allowanceMessage = subscriber
+    ? renewsAt
+      ? `You have used this month's Interview Ready credits. More arrive on ${renewsAt}.`
+      : 'You have used this month\u2019s Interview Ready credits. More arrive when your membership renews.'
+    : 'You have used your Interview Ready allowance. A membership adds credits every month.'
+  const allowanceHref = tier === 'pro' ? null : '/talent/membership'
+
   const buildPrep = async () => {
     if (!jobId && !targetRole.trim()) { setError('Choose one of the live roles or enter the role you are preparing for.'); return }
     if (!assessmentComplete) { setError('Complete the short working-style assessment first. It takes six choices.'); return }
-    setPreparing(true); setError(''); setPrep(null); setFeedback(null)
+    setPreparing(true); setError(''); setLocked(null); setPrep(null); setFeedback(null)
     try {
       const res = await fetch('/api/interview-ready', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'prepare', jobId, targetRole, companyName, jobDescription, styleAnswers: answers }) })
       const data = await res.json().catch(() => ({}))
+      // Being told you have run out is not an error message, it is a decision
+      // to put in front of somebody - so it gets a button rather than a line
+      // of red text they cannot act on.
+      if (res.status === 403 && data.code === 'FEATURE_LOCKED') {
+        setLocked({ message: data.error || 'You have used your Interview Ready allowance.', upgradeHref: data.upgradeHref || null })
+        setPreparing(false)
+        return
+      }
       if (!res.ok) throw new Error(data.error || 'Interview Ready could not build your preparation. Please try again.')
       setPrep(data); setQuestionIndex(0); setTab('dossier')
     } catch (e: any) { setError(e.message || 'Interview Ready is unavailable.') } finally { setPreparing(false) }
@@ -194,20 +244,22 @@ export default function InterviewReadyPage() {
     <div className="mb-8 max-w-4xl">
       <p className="dashboard-eyebrow">Career development</p>
       <h1 className="dashboard-title">Interview Ready</h1>
-      <p className="dashboard-intro max-w-3xl">Know yourself. Know the role. Know the business. Interview Ready brings together your CV, WHC profile and the exact opportunity so you understand what matters and can practise with confidence.</p>
+      <p className="dashboard-intro max-w-3xl">Know yourself. Know the role. Know the business. Interview Ready brings together your CV, Talent House profile and the exact opportunity so you understand what matters and can practise with confidence.</p>
     </div>
 
     <div className="mb-8 border-l-2 border-accent bg-white/70 px-5 py-4">
       <div className="flex items-start gap-3"><Sparkles size={17} className="text-accent shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">Not an answer machine. A confidence builder.</p><p className="text-[12px] text-muted mt-1 leading-5">We never invent an achievement, brand, salary or result. We help you understand the employer, identify the evidence you already have and strengthen how you communicate it.</p></div></div>
     </div>
 
+    {outOfCredits && <AllowancePanel message={allowanceMessage} upgradeHref={allowanceHref} />}
+
     {!prep ? <div className="grid grid-cols-1 xl:grid-cols-[.9fr_1.1fr] gap-6">
       <section className="dashboard-panel">
         <p className="dashboard-eyebrow">1. The opportunity</p>
         <h2 className="dashboard-section-title mb-2">What are you preparing for?</h2>
-        <p className="text-[12px] text-muted leading-5 mb-5">Choose a live WHC role and we use its full job description and property profile. For an external role, paste as much detail as you have.</p>
-        <label className="block text-[11px] font-medium text-ink mb-1.5">Live role on WHC</label>
-        <select aria-label="Live role on WHC" value={jobId} onChange={e => { setJobId(e.target.value); if (e.target.value) { setTargetRole(''); setCompanyName(''); setJobDescription('') } }} className="input-field text-[13px] mb-5">
+        <p className="text-[12px] text-muted leading-5 mb-5">Choose a live Talent House role and we use its full job description and property profile. For an external role, paste as much detail as you have.</p>
+        <label className="block text-[11px] font-medium text-ink mb-1.5">Live role on Talent House</label>
+        <select aria-label="Live role on Talent House" value={jobId} onChange={e => { setJobId(e.target.value); if (e.target.value) { setTargetRole(''); setCompanyName(''); setJobDescription('') } }} className="input-field text-[13px] mb-5">
           <option value="">Choose a role</option>
           {jobs.map(job => { const employer = Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles; const company = employer?.property_name || employer?.company_name || 'Property'; return <option key={job.id} value={job.id}>{job.job_title} · {company}{job.location ? ` · ${job.location}` : ''}</option> })}
         </select>
@@ -219,7 +271,7 @@ export default function InterviewReadyPage() {
         <label className="block text-[11px] font-medium text-ink mb-1.5">Job description</label>
         <textarea aria-label="Job description" disabled={Boolean(jobId)} value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the complete job description here." rows={8} className="input-field text-[13px] resize-y disabled:opacity-45" />
         {selectedJob && <div className="mt-5 px-4 py-3 bg-surface text-[12px] text-secondary"><span className="font-medium text-ink">Selected:</span> {selectedJob.job_title}</div>}
-        <div className="mt-5 flex items-start gap-2 text-[11px] text-muted leading-5"><ShieldCheck size={14} className="text-accent shrink-0 mt-0.5" /><span>Property facts are shown only when supplied or verified in the WHC property profile. Missing facts are identified rather than guessed.</span></div>
+        <div className="mt-5 flex items-start gap-2 text-[11px] text-muted leading-5"><ShieldCheck size={14} className="text-accent shrink-0 mt-0.5" /><span>Property facts are shown only when supplied or verified in the Talent House property profile. Missing facts are identified rather than guessed.</span></div>
       </section>
 
       <section className="dashboard-panel">
@@ -227,18 +279,19 @@ export default function InterviewReadyPage() {
         <h2 className="dashboard-section-title mb-2">A language for how you naturally work.</h2>
         <p className="text-[12px] text-muted leading-5 mb-6">Our own coaching framework, not a personality test or hiring judgement. Pick what feels most like you at work.</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-7">{(Object.keys(styles) as StyleName[]).map(name => <div key={name} className="border border-border bg-white px-3.5 py-3"><p className="text-[12px] font-semibold text-ink">{name}</p><p className="text-[10.5px] text-muted leading-4 mt-1">{styles[name]}</p></div>)}</div>
-        <div className="space-y-6">{styleQuestions.map((q, index) => <div key={q.question}><p className="text-[12px] font-medium text-ink mb-2.5"><span className="text-accent mr-2">{index + 1}.</span>{q.question}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{(Object.keys(q.options) as StyleName[]).map(name => <button key={name} type="button" onClick={() => selectStyle(index, name)} className={`text-left border px-3.5 py-3 transition-colors ${answers[index] === name ? 'border-accent bg-[#f3f0eb]' : 'border-border bg-white hover:border-accent/60'}`}><span className="block text-[10px] uppercase tracking-[.12em] text-accent mb-1">{name}</span><span className="block text-[11.5px] text-secondary leading-4">{q.options[name]}</span></button>)}</div></div>)}</div>
+        <div className="space-y-6">{styleQuestions.map((q, index) => <div key={q.question}><p className="text-[12px] font-medium text-ink mb-2.5"><span className="text-accent mr-2">{index + 1}.</span>{q.question}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{(Object.keys(q.options) as StyleName[]).map(name => <button key={name} type="button" onClick={() => selectStyle(index, name)} className={`text-left border px-3.5 py-3 transition-colors ${answers[index] === name ? 'border-accent bg-[#ede8df]' : 'border-border bg-white hover:border-accent/60'}`}><span className="block text-[10px] uppercase tracking-[.12em] text-accent mb-1">{name}</span><span className="block text-[11.5px] text-secondary leading-4">{q.options[name]}</span></button>)}</div></div>)}</div>
         {error && <p className="mt-5 border-l-2 border-red-500 pl-3 text-[12px] text-red-700">{error}</p>}
-        <button type="button" disabled={preparing} onClick={buildPrep} className="btn-primary mt-7 w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-50">{preparing ? <><RefreshCw size={14} className="animate-spin" />Building your personalised dossier</> : <>Build my Interview Ready dossier <ArrowRight size={14} /></>}</button>
+        {locked && <div className="mt-5"><AllowancePanel message={locked.message} upgradeHref={locked.upgradeHref} /></div>}
+        <button type="button" disabled={preparing || outOfCredits} onClick={buildPrep} className="btn-primary mt-7 w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-50">{preparing ? <><RefreshCw size={14} className="animate-spin" />Building your personalised dossier</> : <>Build my Interview Ready dossier <ArrowRight size={14} /></>}</button>
       </section>
     </div> : <>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
-        <div className="inline-flex border border-border bg-white p-1 w-fit"><button onClick={() => setTab('dossier')} className={`px-4 py-2 text-[12px] ${tab === 'dossier' ? 'bg-[#1c1b1a] text-white' : 'text-secondary'}`}>My dossier</button><button onClick={() => setTab('practice')} className={`px-4 py-2 text-[12px] ${tab === 'practice' ? 'bg-[#1c1b1a] text-white' : 'text-secondary'}`}>Practice interview</button></div>
+        <div className="inline-flex border border-border bg-white p-1 w-fit"><button onClick={() => setTab('dossier')} className={`px-4 py-2 text-[12px] ${tab === 'dossier' ? 'bg-[#222321] text-white' : 'text-secondary'}`}>My dossier</button><button onClick={() => setTab('practice')} className={`px-4 py-2 text-[12px] ${tab === 'practice' ? 'bg-[#222321] text-white' : 'text-secondary'}`}>Practice interview</button></div>
         <button onClick={() => { setPrep(null); setError(''); setFeedback(null) }} className="btn-secondary text-[12px]">Prepare for another role</button>
       </div>
 
       {tab === 'dossier' ? <div className="space-y-6">
-        <section className="dashboard-panel bg-[#1c1b1a] !border-[#1c1b1a] text-white">
+        <section className="dashboard-panel !bg-[#222321] !border-[#222321] text-white">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-7 items-start">
             <div><p className="text-[9px] uppercase tracking-[.2em] text-white/60 mb-2">Your preparation</p><h2 className="text-[30px] !text-white mb-3">{prep.company_intelligence?.name || selectedJob?.job_title || targetRole}</h2><p className="text-[13px] leading-6 text-white/70 max-w-3xl">{prep.role_intelligence?.role_summary}</p>{prep.style && <p className="text-[12px] text-white/55 mt-4">Working style: <span className="text-white">{prep.style.primary}</span> with {prep.style.secondary} · {prep.style.summary}</p>}</div>
             <div className="bg-white/[0.06] border border-white/10 p-5"><p className="text-[9px] uppercase tracking-[.18em] text-white/45 mb-2">Interview Readiness</p><p className="text-[46px] leading-none text-white font-serif">{prep.readiness?.overall ?? 0}%</p><p className="text-[11px] leading-5 text-white/55 mt-3">Preparation score, not a hiring prediction.</p></div>
@@ -251,7 +304,7 @@ export default function InterviewReadyPage() {
             {prep.company_intelligence?.about && <p className="text-[12px] text-secondary leading-5 mb-5">{prep.company_intelligence.about}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-5">{(prep.company_intelligence?.verified_facts || []).map((fact, i) => <div key={`${fact.label}-${i}`} className="border border-border bg-white px-3.5 py-3"><p className="text-[9px] uppercase tracking-[.14em] text-muted">{fact.label}</p><p className="text-[12px] font-medium text-ink mt-1">{fact.value}</p></div>)}</div>
             <p className="text-[11px] font-medium text-ink mb-2">Why this matters in interview</p><BulletList items={prep.company_intelligence?.why_it_matters} empty="Use the verified property facts above to think about the guest, service and commercial expectations." />
-            {!!prep.company_intelligence?.research_gaps?.length && <div className="mt-5 bg-[#f3f0eb] p-4"><p className="text-[10px] uppercase tracking-[.14em] text-muted mb-2">Not yet verified</p>{prep.company_intelligence.research_gaps.map((gap, i) => <p key={i} className="text-[11px] text-muted leading-5">• {gap}</p>)}</div>}
+            {!!prep.company_intelligence?.research_gaps?.length && <div className="mt-5 bg-[#ede8df] p-4"><p className="text-[10px] uppercase tracking-[.14em] text-muted mb-2">Not yet verified</p>{prep.company_intelligence.research_gaps.map((gap, i) => <p key={i} className="text-[11px] text-muted leading-5">• {gap}</p>)}</div>}
           </section>
 
           <section className="dashboard-panel"><div className="flex items-center gap-2 mb-4"><Briefcase size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Understand the role</p><h2 className="dashboard-section-title">What they are really hiring for</h2></div></div>
@@ -263,7 +316,7 @@ export default function InterviewReadyPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <section className="dashboard-panel"><div className="flex items-center gap-2 mb-4"><Target size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Your CV + this job</p><h2 className="dashboard-section-title">Why you match</h2></div></div><BulletList items={prep.cv_match?.why_you_match} empty="Interview Ready could not find enough explicit overlap yet. That does not mean you cannot do the role; it means your evidence needs to be clearer." />
-            {!!prep.cv_match?.strongest_evidence?.length && <div className="mt-6 pt-5 border-t border-border"><p className="text-[11px] font-medium text-ink mb-3">Strongest evidence already visible</p><div className="flex flex-wrap gap-2">{prep.cv_match.strongest_evidence.map((item, i) => <span key={i} className="text-[11px] bg-[#f3f0eb] text-secondary px-2.5 py-1.5">{item}</span>)}</div></div>}
+            {!!prep.cv_match?.strongest_evidence?.length && <div className="mt-6 pt-5 border-t border-border"><p className="text-[11px] font-medium text-ink mb-3">Strongest evidence already visible</p><div className="flex flex-wrap gap-2">{prep.cv_match.strongest_evidence.map((item, i) => <span key={i} className="text-[11px] bg-[#ede8df] text-secondary px-2.5 py-1.5">{item}</span>)}</div></div>}
             <div className="mt-6 pt-5 border-t border-border"><p className="text-[11px] font-medium text-ink mb-3">Talk about this</p><BulletList items={prep.cv_match?.talk_about_this} /></div>
           </section>
 
@@ -291,12 +344,20 @@ export default function InterviewReadyPage() {
         <section className="dashboard-panel"><p className="dashboard-eyebrow">Interview Readiness</p><div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-7 items-start"><div><p className="text-[52px] leading-none font-serif text-accent">{prep.readiness?.overall ?? 0}%</p><p className="text-[11px] text-muted leading-5 mt-3">Preparation completeness only. It is not a prediction of whether you will be hired.</p></div><div className="space-y-4"><ReadinessBar label="Know the company" value={prep.readiness?.company} /><ReadinessBar label="Understand the role" value={prep.readiness?.role} /><ReadinessBar label="Evidence prepared" value={prep.readiness?.evidence} /><ReadinessBar label="Difficult questions" value={prep.readiness?.difficult_questions} /><ReadinessBar label="Practice" value={prep.readiness?.practice} />{prep.readiness?.message && <p className="text-[12px] text-secondary leading-5 pt-2">{prep.readiness.message}</p>}</div></div><button onClick={() => setTab('practice')} className="btn-primary mt-6 inline-flex items-center gap-2">Start practice interview <ArrowRight size={14} /></button></section>
       </div> : <section className="dashboard-panel max-w-4xl">
         <div className="flex items-center justify-between gap-4 mb-6"><div><p className="dashboard-eyebrow">Practice interview</p><h2 className="dashboard-section-title">One question at a time.</h2></div><span className="text-[11px] text-muted">Question {questionIndex + 1} of {prep.likely_questions?.length || 0}</span></div>
-        <div className="bg-[#1c1b1a] text-white p-6 mb-5"><MessageSquareText size={18} className="text-white/70 mb-3" /><p className="font-serif text-[24px] leading-8">{currentQuestion}</p></div>
+        <div className="bg-[#222321] text-white p-6 mb-5"><MessageSquareText size={18} className="text-white/70 mb-3" /><p className="font-serif text-[24px] leading-8">{currentQuestion}</p></div>
         <p className="text-[12px] text-muted leading-5 mb-3">Answer naturally as if you were in the interview. Do not try to sound perfect. The coach will show you what is strong and what evidence is missing.</p>
         <textarea aria-label="Your practice answer" value={practiceAnswer} onChange={e => setPracticeAnswer(e.target.value)} rows={8} placeholder="Type your answer in your own words..." className="input-field text-[13px] resize-y" />
         {error && <p className="mt-4 border-l-2 border-red-500 pl-3 text-[12px] text-red-700">{error}</p>}
         {!feedback ? <button disabled={coaching} onClick={reviewAnswer} className="btn-primary mt-5 inline-flex items-center gap-2 disabled:opacity-50">{coaching ? <><RefreshCw size={14} className="animate-spin" />Reviewing your answer</> : <>Coach my answer <ArrowRight size={14} /></>}</button> : <div className="mt-6 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-[110px_1fr] gap-4 items-start"><div className="border border-border bg-white p-4 text-center"><p className="text-[9px] uppercase tracking-[.14em] text-muted">Answer score</p><p className="font-serif text-[34px] text-accent mt-1">{feedback.score || 0}%</p></div><div className="space-y-3"><div className="border-l-2 border-green-500 pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-green-700">Strong</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.strong}</p></div><div className="border-l-2 border-amber-500 pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-amber-700">Improve</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.improve}</p></div>{feedback.missing && <div className="border-l-2 border-slate-400 pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-slate-600">Missing evidence</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.missing}</p></div>}<div className="border-l-2 border-accent pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-accent">Try again</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.try_again}</p></div>{feedback.follow_up && <div className="bg-surface p-4"><p className="text-[10px] uppercase tracking-[.14em] text-muted">Think about</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.follow_up}</p></div>}</div></div>
+          <div className="grid grid-cols-1 sm:grid-cols-[110px_1fr] gap-4 items-start"><div className="border border-border bg-white p-4 text-center">
+            {/* A null score means the review did not run. `score || 0` would
+                have printed 0%, which is a far worse thing to tell somebody
+                about their interview answer than printing nothing. */}
+            <p className="text-[9px] uppercase tracking-[.14em] text-muted">Answer score</p>
+            {typeof feedback.score === 'number'
+              ? <p className="font-serif text-[34px] text-accent mt-1">{feedback.score}%</p>
+              : <p className="font-serif text-[28px] text-muted mt-1">&mdash;</p>}
+          </div><div className="space-y-3"><div className="border-l-2 border-green-500 pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-green-700">Strong</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.strong}</p></div><div className="border-l-2 border-amber-500 pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-amber-700">Improve</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.improve}</p></div>{feedback.missing && <div className="border-l-2 border-slate-400 pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-slate-600">Missing evidence</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.missing}</p></div>}<div className="border-l-2 border-accent pl-4"><p className="text-[10px] uppercase tracking-[.14em] text-accent">Try again</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.try_again}</p></div>{feedback.follow_up && <div className="bg-surface p-4"><p className="text-[10px] uppercase tracking-[.14em] text-muted">Think about</p><p className="text-[12px] text-secondary leading-5 mt-1">{feedback.follow_up}</p></div>}</div></div>
           <div className="flex flex-wrap gap-3 pt-2"><button onClick={() => setFeedback(null)} className="btn-secondary">Try this question again</button><button onClick={nextQuestion} className="btn-primary inline-flex items-center gap-2">Next question <ArrowRight size={14} /></button></div>
         </div>}
       </section>}

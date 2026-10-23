@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRight, Check, Crown, Home, Megaphone, Sparkles, Users } from 'lucide-react'
+import Link from 'next/link'
 
 type CommercialSetting = {
   product_key: string
@@ -36,7 +37,7 @@ export default function EmployerFeaturedPage() {
         fetch('/api/commercial-settings?product=featured_employer', { cache: 'no-store' }),
       ])
       if (auth.user) {
-        const { data } = await supabase.from('employer_profiles').select('*').eq('user_id', auth.user.id).maybeSingle()
+        const { data } = await supabase.from('employer_profiles_private').select('*').eq('user_id', auth.user.id).maybeSingle()
         setProfile(data)
       }
       if (productRes.ok) {
@@ -93,7 +94,7 @@ export default function EmployerFeaturedPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="dashboard-card !p-0 overflow-hidden">
-          <div className="bg-[#1c1b1a] px-7 py-8 text-white">
+          <div className="bg-[#222321] px-7 py-8 text-white">
             <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white/80"><Crown size={20} /></div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80">Featured Hotel / Employer</p>
             <div className="mt-2 flex flex-wrap items-end gap-3">
@@ -103,6 +104,9 @@ export default function EmployerFeaturedPage() {
             <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across Talent House Collective.'}</p>
           </div>
 
+          <p className="px-7 pt-6 text-[12px] leading-6 text-secondary">
+            Featured is about being seen. Searching the talent pool and role analytics come with <Link href="/employer/membership" className="underline">Employer Pro</Link>, and the two work well together: Featured brings people to your property, Pro lets you go and find them.
+          </p>
           <div className="grid gap-5 p-7 sm:grid-cols-2">
             {[
               [Home, 'Featured property placement', 'Appear above standard properties in the public property directory with a Featured badge.'],
@@ -111,7 +115,7 @@ export default function EmployerFeaturedPage() {
               [Megaphone, 'Extra role prominence', 'Your property brand is more visible wherever candidates are researching employers and opportunities.'],
             ].map(([Icon, title, copy]: any) => (
               <div key={title} className="dashboard-card">
-                <Icon size={17} className="mb-3 text-[#1c1b1a]" />
+                <Icon size={17} className="mb-3 text-[#222321]" />
                 <p className="text-[13px] font-semibold text-ink">{title}</p>
                 <p className="mt-1.5 text-[12px] leading-5 text-muted">{copy}</p>
               </div>
@@ -126,7 +130,7 @@ export default function EmployerFeaturedPage() {
               <>
                 <div className="mt-3 flex items-center gap-2 text-[18px] font-semibold text-ink"><Check size={18} className="text-emerald-600" /> Featured is active</div>
                 <p className="mt-2 text-[12px] leading-5 text-muted">{profile?.featured_until ? `Current paid period runs until ${new Date(profile.featured_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.` : 'Your property is currently featured.'}</p>
-                <a href="/employer/billing" className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#1c1b1a]">Manage billing <ArrowRight size={13} /></a>
+                <a href="/employer/billing" className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#222321]">Manage billing <ArrowRight size={13} /></a>
               </>
             ) : (
               <>

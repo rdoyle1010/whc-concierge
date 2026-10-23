@@ -1,11 +1,20 @@
+import { sendTransactionalEmail } from '@/lib/send-email'
+// The wording lives in ./consent-wording, which a browser can import. This
+// module signs tokens and sends email, and a client page that wanted one
+// sentence from it was pulling all of that with it.
+import {
+  PRIVACY_POLICY_VERSION, MARKETING_CONSENT_WORDING, TERMS_ACCEPTANCE_WORDING, NEWSLETTER_CONSENT_WORDING,
+} from '@/lib/consent-wording'
+export { PRIVACY_POLICY_VERSION, MARKETING_CONSENT_WORDING, TERMS_ACCEPTANCE_WORDING, NEWSLETTER_CONSENT_WORDING }
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
-export const PRIVACY_POLICY_VERSION = '2026-08-26'
-export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective to send me marketing emails about jobs, Academy courses, platform features, events and relevant WHC services. I can unsubscribe at any time.'
-export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant WHC services. I can unsubscribe at any time.'
+// What somebody accepts at the moment their account is created, recorded
+// verbatim against the account. The wording lives here rather than in the form
+// so the sentence shown and the sentence stored can never drift apart, which
+// is the only thing that makes a consent record worth having.
+
 
 const SITE = 'https://talenthousecollective.co.uk'
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 export function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex')
@@ -50,42 +59,29 @@ export function verifyNewsletterUnsubscribeToken(subscriberId: string, token: st
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.log(`[Privacy email skipped - no RESEND_API_KEY] To: ${to}, Subject: ${subject}`)
-    return false
-  }
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-  })
-  if (!response.ok) {
-    console.error(`[Privacy email failed ${response.status}] ${await response.text().catch(() => '')}`)
-    return false
-  }
-  return true
+  const result = await sendTransactionalEmail({ to, subject, html, kind: 'marketing' })
+  return result.ok
 }
 
 function confirmationEmailHtml(heading: string, intro: string, wording: string, url: string) {
   return `
-    <div style="font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:620px;margin:0 auto;padding:40px 22px;color:#1c1b1a">
+    <div style="font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:620px;margin:0 auto;padding:40px 22px;color:#222321">
       <p style="font-weight:700;margin-bottom:30px">Wellness House Collective</p>
       <h1 style="font-size:26px;line-height:1.2">${heading}</h1>
       <p style="font-size:15px;line-height:1.7;color:#4d4d4d">${intro}</p>
       <p style="font-size:14px;line-height:1.7;color:#4d4d4d"><strong>What you are agreeing to:</strong><br>${wording}</p>
-      <p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#1c1b1a;color:#fff;text-decoration:none;padding:13px 20px;border-radius:7px;font-weight:600">Confirm subscription</a></p>
-      <p style="font-size:12px;line-height:1.6;color:#8c8781">If you did not request this, ignore this email. Nothing will be activated. This confirmation link expires in 24 hours.</p>
-      <p style="font-size:12px;line-height:1.6;color:#8c8781;margin-top:30px">Talent House Collective · talenthousecollective.co.uk · <a href="${SITE}/privacy" style="color:#4d4d4d">Privacy policy</a></p>
+      <p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#222321;color:#fff;text-decoration:none;padding:13px 20px;border-radius:7px;font-weight:600">Confirm subscription</a></p>
+      <p style="font-size:12px;line-height:1.6;color:#8c8c8c">If you did not request this, ignore this email. Nothing will be activated. This confirmation link expires in 24 hours.</p>
+      <p style="font-size:12px;line-height:1.6;color:#8c8c8c;margin-top:30px">Talent House Collective · talenthousecollective.co.uk · <a href="${SITE}/privacy" style="color:#4d4d4d">Privacy policy</a></p>
     </div>
   `
 }
 
 export async function sendMarketingDoubleOptInEmail(email: string, token: string) {
   const url = `${SITE}/api/privacy/marketing/confirm?token=${encodeURIComponent(token)}`
-  return sendEmail(email, 'Please confirm your WHC marketing preferences', confirmationEmailHtml(
+  return sendEmail(email, 'Please confirm your Talent House marketing preferences', confirmationEmailHtml(
     'One more step to confirm marketing emails',
-    'You asked to receive optional WHC marketing emails. We use double opt-in, so nothing is activated until you confirm below.',
+    'You asked to receive optional Talent House marketing emails. We use double opt-in, so nothing is activated until you confirm below.',
     MARKETING_CONSENT_WORDING,
     url,
   ))
@@ -93,12 +89,67 @@ export async function sendMarketingDoubleOptInEmail(email: string, token: string
 
 export async function sendNewsletterDoubleOptInEmail(email: string, token: string) {
   const url = `${SITE}/api/newsletter/confirm?token=${encodeURIComponent(token)}`
-  return sendEmail(email, 'Please confirm your WHC newsletter subscription', confirmationEmailHtml(
-    'Confirm your WHC newsletter',
-    'You entered your email on WHC to receive our newsletter. We use double opt-in, so we will not add you to the newsletter list until you confirm below.',
+  return sendEmail(email, 'Please confirm your Talent House newsletter subscription', confirmationEmailHtml(
+    'Confirm your Talent House newsletter',
+    'You entered your email on Talent House to receive our newsletter. We use double opt-in, so we will not add you to the newsletter list until you confirm below.',
     NEWSLETTER_CONSENT_WORDING,
     url,
   ))
+}
+
+// Start the double opt-in for somebody, from wherever they asked.
+//
+// This lived only inside /api/privacy/marketing/request, which needs a signed
+// in session - so the only place on the whole platform where anybody could
+// opt in was the Privacy & Preferences page, buried in account settings.
+// Six of the first eight members had never opted in, and none of them had
+// declined: nobody had asked them.
+//
+// Registration can now ask, which is the moment somebody is most willing and
+// the only moment you get for free. The record still says exactly what they
+// saw, and it is still pending until they click the link.
+export async function startMarketingOptIn(
+  admin: any,
+  userId: string,
+  email: string,
+  source: 'registration' | 'account_preferences',
+): Promise<{ ok: boolean; error?: string }> {
+  if (!userId || !email) return { ok: false, error: 'No account to opt in' }
+
+  const token = newConfirmationToken()
+  const now = new Date()
+  const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+
+  await admin.from('marketing_confirmation_tokens').delete().eq('user_id', userId).is('consumed_at', null)
+  const { error: tokenError } = await admin.from('marketing_confirmation_tokens').insert({
+    user_id: userId,
+    token_hash: hashToken(token),
+    expires_at: expires.toISOString(),
+  })
+  if (tokenError) return { ok: false, error: tokenError.message }
+
+  const { error: prefError } = await admin.from('privacy_preferences').upsert({
+    user_id: userId,
+    marketing_email_status: 'pending',
+    marketing_email_requested_at: now.toISOString(),
+    marketing_email_confirmed_at: null,
+    updated_at: now.toISOString(),
+  }, { onConflict: 'user_id' })
+  if (prefError) return { ok: false, error: prefError.message }
+
+  // The wording recorded is the wording they were shown. That is the whole
+  // point of keeping a consent record rather than a boolean.
+  await admin.from('consent_events').insert({
+    user_id: userId,
+    consent_type: 'marketing_email',
+    action: 'requested',
+    policy_version: PRIVACY_POLICY_VERSION,
+    wording: MARKETING_CONSENT_WORDING,
+    source,
+  })
+
+  const sent = await sendMarketingDoubleOptInEmail(email, token)
+  return sent ? { ok: true } : { ok: false, error: 'The confirmation email could not be sent' }
 }
 
 export function marketingUnsubscribeUrl(userId: string) {
@@ -107,4 +158,24 @@ export function marketingUnsubscribeUrl(userId: string) {
 
 export function newsletterUnsubscribeUrl(subscriberId: string) {
   return `${SITE}/api/newsletter/unsubscribe?id=${encodeURIComponent(subscriberId)}&token=${createNewsletterUnsubscribeToken(subscriberId)}`
+}
+
+/**
+ * Records that an account holder accepted the terms as their account was
+ * created. Best-effort by design: the ledger entry must never be the reason a
+ * registration fails, and the acceptance itself is enforced before this runs.
+ */
+export async function recordTermsAcceptance(admin: any, userId: string, source: string) {
+  try {
+    await admin.from('consent_events').insert({
+      user_id: userId,
+      consent_type: 'terms',
+      action: 'accepted',
+      policy_version: PRIVACY_POLICY_VERSION,
+      wording: TERMS_ACCEPTANCE_WORDING,
+      source,
+    })
+  } catch (error: any) {
+    console.error('Terms acceptance record failed (non-fatal):', error?.message)
+  }
 }

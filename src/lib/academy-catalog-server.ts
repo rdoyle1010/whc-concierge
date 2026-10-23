@@ -2,7 +2,6 @@ import 'server-only'
 
 import { ACADEMY, CORE_SLUGS, type AcademyCourse } from '@/lib/academy'
 import { ACADEMY_ANSWERS } from '@/lib/academy-answers'
-import { courseImage } from '@/lib/academy-extras'
 import { getCourseContent } from '@/lib/academy-content'
 import type { CourseContent } from '@/lib/academy-types'
 import {
@@ -17,6 +16,9 @@ import {
   type AcademyContentDoc,
 } from '@/lib/academy-course-content'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { CourseSummary } from './academy-types-public'
+import { unstable_cache } from 'next/cache'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
 // The commercial fields an admin controls on every course, whoever authored
 // the teaching content.
@@ -155,7 +157,10 @@ function baseCourse(course: AcademyCourse): ManagedAcademyCourse {
   return {
     ...course,
     price: course.price ?? 1000,
-    image_url: courseImage(course.slug),
+    // Empty, and that is the point. This used to be a stock photograph, which
+    // meant the catalogue handed every course a picture nobody had chosen and
+    // the page had no way to tell it apart from one that had been uploaded.
+    image_url: '',
     is_active: true,
     is_core: CORE_SLUGS.includes(course.slug),
     is_custom: false,
@@ -184,7 +189,7 @@ function rowCourse(row: CourseRow): ManagedAcademyCourse {
     category: row.category,
     minutes: row.minutes,
     price: row.price,
-    image_url: row.image_url || courseImage(row.slug),
+    image_url: row.image_url || '',
     lessons: Array.isArray(row.lessons) ? row.lessons : [],
     quiz: Array.isArray(row.quiz) ? row.quiz : [],
     is_active: row.is_active,
@@ -222,6 +227,84 @@ export function publicCourse(course: ManagedAcademyCourse) {
   const { answer_key: _answerKey, override: _override, content_doc: _contentDoc, ...safe } = course
   return safe
 }
+
+// The shape lives in academy-types-public.ts. This module holds the
+// service-role client, so nothing that runs in a browser may name it - not even
+// for a type, because a type import is one edit away from a value import.
+export type { CourseSummary } from './academy-types-public'
+
+/**
+ * A course with its teaching removed.
+ *
+ * The list endpoint used to return whole courses - every lesson body, every
+ * quiz question, the rich content document - which made it 305KB uncompressed
+ * and the heaviest asset on the platform. Both pages that call it draw cards:
+ * a title, a tagline, minutes, a price, a picture and the number of modules.
+ * Nothing on either page has ever rendered a lesson.
+ *
+ * It was also the paid material, handed to anybody who opened the network tab
+ * on a page that sells it.
+ */
+export function courseSummary(course: ManagedAcademyCourse): CourseSummary {
+  return {
+    slug: course.slug,
+    title: course.title,
+    tagline: course.tagline,
+    category: course.category,
+    minutes: course.minutes,
+    price: course.price ?? 1000,
+    image_url: course.image_url || '',
+    is_core: Boolean(course.is_core),
+    lesson_count: Array.isArray(course.lessons) ? course.lessons.length : 0,
+  }
+}
+
+/**
+ * A course's public page: what it covers, without covering it.
+ *
+ * Lesson titles, because a syllabus is what somebody deciding whether to spend
+ * fifteen pounds actually wants to read. Lesson bodies are the thing being
+ * sold, so they stay on the paid side; this is the shop window, not the shop.
+ */
+export type CourseSyllabus = CourseSummary & {
+  lesson_titles: string[]
+  quiz_count: number
+}
+
+export function courseSyllabus(course: ManagedAcademyCourse): CourseSyllabus {
+  return {
+    ...courseSummary(course),
+    lesson_titles: (Array.isArray(course.lessons) ? course.lessons : []).map(lesson => String(lesson?.title || '').trim()).filter(Boolean),
+    quiz_count: Array.isArray(course.quiz) ? course.quiz.length : 0,
+  }
+}
+
+/**
+ * One course's public page data, or null when there is no such live course.
+ *
+ * Cached for an hour under the academy tag, so the page is prerendered for
+ * almost every visitor and an edit in admin still lands immediately.
+ */
+export const getCourseSyllabus = unstable_cache(
+  async (slug: string): Promise<CourseSyllabus | null> => {
+    const course = await getAcademyCourseBySlug(slug, false)
+    return course && course.is_active !== false ? courseSyllabus(course) : null
+  },
+  ['public-course-syllabus-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.academy] },
+)
+
+/** Every live course slug, for prerendering and the sitemap. */
+export async function getAcademySlugs(): Promise<string[]> {
+  return (await getAcademyCatalog(false)).map(course => course.slug)
+}
+
+/** The card data for every live course, read on the server. */
+export const getAcademySummaries = unstable_cache(
+  async (): Promise<CourseSummary[]> => (await getAcademyCatalog(false)).map(courseSummary),
+  ['public-academy-summaries-v1'],
+  { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.academy] },
+)
 
 // Admin display order first (lowest sort_order wins), then the code order.
 function bySortOrder(courses: ManagedAcademyCourse[]) {

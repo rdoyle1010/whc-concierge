@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { profileDistanceMiles } from '@/lib/geo'
+import { productAvailableIn } from '@/lib/countries'
 import { getRequestUser } from '@/lib/request-user'
 import { GET as legacyGET, POST } from './core'
 
@@ -25,8 +26,8 @@ export async function GET(req: NextRequest) {
     try { const { data: shouldSweep } = await admin.rpc('claim_maintenance_job', { p_job_key: 'agency_sweep', p_min_interval_seconds: MAINTENANCE_INTERVAL_SECONDS }); if (shouldSweep) await legacyGET() } catch (e: any) { console.error('Agency maintenance claim failed:', e?.message) }
 
     const [{ data: cand }, { data: emp }] = await Promise.all([
-      admin.from('candidate_profiles').select('id, full_name, user_id, agency_available, agency_tier, agency_listed_until').eq('user_id', user.id).maybeSingle(),
-      admin.from('employer_profiles').select('id, company_name, property_name, user_id, preferred_employer, preferred_until, agency_plus_active, agency_plus_until').eq('user_id', user.id).maybeSingle(),
+      admin.from('candidate_profiles').select('id, full_name, user_id, agency_available, agency_tier, agency_listed_until, country_code, location_country').eq('user_id', user.id).maybeSingle(),
+      admin.from('employer_profiles').select('id, company_name, property_name, user_id, preferred_employer, preferred_until, agency_plus_active, agency_plus_until, country_code, country').eq('user_id', user.id).maybeSingle(),
     ])
 
     const rows: any[] = []
@@ -63,6 +64,6 @@ export async function GET(req: NextRequest) {
       }
     }).sort((a,b)=>new Date(b.created_at||0).getTime()-new Date(a.created_at||0).getTime())
 
-    return NextResponse.json({ bookings: enriched, viewer: { candidate: cand ? { id:cand.id, full_name:cand.full_name, agency_available:Boolean(cand.agency_available), agency_tier:cand.agency_tier||null, agency_listed_until:cand.agency_listed_until||null } : null, employer: emp ? { id:emp.id, company_name:emp.company_name, property_name:emp.property_name, preferred_employer:Boolean(emp.preferred_employer), preferred_until:emp.preferred_until||null, agency_plus_active:Boolean(emp.agency_plus_active) && (!emp.agency_plus_until || new Date(emp.agency_plus_until).getTime() > Date.now()), agency_plus_until:emp.agency_plus_until||null } : null }, pagination: { limit_per_profile:BOOKING_LIMIT, returned:enriched.length, capped:(cand ? rows.filter(r=>r.candidate_id===cand.id).length>=BOOKING_LIMIT:false)||(emp ? rows.filter(r=>r.employer_id===emp.id).length>=BOOKING_LIMIT:false) } })
+    return NextResponse.json({ bookings: enriched, viewer: { candidate: cand ? { id:cand.id, full_name:cand.full_name, agency_available:Boolean(cand.agency_available), agency_tier:cand.agency_tier||null, agency_listed_until:cand.agency_listed_until||null, agency_available_here:productAvailableIn('agency', cand.country_code||cand.location_country) } : null, employer: emp ? { id:emp.id, company_name:emp.company_name, property_name:emp.property_name, preferred_employer:Boolean(emp.preferred_employer), preferred_until:emp.preferred_until||null, agency_plus_active:Boolean(emp.agency_plus_active) && (!emp.agency_plus_until || new Date(emp.agency_plus_until).getTime() > Date.now()), agency_plus_until:emp.agency_plus_until||null, agency_available_here:productAvailableIn('agency', emp.country_code||emp.country) } : null }, pagination: { limit_per_profile:BOOKING_LIMIT, returned:enriched.length, capped:(cand ? rows.filter(r=>r.candidate_id===cand.id).length>=BOOKING_LIMIT:false)||(emp ? rows.filter(r=>r.employer_id===emp.id).length>=BOOKING_LIMIT:false) } })
   } catch (e:any) { return NextResponse.json({ error:e.message }, { status:500 }) }
 }

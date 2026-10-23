@@ -33,7 +33,7 @@ async function saveValue(key: string, value: string) {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data } = await admin.from('platform_config').select('key,value').in('key', [PUBLIC_PAGES_DRAFT_KEY, PUBLIC_PAGES_PUBLISHED_KEY, PUBLIC_PAGES_HISTORY_KEY])
   const values = new Map((data || []).map(row => [row.key, row.value]))
@@ -44,13 +44,52 @@ export async function GET() {
   return NextResponse.json({ draft, published, history })
 }
 
+function parseSubmittedContent(content: unknown):
+  | { ok: true; data: ReturnType<typeof parsePublicPagesContent> }
+  | { ok: false; error: string; detail: string } {
+  const strict = PublicPagesContentSchema.safeParse(content)
+  if (strict.success) return { ok: true, data: strict.data }
+
+  // parsePublicPagesContent fills gaps from the defaults and re-validates.
+  // If the result is usable, the submission was merely older than the schema.
+  const repaired = parsePublicPagesContent(content)
+  const check = PublicPagesContentSchema.safeParse(repaired)
+  if (check.success) return { ok: true, data: check.data }
+
+  const first = strict.error.issues[0]
+  const where = first?.path?.join(' → ') || 'somewhere in the content'
+  return {
+    ok: false,
+    error: `That could not be saved: ${where} ${first?.message ? `(${first.message})` : 'is not valid'}.`,
+    detail: JSON.stringify(strict.error.issues.slice(0, 5)),
+  }
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   try {
     const body = await req.json()
-    const parsed = PublicPagesContentSchema.safeParse(body.content)
-    if (!parsed.success) return NextResponse.json({ error: 'Some page fields are invalid.' }, { status: 400 })
+    // Repaired, not rejected, and this is the part that actually cost her the
+    // photographs.
+    //
+    // A rejected save saves nothing at all. So when six pages were added to the
+    // schema and her open editor was still holding a version from before them,
+    // every upload she made was refused with "Some page fields are invalid" and
+    // silently dropped. The live site went on serving the last thing that had
+    // published successfully, which is why she kept reporting old photographs
+    // after adding new ones. The error named no field, so there was nothing to
+    // act on either.
+    //
+    // A picture somebody has already uploaded must not be lost because a page
+    // they have never opened is missing from the payload. Gaps are filled from
+    // the defaults first, and only content that is still unreadable after that
+    // is refused - with the field named, so the next one is diagnosable.
+    const parsed = parseSubmittedContent(body.content)
+    if (!parsed.ok) {
+      console.error('[public pages] rejected save:', parsed.detail)
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
+    }
     if (body.action === 'save') {
       await saveValue(PUBLIC_PAGES_DRAFT_KEY, JSON.stringify(parsed.data))
       return NextResponse.json({ success: true })

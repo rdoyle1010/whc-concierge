@@ -5,8 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { createClient } from '@/lib/supabase/client'
-import { courseTitle } from '@/lib/academy'
+import { courseTitle } from '@/lib/academy-titles'
 import { ShieldCheck, ShieldX } from 'lucide-react'
 
 // Certificate lookup by code. RLS only exposes COMPLETED enrolments, so a
@@ -15,7 +14,10 @@ import { ShieldCheck, ShieldX } from 'lucide-react'
 export default function VerifyResultPage() {
   const params = useParams()
   const code = decodeURIComponent(Array.isArray(params?.code) ? params.code[0] : (params?.code as string) || '').toUpperCase()
-  const supabase = createClient()
+  // The Supabase client used to be constructed here and never used once: the
+  // check goes through /api/certificates/verify, as it must, because a public
+  // visitor has no business reading the certificates table directly. It cost
+  // 57KB gzipped on a page whose whole job is to answer one question quickly.
   const [loading, setLoading] = useState(true)
   const [cert, setCert] = useState<any>(null)
   const [name, setName] = useState('')
@@ -30,7 +32,7 @@ export default function VerifyResultPage() {
         // holder's name. Locking that table down to own-row-or-admin - which
         // was right - meant the lookup silently returned nothing, and a
         // hiring manager following the URL printed on a certificate saw
-        // "Certificate verified - WHC Professional" with no name at all,
+        // "Certificate verified - Talent House Professional" with no name at all,
         // verifying precisely nothing about who earned it.
         //
         // /api/certificates/verify already does this properly with the
@@ -66,13 +68,13 @@ export default function VerifyResultPage() {
             <>
               <ShieldCheck size={36} className="mx-auto text-green-600 mb-4" />
               <p className="text-[11px] uppercase tracking-[0.25em] text-green-700 font-semibold mb-3">Certificate verified</p>
-              <p className="font-serif text-[22px] font-bold text-ink capitalize mb-1">{name || 'WHC Professional'}</p>
+              <p className="font-serif text-[22px] font-bold text-ink capitalize mb-1">{name || 'Talent House Professional'}</p>
               <p className="text-[14px] text-gray-600 mb-1">{courseName || cert.course_slug}</p>
               <p className="text-[12px] text-secondary mb-4">
                 Completed {new Date(cert.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <p className="text-[11px] text-muted font-mono mb-6">{cert.certificate_code}</p>
-              <p className="text-[11px] text-muted">Issued by Wellness House Collective. This certificate evidences completion of a WHC Academy course and its assessment.</p>
+              <p className="text-[11px] text-muted">Issued by Talent House Collective. This certificate evidences completion of a Talent House Academy course and its assessment.</p>
             </>
           ) : (
             <>

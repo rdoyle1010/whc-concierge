@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
-import { coursesForSkill } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 import { ACADEMY } from '@/lib/academy'
 
 // Explains a signed-in professional's match with one live role: the score,
@@ -13,7 +13,7 @@ import { ACADEMY } from '@/lib/academy'
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const jobId = String(req.nextUrl.searchParams.get('job') || '').trim()
     if (!jobId) return NextResponse.json({ error: 'A job id is required.' }, { status: 400 })

@@ -1,16 +1,24 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice, type AcademyCourse } from '@/lib/academy'
-import { courseImage } from '@/lib/academy-extras'
+import { COURSE_PRICE, BUNDLE_PRICE, coursePrice } from '@/lib/academy-pricing'
+import type { CourseSummary } from '@/lib/academy-types-public'
 import { GraduationCap, Award, Clock, Check, Download } from 'lucide-react'
 
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
 
 export default function AcademyPage() {
-  const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string; is_core?: boolean })[]>(ACADEMY)
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
+  // Empty until the catalogue arrives, which is what the loading state below
+  // already handles. Seeding from the ACADEMY constant put every lesson in the
+  // Academy into this page's JavaScript - 109KB gzipped of the material members
+  // are paying to read - so that a card could show a title and a module count.
+  const [courses, setCourses] = useState<CourseSummary[]>([])
   const [enrollments, setEnrollments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busySlug, setBusySlug] = useState<string | null>(null)
@@ -89,7 +97,7 @@ export default function AcademyPage() {
   const enrolmentFor = (slug: string) => enrollments.find(e => e.course_slug === slug && e.paid_at)
   const completedCount = enrollments.filter(e => e.completed_at).length
   const categories = Array.from(new Set(courses.map(c => c.category)))
-  const coreCourses = courses.filter(course => course.is_core ?? CORE_SLUGS.includes(course.slug))
+  const coreCourses = courses.filter(course => course.is_core)
   const activeCoreSlugs = coreCourses.map(course => course.slug)
 
   return (
@@ -98,7 +106,7 @@ export default function AcademyPage() {
         <p className="dashboard-eyebrow">Learning &amp; development</p>
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap size={22} className="text-accent" />
-          <h1 className="dashboard-title">WHC Academy</h1>
+          <h1 className="dashboard-title">Talent House Academy</h1>
         </div>
         <p className="dashboard-intro mb-6 max-w-2xl">
           The Academy exists to move your career forward: learn, pass the assessment, and the verified badge joins your profile - where it strengthens your matches and shows employers exactly what you can do. Core curriculum £{(COURSE_PRICE / 100).toFixed(0)} per course, brand masterclasses £5, leadership programmes with practical toolkits.
@@ -108,10 +116,10 @@ export default function AcademyPage() {
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
         {career && (
-          <div className="mb-8 rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-6">
+          <div className="mb-8 rounded-2xl border border-[#dcd4c8] bg-[#ede8df] p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1b1a]">Your career position</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#222321]">Your career position</p>
                 <h2 className="mt-1 font-sans text-[22px] font-semibold tracking-tight text-ink">{career.position?.current || 'Building your profile'} → {career.position?.next}</h2>
                 <p className="mt-1 text-[12px] leading-5 text-secondary max-w-xl">
                   {career.position?.average_match ? <>Across {career.position.live_roles_assessed} live roles you average a {career.position.average_match}% match{career.position?.top_match ? <> - strongest: {career.position.top_match.score}% for {career.position.top_match.title}</> : null}. The learning below is chosen to move those numbers, not to sell you courses.</> : 'Complete your profile and the Academy will read the live market against your skills to recommend exactly what to learn next.'}
@@ -125,11 +133,11 @@ export default function AcademyPage() {
             </div>
 
             {career.progress?.in_progress?.length > 0 && (
-              <div className="mt-5 border-t border-[#e0dad2] pt-4">
-                <p className="mb-2 text-[11px] font-semibold text-[#1c1b1a]">Continue learning</p>
+              <div className="mt-5 border-t border-[#dcd4c8] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#222321]">Continue learning</p>
                 <div className="flex flex-wrap gap-2">
                   {career.progress.in_progress.map((item: any) => (
-                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#e0dad2] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1b1a]">
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dcd4c8] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#222321]">
                       {item.title}
                       <span className="text-[10px] text-muted">{item.lessons_done}/{item.lessons_total} lessons</span>
                     </Link>
@@ -139,18 +147,18 @@ export default function AcademyPage() {
             )}
 
             {career.gaps?.length > 0 && (
-              <div className="mt-5 border-t border-[#e0dad2] pt-4">
-                <p className="mb-1 text-[11px] font-semibold text-[#1c1b1a]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
+              <div className="mt-5 border-t border-[#dcd4c8] pt-4">
+                <p className="mb-1 text-[11px] font-semibold text-[#222321]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
                 <p className="mb-3 text-[11px] text-secondary">From the requirements of live roles you could match. Closing a gap strengthens real applications - directional, honest, no invented percentages.</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {career.gaps.map((gap: any) => (
-                    <div key={gap.skill} className="rounded-xl border border-[#e0dad2] bg-white p-3.5">
+                    <div key={gap.skill} className="rounded-xl border border-[#dcd4c8] bg-white p-3.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[13px] font-semibold text-ink truncate">{gap.skill}</p>
                         <span className="shrink-0 text-[10px] text-muted">{gap.demanded_in} live role{gap.demanded_in === 1 ? '' : 's'}</span>
                       </div>
                       {gap.courses?.length ? gap.courses.map((c: any) => (
-                        <Link key={c.slug} href={`/talent/academy/${c.slug}`} className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#1c1b1a] hover:underline">
+                        <Link key={c.slug} href={`/talent/academy/${c.slug}`} className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#222321] hover:underline">
                           <span className="truncate">→ {c.title}</span><span className="shrink-0 text-[10px] text-muted">~{c.minutes} min</span>
                         </Link>
                       )) : <p className="mt-1.5 text-[11px] text-muted">Evidence this on your profile - no course needed.</p>}
@@ -161,13 +169,13 @@ export default function AcademyPage() {
             )}
 
             {career.pathway?.length > 0 && (
-              <div className="mt-5 border-t border-[#e0dad2] pt-4">
-                <p className="mb-2 text-[11px] font-semibold text-[#1c1b1a]">Recommended for your step up to {career.position?.next}</p>
+              <div className="mt-5 border-t border-[#dcd4c8] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#222321]">Recommended for your step up to {career.position?.next}</p>
                 <div className="flex flex-wrap gap-2">
                   {career.pathway.map((item: any) => (
-                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#e0dad2] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1b1a]">
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dcd4c8] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#222321]">
                       {item.title}
-                      <span className="rounded-full bg-[#f3f0eb] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#1c1b1a]">{item.level}</span>
+                      <span className="rounded-full bg-[#ede8df] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#222321]">{item.level}</span>
                     </Link>
                   ))}
                 </div>
@@ -209,8 +217,8 @@ export default function AcademyPage() {
                   const isManagement = MANAGEMENT_PROGRAMMES.has(course.slug)
                   return (
                     <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-accent ring-2 ring-accent shadow-lg shadow-accent/20' : ''}`}>
-                      <div className="relative h-28 shrink-0">
-                        <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="relative h-28 shrink-0 bg-ink">
+                        {course.image_url && <img loading="lazy" decoding="async" src={course.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/80">Leadership programme</span>}
                       </div>
@@ -220,8 +228,8 @@ export default function AcademyPage() {
                           {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-accent text-white px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
                         </div>
                         <p className="text-[12px] text-secondary mb-2">{course.tagline}</p>
-                        <p className="text-[11px] text-muted mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
-                        {isManagement && <div className="mb-4 rounded-xl border border-accent/20 bg-[#f3f0eb] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
+                        <p className="text-[11px] text-muted mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lesson_count} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
+                        {isManagement && <div className="mb-4 rounded-xl border border-accent/20 bg-[#ede8df] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
                         <div className="mt-auto">
                           {done ? (
                             <div className="grid grid-cols-1 gap-2">
@@ -233,7 +241,7 @@ export default function AcademyPage() {
                             </div>
                           ) : enr ? (
                             <div className="grid gap-2">
-                              <Link href={`/talent/academy/${course.slug}`} className="btn-primary text-[12px] block text-center">{lessonsDone > 0 ? `Continue (${lessonsDone}/${course.lessons.length} lessons)` : 'Start course'}</Link>
+                              <Link href={`/talent/academy/${course.slug}`} className="btn-primary text-[12px] block text-center">{lessonsDone > 0 ? `Continue (${lessonsDone}/${course.lesson_count} lessons)` : 'Start course'}</Link>
                               {isManagement && <Link href={`/talent/academy/${course.slug}/toolkit`} className="btn-secondary text-[12px] inline-flex items-center justify-center gap-2"><Download size={13} /> Open toolkit</Link>}
                             </div>
                           ) : (
@@ -251,7 +259,7 @@ export default function AcademyPage() {
           ))
         )}
 
-        <p className="text-[11px] text-muted">Certificates are issued by Wellness House Collective and carry a unique verification code. They evidence course completion and knowledge assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
+        <p className="text-[11px] text-muted">Certificates are issued by Talent House Collective and carry a unique verification code. They evidence course completion and knowledge assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
       </div>
     </DashboardShell>
   )

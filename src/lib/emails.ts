@@ -1,78 +1,62 @@
 // Email notification templates for Talent House Collective
 // Uses Resend API - set RESEND_API_KEY in environment
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
+// Every message in this file goes through the shared sender, which records
+// what was sent to whom and what happened to it. Eighteen kinds of email run
+// through here across thirteen routes; before, all of them failed into a
+// console nobody reads.
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) {
-    console.log(`[Email skipped - no API key] To: ${to}, Subject: ${subject}`)
-    return
-  }
-
-  try {
-    // Log failures loudly - Resend rejections (bad key, unverified domain)
-    // otherwise fail in silence and nobody notices for months.
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} - ${detail.slice(0, 300)}`)
-    }
-  } catch (err) {
-    console.error('Email send failed:', err)
-  }
+  await sendTransactionalEmail({ to, subject, html, kind: 'notification' })
 }
 
 const wrapper = (content: string) => `
   <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
     <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
     ${content}
-    <p style="margin-top: 40px; font-size: 12px; color: #8c8781;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
+    <p style="margin-top: 40px; font-size: 12px; color: #8c8c8c;">Talent House Collective &middot; talenthousecollective.co.uk</p>
   </div>
 `
 
 export async function sendWelcomeEmail(email: string, name: string) {
   await sendEmail(email, 'Welcome to Talent House Collective', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Welcome, ${name}</p>
-    <p style="color: #57534e;">Thank you for joining Talent House Collective. Your profile is now under review by our team.</p>
-    <p style="color: #57534e;">We'll notify you within 24 hours once your profile has been approved.</p>
+    <p style="color: #57544c;">Thank you for joining Talent House Collective. Your profile is now under review by our team.</p>
+    <p style="color: #57544c;">We'll notify you within 24 hours once your profile has been approved.</p>
   `))
 }
 
 export async function sendApprovalEmail(email: string, name: string) {
   await sendEmail(email, 'Your profile is now live', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Great news, ${name}</p>
-    <p style="color: #57534e;">Your Talent House Collective profile has been approved and is now live on the platform.</p>
-    <p style="color: #57534e;">You can now browse roles, receive matches, and connect with properties.</p>
+    <p style="color: #57544c;">Your Talent House Collective profile has been approved and is now live on the platform.</p>
+    <p style="color: #57544c;">You can now browse roles, receive matches, and connect with properties.</p>
   `))
 }
 
 export async function sendRejectionEmail(email: string, name: string, reason: string) {
   await sendEmail(email, 'Your application needs attention', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
-    <p style="color: #57534e;">Unfortunately we weren't able to approve your profile at this time.</p>
-    <p style="color: #57534e; font-weight: 500;">Reason: ${reason}</p>
-    <p style="color: #57534e;">Please update your profile and resubmit for review.</p>
+    <p style="color: #57544c;">Unfortunately we weren't able to approve your profile at this time.</p>
+    <p style="color: #57544c; font-weight: 500;">Reason: ${reason}</p>
+    <p style="color: #57544c;">Please update your profile and resubmit for review.</p>
   `))
 }
 
 export async function sendNewMatchEmail(email: string, name: string, matchName: string) {
   await sendEmail(email, 'You have a new match', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">New match, ${name}</p>
-    <p style="color: #57534e;">You have a new match with <strong>${matchName}</strong> on Talent House Collective.</p>
-    <p style="color: #57534e;">Log in to your dashboard to start a conversation.</p>
+    <p style="color: #57544c;">You have a new match with <strong>${matchName}</strong> on Talent House Collective.</p>
+    <p style="color: #57544c;">Log in to your dashboard to start a conversation.</p>
   `))
 }
 
 export async function sendNewMessageEmail(email: string, name: string, senderName: string) {
   await sendEmail(email, `New message from ${senderName}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">New message</p>
-    <p style="color: #57534e;">You have a new message from <strong>${senderName}</strong>.</p>
-    <p style="color: #57534e;">Log in to your inbox to reply.</p>
+    <p style="color: #57544c;">You have a new message from <strong>${senderName}</strong>.</p>
+    <p style="color: #57544c;">Log in to your inbox to reply.</p>
   `))
 }
 
@@ -80,71 +64,108 @@ export async function sendRoleFilledEmail(email: string, name: string, roleTitle
   const outcome = variant === 'filled' ? 'filled this position' : 'closed this position'
   await sendEmail(email, `${roleTitle} at ${propertyName} has now been ${variant}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Role update</p>
-    <p style="color: #57534e;">Hi ${name || 'there'},</p>
-    <p style="color: #57534e;">Thank you for your interest in <strong>${roleTitle}</strong> at <strong>${propertyName}</strong>. The property has now ${outcome}, so it is no longer accepting applications.</p>
-    <p style="color: #57534e;">Your profile remains available for other suitable opportunities on Talent House Collective.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/jobs" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Browse current roles</a></p>
+    <p style="color: #57544c;">Hi ${name || 'there'},</p>
+    <p style="color: #57544c;">Thank you for your interest in <strong>${roleTitle}</strong> at <strong>${propertyName}</strong>. The property has now ${outcome}, so it is no longer accepting applications.</p>
+    <p style="color: #57544c;">Your profile remains available for other suitable opportunities on Talent House Collective.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/jobs" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Browse current roles</a></p>
   `))
 }
 
 export async function sendBookingConfirmedEmail(email: string, name: string, details: string) {
   await sendEmail(email, 'Booking confirmed', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Booking confirmed</p>
-    <p style="color: #57534e;">Your booking has been confirmed: ${details}</p>
+    <p style="color: #57544c;">Your booking has been confirmed: ${details}</p>
   `))
 }
 
 export async function sendReviewRequestEmail(email: string, name: string, otherName: string) {
   await sendEmail(email, `How was your experience with ${otherName}?`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Leave a review</p>
-    <p style="color: #57534e;">How was your experience with <strong>${otherName}</strong>?</p>
-    <p style="color: #57534e;">Log in to leave a review and help the WHC community.</p>
+    <p style="color: #57544c;">How was your experience with <strong>${otherName}</strong>?</p>
+    <p style="color: #57544c;">Log in to leave a review and help the Talent House community.</p>
   `))
 }
 
 export async function sendCourseGiftEmail(email: string, name: string, course: string, awarded: boolean) {
   await sendEmail(email, awarded ? `Certificate awarded - ${course}` : `A course has been unlocked for you - ${course}`, wrapper(awarded ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Congratulations, ${name}</p>
-    <p style="color: #57534e;">Wellness House Collective has awarded you the certificate for <strong>${course}</strong>. It is live on your profile now, visible to every property searching the directory.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your certificate</a></p>
+    <p style="color: #57544c;">Talent House Collective has awarded you the certificate for <strong>${course}</strong>. It is live on your profile now, visible to every property searching the directory.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your certificate</a></p>
   ` : `
-    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A gift from WHC, ${name}</p>
-    <p style="color: #57534e;">Wellness House Collective has enrolled you on <strong>${course}</strong>, with our compliments. Complete the modules, pass the assessment, and the certificate and profile badge are yours.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A gift from Talent House, ${name}</p>
+    <p style="color: #57544c;">Talent House Collective has enrolled you on <strong>${course}</strong>, with our compliments. Complete the modules, pass the assessment, and the certificate and profile badge are yours.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
   `))
 }
 
+// The account line is not decoration. A guest buys by email, and the email
+// decides the account: an address that already has one gets the course there.
+// Somebody who pays with a personal address and later signs in with a work one
+// finds no course and concludes the purchase failed. Naming the address here,
+// in the one message they keep, is what makes that recoverable without support.
 export async function sendCourseAccessEmail(email: string, name: string, course: string, link: string) {
-  await sendEmail(email, `Your WHC Academy course is ready - ${course}`, wrapper(`
+  await sendEmail(email, `Your Talent House Academy course is ready - ${course}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Welcome to the Academy, ${name}</p>
-    <p style="color: #57534e;">Thank you for your purchase. Your course <strong>${course}</strong> is ready - the button below signs you straight in, no password needed.</p>
-    <p style="margin-top: 24px;"><a href="${link}" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
-    <p style="color: #57534e; margin-top: 24px; font-size: 13px;">Complete the lessons, pass the final quiz (80%), and your certificate is issued instantly with a unique verification code. A free WHC profile has been created for you - complete it any time to be visible to five-star properties hiring on the platform.</p>
+    <p style="color: #57544c;">Thank you for your purchase. Your course <strong>${course}</strong> is ready - the button below signs you straight in, no password needed.</p>
+    <p style="margin-top: 24px;"><a href="${link}" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
+    <p style="color: #57544c; margin-top: 24px; padding: 12px 16px; background: #ede8df; font-size: 13px;">Your course is on the account <strong>${email}</strong>. Sign in with that address whenever you come back to it - a different address will not find this course.</p>
+    <p style="color: #57544c; margin-top: 24px; font-size: 13px;">Complete the lessons, pass the final quiz (80%), and your certificate is issued instantly with a unique verification code. A free Talent House profile has been created for you - complete it any time to be visible to five-star properties hiring on the platform.</p>
   `))
 }
 
 export async function sendVerificationResultEmail(email: string, name: string, verified: boolean, reason: string | null) {
-  await sendEmail(email, verified ? 'You are WHC Verified' : 'Your verification needs attention', wrapper(verified ? `
+  await sendEmail(email, verified ? 'You are Talent House Verified' : 'Your verification needs attention', wrapper(verified ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Congratulations, ${name}</p>
-    <p style="color: #57534e;">Your insurance and qualifications checked out. The <strong>WHC Verified</strong> badge now shows on your profile and in the agency directory - properties consistently choose verified therapists first.</p>
-    <p style="color: #57534e;">We'll remind you before your insurance expires so the badge never lapses.</p>
+    <p style="color: #57544c;">Your insurance and qualifications checked out. The <strong>Talent House Verified</strong> badge now shows on your profile and in the agency directory - properties consistently choose verified therapists first.</p>
+    <p style="color: #57544c;">We'll remind you before your insurance expires so the badge never lapses.</p>
   ` : `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
-    <p style="color: #57534e;">We couldn't verify your documents this time.</p>
-    ${reason ? `<p style="color: #57534e; font-weight: 500;">Reason: ${reason}</p>` : ''}
-    <p style="color: #57534e;">Update your documents and resubmit from your Verification page - it only takes a minute.</p>
+    <p style="color: #57544c;">We couldn't verify your documents this time.</p>
+    ${reason ? `<p style="color: #57544c; font-weight: 500;">Reason: ${reason}</p>` : ''}
+    <p style="color: #57544c;">Update your documents and resubmit from your Verification page - it only takes a minute.</p>
   `))
 }
 
-export async function sendInsuranceExpiryEmail(email: string, name: string, expiryDate: string, lapsed: boolean) {
-  await sendEmail(email, lapsed ? 'Your WHC Verified badge has lapsed' : 'Your insurance is about to expire', wrapper(lapsed ? `
+// A certificate decision used to create an in-app notification and nothing
+// else, so a professional who uploaded one only found out by logging back in
+// and noticing a bell. Right-to-work decisions have always sent an email; this
+// makes the two consistent.
+export async function sendCertificateResultEmail(
+  email: string, name: string, certificate: string,
+  decision: 'verified' | 'rejected' | 'more_information', note: string | null,
+) {
+  const subject = decision === 'verified'
+    ? `${certificate} is verified`
+    : decision === 'rejected'
+      ? `${certificate} could not be verified`
+      : `${certificate} needs a little more`
+
+  const body = decision === 'verified' ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Good news, ${name}</p>
+    <p style="color: #57544c;"><strong>${certificate}</strong> has been reviewed and verified by Talent House. It now shows as verified on your profile, where properties can see it.</p>
+  ` : decision === 'rejected' ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
-    <p style="color: #57534e;">Your insurance expired on <strong>${expiryDate}</strong>, so your WHC Verified badge has been paused. Properties can still book you, but the badge is a real edge - especially for urgent cover.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/verification" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload your new certificate</a></p>
+    <p style="color: #57544c;">We could not verify <strong>${certificate}</strong> this time.</p>
+    ${note ? `<p style="color: #57544c; font-weight: 500;">Reason: ${note}</p>` : ''}
+    <p style="color: #57544c;">Upload a clearer copy from your profile and we will look again.</p>
   ` : `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
-    <p style="color: #57534e;">Your insurance certificate expires on <strong>${expiryDate}</strong>. Upload your renewal now and your WHC Verified badge carries straight on - no gap, no fuss.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/verification" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload renewal</a></p>
+    <p style="color: #57544c;">We need a little more to verify <strong>${certificate}</strong>.</p>
+    ${note ? `<p style="color: #57544c; font-weight: 500;">${note}</p>` : ''}
+    <p style="color: #57544c;">Add it from your profile and we will finish the check.</p>
+  `
+  await sendEmail(email, subject, wrapper(body))
+}
+
+export async function sendInsuranceExpiryEmail(email: string, name: string, expiryDate: string, lapsed: boolean) {
+  await sendEmail(email, lapsed ? 'Your Talent House Verified badge has lapsed' : 'Your insurance is about to expire', wrapper(lapsed ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #57544c;">Your insurance expired on <strong>${expiryDate}</strong>, so your Talent House Verified badge has been paused. Properties can still book you, but the badge is a real edge - especially for urgent cover.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/verification" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload your new certificate</a></p>
+  ` : `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #57544c;">Your insurance certificate expires on <strong>${expiryDate}</strong>. Upload your renewal now and your Talent House Verified badge carries straight on - no gap, no fuss.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/verification" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload renewal</a></p>
   `))
 }
 
@@ -162,26 +183,56 @@ export async function sendAgencyOfferEmail(
     : ''
   await sendEmail(email, subject, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">${opts.urgent ? 'Urgent cover needed today' : 'New shift offer'}</p>
-    <p style="color: #57534e;">Hi ${name}, <strong>${opts.propertyName}</strong> has offered you an agency shift on <strong>${opts.shiftDate}</strong> at <strong>£${opts.rate}/hour</strong>${totalLine}.</p>
+    <p style="color: #57544c;">Hi ${name}, <strong>${opts.propertyName}</strong> has offered you an agency shift on <strong>${opts.shiftDate}</strong> at <strong>£${opts.rate}/hour</strong>${totalLine}.</p>
     ${expiryLine}
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/agency" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View &amp; respond</a></p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/agency" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View &amp; respond</a></p>
   `))
 }
 
 export async function sendFeaturedExpiringEmail(email: string, name: string) {
   await sendEmail(email, 'Your featured profile expires in 3 days', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Featured expiring soon</p>
-    <p style="color: #57534e;">Hi ${name}, your featured profile on Talent House Collective expires in 3 days.</p>
-    <p style="color: #57534e;">Renew now to keep your premium visibility.</p>
+    <p style="color: #57544c;">Hi ${name}, your featured profile on Talent House Collective expires in 3 days.</p>
+    <p style="color: #57544c;">Renew now to keep your premium visibility.</p>
   `))
 }
 
 export async function sendFeaturedTalentEmail(email: string, employerName: string, talentName: string, headline: string) {
   await sendEmail(email, `Featured talent: ${talentName}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">New featured professional</p>
-    <p style="color: #57534e;">Hi ${employerName || 'there'}, <strong>${talentName}</strong>${headline ? ` - ${headline}` : ''} is now featured on Talent House Collective.</p>
-    <p style="color: #57534e;">View their profile, check their experience against your live roles and add them to your shortlist.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/employer/candidates" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View featured talent</a></p>
+    <p style="color: #57544c;">Hi ${employerName || 'there'}, <strong>${talentName}</strong>${headline ? ` - ${headline}` : ''} is now featured on Talent House Collective.</p>
+    <p style="color: #57544c;">View their profile, check their experience against your live roles and add them to your shortlist.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/employer/candidates" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View featured talent</a></p>
+  `))
+}
+
+// A property reaching out to somebody who has never heard of them.
+//
+// Registering interest and requesting a private introduction both told the
+// employer "the professional has been notified" and sent no email at all -
+// only an in-app notification, a mobile push to an app most people do not
+// have, and an SMS if they had opted in. So the one message that matters
+// most, to the one person with no reason to log in and check, was the one
+// message the platform never sent. A property said "come and work for us"
+// and the professional heard nothing.
+export async function sendPropertyInterestEmail(email: string, name: string, propertyName: string, roleTitle: string) {
+  await sendEmail(email, `${propertyName} is interested in you`, wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A property has asked for you by name</p>
+    <p style="color: #57544c;">Hi ${name || 'there'}, <strong>${propertyName}</strong> has registered interest in you for their <strong>${roleTitle}</strong> role.</p>
+    <p style="color: #57544c;">They have seen your profile and chosen you deliberately. Have a look at the role and, if it suits, apply - your interest goes straight back to them.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/jobs" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">See the role</a></p>
+  `))
+}
+
+// The confidential version. The property is named; the professional is not
+// revealed to them until the introduction is accepted, and the email says so
+// because that is the whole reason somebody uses this rather than applying.
+export async function sendPrivateApproachEmail(email: string, name: string, propertyName: string) {
+  await sendEmail(email, `${propertyName} would like an introduction`, wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A confidential introduction</p>
+    <p style="color: #57544c;">Hi ${name || 'there'}, <strong>${propertyName}</strong> would like to be introduced to you.</p>
+    <p style="color: #57544c;">Nothing has been shared yet. Accepting reveals your full profile to them and opens messaging. Declining tells them nothing at all about who you are - not your name, and not that you said no.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/dashboard" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Read the approach</a></p>
   `))
 }
 
@@ -190,17 +241,17 @@ export async function sendFeaturedTalentEmail(email: string, employerName: strin
 export async function sendAgencyUpdateEmail(email: string, name: string, subject: string, line: string, link = '/') {
   await sendEmail(email, subject, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">${subject}</p>
-    <p style="color: #57534e;">Hi ${name},</p>
-    <p style="color: #57534e;">${line}</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk${link}" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View &amp; respond</a></p>
+    <p style="color: #57544c;">Hi ${name},</p>
+    <p style="color: #57544c;">${line}</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk${link}" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View &amp; respond</a></p>
   `))
 }
 
 export async function sendReferralRewardEmail(email: string, name: string) {
   await sendEmail(email, 'You have earned a free month', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Thank you, ${name}</p>
-    <p style="color: #57534e;">Someone you referred has just joined Talent House Collective, so you have earned a referral reward.</p>
-    <p style="color: #57534e;">A free month will be applied to your next paid listing automatically - nothing to do on your end.</p>
-    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/employer/dashboard" style="display: inline-block; background: #1c1b1a; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your dashboard</a></p>
+    <p style="color: #57544c;">Someone you referred has just joined Talent House Collective, so you have earned a referral reward.</p>
+    <p style="color: #57544c;">A free month will be applied to your next paid listing automatically - nothing to do on your end.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/employer/dashboard" style="display: inline-block; background: #222321; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your dashboard</a></p>
   `))
 }

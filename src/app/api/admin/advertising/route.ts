@@ -11,7 +11,7 @@ async function requireAdmin() {
 }
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data, error } = await admin.from('ad_placements').select('*').order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json()
   const action = String(body.action || '')
   const id = String(body.id || '')

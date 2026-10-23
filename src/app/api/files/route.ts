@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getRequestUser } from '@/lib/request-user'
 
 const PRIVATE_BUCKETS = new Set(['talent-documents', 'message-attachments'])
 
@@ -83,17 +82,12 @@ async function candidateRelationshipStrength(
 }
 
 export async function GET(req: NextRequest) {
-  const cookieStore = await cookies()
-  const auth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
-  )
-  const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const user = await getRequestUser(req)
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const bucket = String(req.nextUrl.searchParams.get('bucket') || '')
   const path = String(req.nextUrl.searchParams.get('path') || '')
+  const wantsJson = req.nextUrl.searchParams.get('format') === 'json'
   if (!PRIVATE_BUCKETS.has(bucket) || !path || path.startsWith('/') || path.includes('..') || path.includes('\\')) {
     return NextResponse.json({ error: 'Invalid file request' }, { status: 400 })
   }
@@ -122,9 +116,10 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!allowed) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 60)
   if (error || !data?.signedUrl) return NextResponse.json({ error: 'File not found' }, { status: 404 })
+  if (wantsJson) return NextResponse.json({ url: data.signedUrl, expiresIn: 60 })
   return NextResponse.redirect(data.signedUrl)
 }

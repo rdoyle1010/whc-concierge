@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Building2, CheckCircle2, FileText, MapPin, Paperclip, Search, Sparkles, Upload, X } from 'lucide-react'
+import AiWrite from '@/components/AiWrite'
 
 const BUCKET = 'property-fact-documents'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -13,7 +14,7 @@ const fields = {
   arrival: [
     ['directions','Directions / how to find us'], ['nearest_transport','Nearest train / tube'],
     ['parking_details','Where exactly to park'], ['staff_entrance','Staff entrance'], ['arrival_contact_name','Who to ask for on arrival'], ['arrival_contact_role','Contact role'],
-    ['arrival_phone','Emergency / on-the-day number'], ['recommended_arrival_buffer_minutes','Recommended arrival buffer (minutes)'], ['uniform_required','Uniform required'], ['worker_should_bring','What the Spa Platform worker should bring'],
+    ['arrival_phone','Emergency / on-the-day number'], ['recommended_arrival_buffer_minutes','Recommended arrival buffer (minutes)'], ['uniform_required','Uniform required'], ['worker_should_bring','What the Talent House Collective worker should bring'],
     ['changing_facilities','Changing facilities'], ['locker_information','Locker information'],
   ],
   welfare: [
@@ -64,13 +65,25 @@ function FactFileSection({
           <div key={key} className={LONG_FIELDS.has(key) ? 'md:col-span-2' : ''}>
             <label className="block text-[11px] font-medium text-ink mb-1.5">{label}</label>
             {LONG_FIELDS.has(key) ? (
-              <textarea
-                rows={3}
-                aria-label={label}
-                className="input-field text-[13px] resize-y"
-                value={form[key] || ''}
-                onChange={e => onChange(key, e.target.value)}
-              />
+              <>
+                <textarea
+                  rows={4}
+                  aria-label={label}
+                  className="input-field text-[13px] resize-y"
+                  value={form[key] || ''}
+                  onChange={e => onChange(key, e.target.value)}
+                />
+                {/* Every long box, from one shape. Twelve near-identical
+                    entries in ai-write would have drifted apart within a
+                    month; the box tells the writer which one it is. */}
+                <AiWrite
+                  className="mt-2"
+                  field="property_policy"
+                  subject={label}
+                  value={form[key] || ''}
+                  onAccept={text => onChange(key, text)}
+                />
+              </>
             ) : (
               <input
                 aria-label={label}
@@ -104,7 +117,7 @@ export default function PropertyFactFilePage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: employer } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
+      const { data: employer } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).maybeSingle()
       setProfile(employer)
       if (employer) {
         setPostcode(employer.postcode || '')
@@ -238,7 +251,7 @@ export default function PropertyFactFilePage() {
       <h1 className="dashboard-title">Property Fact File</h1>
       <p className="dashboard-intro max-w-3xl">Create the operational information every Agency worker and Residency specialist needs before arriving at your property.</p>
 
-      <div className="my-7 border-l-2 border-[#1c1b1a] bg-white px-5 py-4">
+      <div className="my-7 border-l-2 border-[#222321] bg-white px-5 py-4">
         <div className="flex gap-3"><Sparkles size={17} className="text-ink shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">One master file. Automatic Before You Arrive packs.</p><p className="text-[12px] text-muted mt-1 leading-5">When a booking is confirmed, Talent House Collective takes a snapshot of this file and adds the booking-specific date, times and details. Agency receives the concise operational version; Residency receives the extended stay information too.</p></div></div>
       </div>
 
@@ -257,7 +270,7 @@ export default function PropertyFactFilePage() {
         <h2 className="dashboard-section-title">Getting here & arrival</h2>
         <p className="text-[12px] text-muted mt-1 mb-5 max-w-3xl">Remove the uncertainty before someone travels to you.</p>
 
-        <div className="border border-border bg-[#f3f0eb] p-4 mb-5">
+        <div className="border border-border bg-[#ede8df] p-4 mb-5">
           <div className="flex items-center gap-2 mb-3"><MapPin size={15} className="text-ink"/><p className="text-[12px] font-semibold text-ink">Find the property address</p></div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input aria-label="Postcode" className="input-field text-[13px] flex-1" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} placeholder="Enter postcode, e.g. BD20 5QG" />
@@ -267,7 +280,7 @@ export default function PropertyFactFilePage() {
           {addressLookupMessage && <p className="mt-2 text-[11px] text-muted">{addressLookupMessage}</p>}
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className="block text-[11px] font-medium text-ink mb-1.5">Property address</label><input aria-label="Property address" className="input-field text-[13px]" value={form.property_address || ''} onChange={e => set('property_address', e.target.value)} placeholder="Full address" /></div>
-            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Map link</label><input aria-label="Map link" className="input-field text-[13px] bg-[#f3f0eb]" value={form.map_url || ''} onChange={e => set('map_url', e.target.value)} placeholder="Created automatically after address selection" /></div>
+            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Map link</label><input aria-label="Map link" className="input-field text-[13px] bg-[#ede8df]" value={form.map_url || ''} onChange={e => set('map_url', e.target.value)} placeholder="Created automatically after address selection" /></div>
           </div>
         </div>
 

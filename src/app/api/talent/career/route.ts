@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
-import { careerPosition, coursesForSkill, courseMeta } from '@/lib/academy-meta'
+import { careerPosition, courseMeta } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 import { courseBySlug } from '@/lib/academy'
 import { calculateMatchScore } from '@/lib/matching'
 
 // Career Intelligence: where the professional sits, what the live market is
 // asking for, the gaps between the two, and the course that closes each gap.
-// Salary signals follow the WHC credibility rules - a number is only shown
+// Salary signals follow the Talent House credibility rules - a number is only shown
 // with its sample size, and below 30 records nothing is shown at all.
 
 const SALARY_SUPPRESS_BELOW = 30
@@ -35,7 +36,7 @@ function quantile(values: number[], q: number): number | null {
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
 
   // The full profile row: the match-uplift computation below feeds the real
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Gap -> course recommendations: demanded skills the professional lacks,
-  // each mapped to the WHC course that teaches it, plus the ladder's
+  // each mapped to the Talent House course that teaches it, plus the ladder's
   // recommended next courses.
   const { data: enrolments } = await admin.from('course_enrollments')
     .select('course_slug, completed_at').eq('candidate_id', candidate.id).not('paid_at', 'is', null)

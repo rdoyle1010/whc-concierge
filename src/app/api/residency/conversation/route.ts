@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { listingId } = await req.json()
     if (!listingId) return NextResponse.json({ error: 'Missing residency listing' }, { status: 400 })
@@ -65,12 +65,13 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (!existingMessage) {
-      await admin.from('messages').insert({
+      const { error: messageError } = await admin.from('messages').insert({
         sender_id: user.id,
         recipient_id: listing.user_id,
         content: `I'd like to discuss a possible ${listing.primary_specialism || 'wellness'} residency.`,
         read: false,
       })
+      if (messageError) console.error('Message not delivered into the thread:', messageError.message)
     }
 
     try {

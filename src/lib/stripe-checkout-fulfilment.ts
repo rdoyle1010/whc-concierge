@@ -1,0 +1,726 @@
+import Stripe from 'stripe'
+import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
+import { publishPaidJobPosting } from '@/lib/job-posting-fulfilment'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
+import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
+import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail, sendFeaturedTalentEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
+import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
+import { fulfilCommercialPurchase, recordCommercialPurchase } from '@/lib/commercial-fulfilment'
+import { applyAgencyCaseAdjustment } from '@/lib/agency-case-adjustment'
+import { getStripe } from '@/lib/stripe'
+import { randomUUID } from 'node:crypto'
+import { sendStandardsReceiptEmail } from '@/lib/documents/receipt-email'
+
+// Everything a completed Stripe checkout has to deliver, in one place.
+//
+// This lived inside the webhook and nowhere else, which meant the webhook was
+// the only thing that could deliver a purchase. When its URL was wrong for
+// several days, every payment through it took the money and delivered
+// nothing: no course access, no agency listing, no featured placement, and no
+// way for the buyer to say so or for the platform to notice.
+//
+// Job adverts were rescued by giving them a second path that asks Stripe
+// directly. Doing that eight more times would have meant eight more copies of
+// fulfilment logic, and the copy that drifts is always the one nobody watches.
+// So the logic moved here instead, and both callers - the webhook, and the
+// confirm route the browser hits on its way back from Stripe - run exactly
+// the same code. Whichever arrives first wins; the second is a no-op, because
+// every branch below is idempotent on its own record.
+
+export type FulfilmentOutcome =
+  | { ok: true; note?: string }
+  | { ok: false; retry: boolean; message: string }
+
+async function convertReferral(supabase: any, candidateId: string) {
+  try {
+    const { data: cand } = await supabase.from('candidate_profiles')
+      .select('id, full_name, referred_by').eq('id', candidateId).maybeSingle()
+    if (!cand?.referred_by) return
+    const { data: ref } = await supabase.from('referrals')
+      .update({ status: 'converted', converted_at: new Date().toISOString() })
+      .eq('referred_candidate_id', cand.id)
+      .eq('status', 'pending')
+      .select('referrer_candidate_id')
+      .maybeSingle()
+    if (!ref) return
+    const { data: referrer } = await supabase.from('candidate_profiles')
+      .select('user_id, full_name').eq('id', ref.referrer_candidate_id).maybeSingle()
+    if (referrer?.user_id) {
+      await createNotification(referrer.user_id, 'general', 'You’ve earned a free month',
+        `${cand.full_name || 'Your friend'} just joined the agency register with your link - a free month will be applied to your listing. Thank you for growing the collective.`,
+        '/talent/agency/settings')
+      const { data: u } = await supabase.auth.admin.getUserById(referrer.user_id)
+      if (u?.user?.email) {
+        await sendReferralRewardEmail(u.user.email, referrer.full_name || 'there')
+      }
+    }
+  } catch (e: any) {
+    console.error('Referral conversion failed (non-fatal):', e?.message)
+  }
+}
+
+function subscriptionPeriodEnd(subscription: Stripe.Subscription, fallbackDays: number) {
+  const itemEnd = (subscription.items?.data?.[0] as any)?.current_period_end
+  const subscriptionEnd = (subscription as any)?.current_period_end
+  const unix = Number(itemEnd || subscriptionEnd || 0)
+  if (unix > 0) return new Date(unix * 1000).toISOString()
+  return new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000).toISOString()
+}
+
+async function announceFeaturedEmployer(supabase: any, employerId: string) {
+  try {
+    const { data: employer } = await supabase.from('employer_profiles')
+      .select('property_name,company_name,location')
+      .eq('id', employerId).maybeSingle()
+    if (!employer) return
+    const propertyName = employer.property_name || employer.company_name || 'A Talent House property'
+    const { data: talent } = await supabase.from('candidate_profiles')
+      .select('user_id,full_name')
+      .eq('approval_status', 'approved')
+      .or('profile_visible.eq.true,profile_visible.is.null')
+
+    await Promise.allSettled((talent || []).map(async (candidate: any) => {
+      if (!candidate.user_id) return
+      await createNotification(
+        candidate.user_id,
+        'general',
+        `Featured property: ${propertyName}`,
+        `${propertyName}${employer.location ? ` in ${employer.location}` : ''} is now featured on Talent House Collective.`,
+        '/properties',
+      )
+      const { data: talentUser } = await supabase.auth.admin.getUserById(candidate.user_id)
+      if (talentUser.user?.email) {
+        await sendFeaturedEmployerEmail(
+          talentUser.user.email,
+          candidate.full_name || 'there',
+          propertyName,
+          employer.location || '',
+        )
+      }
+    }))
+  } catch (e: any) {
+    console.error('Featured employer talent alert failed (non-fatal):', e?.message)
+  }
+}
+
+// Types whose delivery happens on a different path, so falling through here
+// is correct rather than a failure. Residency checkouts are intercepted by
+// handleResidencyStripeEvent before the webhook's switch ever runs.
+const DELIVERED_ELSEWHERE = new Set(['residency_booking', 'residency_listing'])
+
+// Money in, nothing out.
+//
+// Every branch below returned a bare { ok: true } whether or not it had
+// recognised the purchase, so a checkout carrying an unknown type - or the
+// right type with its companion id missing, which is the same thing to an
+// `&&` - took the payment, delivered nothing, and said the word "ok" on the
+// way out. Nobody would have found out until the buyer complained, and most
+// people do not complain, they just never come back.
+//
+// One-off payments get one chance: there is no invoice.paid to follow, no
+// subscription lifecycle to catch it later. So this shouts. It still returns
+// ok, because a retry would match nothing a second time either - the point is
+// that a human sees it while the payment is still refundable.
+async function nothingWasDelivered(
+  session: Stripe.Checkout.Session,
+  meta: Stripe.Metadata | null,
+): Promise<FulfilmentOutcome> {
+  const type = meta?.type || '(none)'
+  if (DELIVERED_ELSEWHERE.has(type)) return { ok: true, note: 'delivered elsewhere' }
+  // Subscriptions are delivered by invoice.paid and the subscription events.
+  if (session.mode === 'subscription') return { ok: true, note: 'subscription' }
+  if (session.payment_status !== 'paid') return { ok: true, note: 'unpaid' }
+
+  const amount = typeof session.amount_total === 'number'
+    ? `\u00a3${(session.amount_total / 100).toFixed(2)}`
+    : 'An amount'
+  const who = session.customer_details?.email || session.customer_email || 'an unidentified buyer'
+  await notifyAdmins(
+    'A payment was taken and nothing was delivered',
+    `${amount} was paid by ${who} on Stripe checkout ${session.id}, and no fulfilment matched it. `
+    + `The purchase was marked "${type}"${meta && Object.keys(meta).length ? ` with ${Object.keys(meta).filter(k => k !== 'type').join(', ') || 'no other details'}` : ' with no other details'}. `
+    + 'Deliver it by hand or refund it in Stripe - the buyer has paid and has nothing.',
+    '/admin/dashboard',
+  )
+  console.error('[Stripe fulfilment] nothing delivered for session', session.id, 'type', type)
+  return { ok: true, note: 'undelivered' }
+}
+
+/**
+ * Deliver a completed checkout.
+ *
+ * Returns rather than throws so the caller decides what a failure means: the
+ * webhook releases its event-ledger row and answers 500 so Stripe retries,
+ * while the confirm route tells the person standing in front of it to try
+ * again. Neither interpretation belongs in here.
+ */
+export async function fulfilCheckoutSession(
+  supabase: any,
+  session: Stripe.Checkout.Session,
+  ctx?: { requestUrl?: string },
+): Promise<FulfilmentOutcome> {
+  const stripe = getStripe()
+  const meta = session.metadata
+  let delivered = false
+
+  if (meta?.type === 'commercial_product' && meta?.product) {
+    delivered = true
+    // Guaranteed fulfilment for memberships and featured products - the
+    // redirect to /api/commercial/confirm never fires if the tab closes.
+    const result = await fulfilCommercialPurchase(supabase, stripe, session)
+    if (!result.ok) {
+      console.error('[Commercial product] fulfilment failed:', result.error)
+      return { ok: false, retry: true, message: 'commercial_product fulfilment failed' }
+    }
+  }
+
+  // A document, or a pack of them.
+  //
+  // Nothing is granted to an account, because a spa director buys without
+  // creating one. The order carries a token, the receipt carries a link with
+  // it, and that link is their library. Idempotent on the session id, so the
+  // webhook and the browser coming back from Stripe cannot deliver twice.
+  if (meta?.type === 'standards' && (meta?.pack_slug || meta?.document_reference)) {
+    delivered = true
+    const email = session.customer_details?.email || session.customer_email || ''
+    if (!email) {
+      // Without an address there is nowhere to send the library, and a buyer
+      // who has paid and received nothing must not be left to notice it
+      // themselves.
+      await notifyAdmins(
+        'A Standards purchase arrived with no email address',
+        `Stripe checkout ${session.id} was paid and carries no address, so the library link has nowhere to go. `
+        + 'Find the buyer in Stripe and send it by hand.',
+        '/admin/dashboard',
+      )
+      return { ok: true, note: 'standards_no_email' }
+    }
+
+    const { data: order, error: orderError } = await supabase.from('standards_orders').upsert({
+      pack_slug: meta.pack_slug || null,
+      document_reference: meta.document_reference || null,
+      buyer_email: email,
+      buyer_name: session.customer_details?.name || null,
+      buyer_user_id: meta.buyer_user_id || null,
+      amount_pence: Number(session.amount_total || 0),
+      currency: session.currency || 'gbp',
+      stripe_checkout_session_id: session.id,
+      stripe_payment_intent_id: typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id || null,
+      // Generated here rather than at checkout, so a token only ever exists
+      // for a purchase that was actually paid for.
+      access_token: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'stripe_checkout_session_id', ignoreDuplicates: false })
+      .select('id, access_token, receipt_sent_at')
+      .maybeSingle()
+
+    if (orderError || !order) {
+      console.error('[Standards] order could not be recorded:', orderError?.message)
+      return { ok: false, retry: true, message: 'standards order failed' }
+    }
+
+    // The receipt is what the buyer actually receives, so a failure to send it
+    // is a failure to deliver, not a footnote. Sent once: the flag is set
+    // after it leaves, and the second caller finds it already set.
+    if (!order.receipt_sent_at) {
+      const origin = (ctx?.requestUrl && new URL(ctx.requestUrl).origin) || 'https://talenthousecollective.co.uk'
+      // A file sold on its own carries a slug no pack knows, so the receipt
+      // is told its name. Looked up only for those, because every other
+      // purchase resolves from the catalogue without a round trip.
+      let itemName: string | null = null
+      if (String(meta.pack_slug || '').startsWith('file-')) {
+        const { data: sold } = await supabase.from('standards_attachments')
+          .select('name').eq('slug', meta.pack_slug).maybeSingle()
+        itemName = sold?.name || null
+      }
+
+      const sent = await sendStandardsReceiptEmail({
+        to: email,
+        name: session.customer_details?.name || null,
+        packSlug: meta.pack_slug || null,
+        reference: meta.document_reference || null,
+        itemName,
+        amountPence: Number(session.amount_total || 0),
+        // Their account, not a bearer link. The token still exists on the
+        // row and the old route still honours it, so a purchase made before
+        // this rule was never stranded, but nothing new is sold on a link
+        // that can be forwarded or lost with an inbox.
+        libraryUrl: `${origin}/my-documents`,
+      })
+      if (sent) {
+        await supabase.from('standards_orders')
+          .update({ receipt_sent_at: new Date().toISOString() }).eq('id', order.id)
+      } else {
+        await notifyAdmins(
+          'A Standards purchase was paid for and its link did not send',
+          `${email} paid for ${meta.pack_slug || meta.document_reference} and the receipt email failed. `
+          + 'They have paid and have nothing. Send them the library link by hand from the orders table.',
+          '/admin/dashboard',
+        )
+      }
+    }
+  }
+
+  if (meta?.type === 'sponsored_ad' && meta?.placement && meta?.brand_name) {
+    delivered = true
+    const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+    const { error } = await supabase.from('ad_placements').upsert({
+      brand_name: meta.brand_name,
+      category: 'Sponsored',
+      placement: meta.placement,
+      website_url: meta.website_url || null,
+      tagline: meta.tagline || null,
+      logo_url: meta.logo_url || null,
+      contact_email: meta.contact_email || session.customer_details?.email || null,
+      monthly_rate: Number(meta.monthly_pence || session.amount_total || 0) / 100,
+      status: 'pending',
+      payment_status: 'paid',
+      review_status: 'pending',
+      start_date: new Date().toISOString().slice(0, 10),
+      stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+      stripe_subscription_id: subscriptionId || null,
+      stripe_checkout_session_id: session.id,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'stripe_checkout_session_id' })
+    if (error) {
+      console.error('[Sponsored advert] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'sponsored_ad fulfilment failed' }
+    }
+  }
+
+  if (meta?.type === 'featured_profile' && meta?.candidate_id) {
+    delivered = true
+    const { data: featuredCandidate } = await supabase.from('candidate_profiles').update({
+      is_featured: true,
+      featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      stripe_customer_id: session.customer as string,
+    }).eq('id', meta.candidate_id).select('full_name, headline').maybeSingle()
+
+    try {
+      const { data: employers } = await supabase.from('employer_profiles')
+        .select('user_id, property_name, company_name')
+        .eq('approval_status', 'approved')
+      await Promise.allSettled((employers || []).map(async (employer: any) => {
+        if (!employer.user_id) return
+        await createNotification(
+          employer.user_id,
+          'general',
+          `Featured talent: ${featuredCandidate?.full_name || 'New professional'}`,
+          featuredCandidate?.headline || 'A featured professional is available to view and shortlist.',
+          '/employer/candidates',
+        )
+        // Preference-gated ('product_news'): the featured-talent broadcast
+        // is promotional; the in-app notification above always fires.
+        if (!(await emailAllowed(supabase, employer.user_id, 'product_news'))) return
+        const { data: employerUser } = await supabase.auth.admin.getUserById(employer.user_id)
+        if (employerUser.user?.email) {
+          await sendFeaturedTalentEmail(
+            employerUser.user.email,
+            employer.property_name || employer.company_name || '',
+            featuredCandidate?.full_name || 'A new professional',
+            featuredCandidate?.headline || '',
+          )
+        }
+      }))
+    } catch (e: any) {
+      console.error('Featured talent employer alert failed (non-fatal):', e?.message)
+    }
+  }
+
+  if (meta?.type === 'featured_employer' && meta?.employer_id) {
+    delivered = true
+    let featuredUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+    if (subscriptionId) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+        featuredUntil = subscriptionPeriodEnd(subscription, subscription.items?.data?.[0]?.price?.recurring?.interval === 'year' ? 365 : 30)
+      } catch {}
+    }
+    const { error } = await supabase.from('employer_profiles').update({
+      featured_employer: true,
+      featured_until: featuredUntil,
+      featured_payment_source: 'stripe',
+      stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+    }).eq('id', meta.employer_id)
+    if (error) {
+      console.error('[Featured employer] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'featured_employer fulfilment failed' }
+    }
+    await announceFeaturedEmployer(supabase, meta.employer_id)
+  }
+
+  // Extra money agreed in a shift resolution. This branch did not exist:
+  // the credit was applied only by a browser redirect, so a closed tab
+  // meant Stripe held the property's money, the case never closed and
+  // the professional was never paid.
+  if (meta?.type === 'agency_case_adjustment' && meta?.case_id) {
+    delivered = true
+    const result = await applyAgencyCaseAdjustment(supabase, {
+      caseId: String(meta.case_id),
+      bookingId: meta.booking_id ? String(meta.booking_id) : null,
+      extra: Number(meta.extra || 0),
+      fee: Number(meta.fee || 0),
+      sessionId: session.id,
+      actorUserId: meta.user_id ? String(meta.user_id) : null,
+      actorRole: 'employer',
+    })
+    if (!result.applied && result.reason === 'write_failed') {
+      console.error('[Agency case adjustment] could not record the payment:', result.message)
+      return { ok: false, retry: true, message: 'agency_case_adjustment fulfilment failed' }
+    }
+    if (!result.applied && (result.reason === 'case_not_found' || result.reason === 'booking_not_found')) {
+      await notifyAdmins('Adjustment payment needs review',
+        `An extra shift payment was received for case ${meta.case_id} but the case or booking could not be found. Check Stripe.`,
+        '/admin/agency')
+    }
+  }
+
+  if (meta?.type === 'agency_booking' && meta?.booking_id) {
+    delivered = true
+    // Pence are authoritative. parseInt on a pound string silently
+    // truncated every half-hour shift - "382.5" became 382 - so the
+    // recorded amount_paid sat up to 99p below what was actually
+    // collected, and every refund was then capped at the wrong figure.
+    // The pound fields are still read as a fallback, for sessions created
+    // before pence metadata existed.
+    const grossPence = meta.gross_pence ? Math.round(Number(meta.gross_pence)) : Math.round(Number(meta.gross || 0) * 100)
+    const feePence = meta.fee_pence ? Math.round(Number(meta.fee_pence)) : Math.round(Number(meta.fee || 0) * 100)
+    const gross = grossPence / 100
+    const fee = feePence / 100
+    // Which money model this booking used. 'stripe_connect' means the
+    // shift money was transferred to the professional by the destination
+    // charge itself; 'manual' means Talent House holds it until it settles.
+    const payoutMethod = meta.payout_method === 'stripe_connect' ? 'stripe_connect' : 'manual'
+    const paidUpdate: Record<string, any> = {
+      status: 'confirmed',
+      paid_at: new Date().toISOString(),
+      amount_paid: gross + fee,
+      payout_amount: gross,
+      payout_status: 'pending',
+      stripe_payment_intent: (session.payment_intent as string) || null,
+      payout_method: payoutMethod,
+    }
+    // Claim the booking rather than overwrite it. Two things this stops.
+    // A second payment for the same shift (a stale checkout tab paid an
+    // hour later) no longer silently overwrites the first with identical
+    // values, leaving the property charged twice and nothing recording
+    // it. And a shift the professional cancelled while the property was
+    // on the Stripe page can no longer be flipped back to confirmed - a
+    // paid, confirmed shift that nobody is working.
+    const claim = () => supabase.from('agency_bookings')
+      .update(paidUpdate)
+      .eq('id', meta.booking_id)
+      .is('paid_at', null)
+      .in('status', ['accepted', 'confirmed'])
+      .select('id')
+    let { data: claimed, error: paidError } = await claim()
+    if (paidError && /column|payout_method/i.test(paidError.message || '')) {
+      // payout_method arrives with migration 20260901100000; the payment
+      // must land regardless of whether it has been run yet.
+      delete paidUpdate.payout_method
+      ;({ data: claimed, error: paidError } = await claim())
+    }
+    // A write failure here means Stripe holds the property's money and
+    // nothing records it. Returning 500 releases the ledger row so Stripe
+    // retries, instead of swallowing it with a 200 and leaving a real
+    // person unpaid with only a log line to show for it.
+    if (paidError) {
+      console.error('[Agency booking] payment record update failed:', paidError.message)
+      return { ok: false, retry: true, message: 'agency_booking fulfilment failed' }
+    }
+    if (!claimed || claimed.length === 0) {
+      // Nothing to claim: already paid, or cancelled while the property
+      // was paying. Either way this payment needs a human, so flag it
+      // rather than acknowledging it silently.
+      console.error('[Agency booking] payment arrived for a booking that could not be claimed:', meta.booking_id)
+      try {
+        await supabase.from('agency_bookings')
+          .update({ dispute_status: 'open', payout_status: 'on_hold' })
+          .eq('id', meta.booking_id)
+      } catch { }
+      try {
+        await notifyAdmins('Payment needs review',
+          `A shift payment was received for booking ${meta.booking_id}, which was already paid or no longer open. Check Stripe and refund it if it is a duplicate.`,
+          '/admin/agency')
+      } catch { }
+      return { ok: true, note: 'unclaimed' }
+    }
+
+    try {
+      const { data: booking } = await supabase.from('agency_bookings')
+        .select('candidate_id, employer_id, shift_date, rate')
+        .eq('id', meta.booking_id).maybeSingle()
+      if (booking) {
+        const { data: cand } = await supabase.from('candidate_profiles')
+          .select('user_id, full_name').eq('id', booking.candidate_id).maybeSingle()
+        const { data: emp } = await supabase.from('employer_profiles')
+          .select('user_id, company_name, property_name').eq('id', booking.employer_id).maybeSingle()
+        const propertyName = emp?.property_name || emp?.company_name || 'the property'
+        const therapistName = cand?.full_name || 'The therapist'
+        const shiftDate = booking.shift_date || 'the agreed date'
+
+        try {
+          const { trackEvent, recordSalary } = await import('@/lib/analytics')
+          await trackEvent('shift_confirmed', { candidateId: booking.candidate_id, employerId: booking.employer_id }, { shift_date: booking.shift_date, rate: booking.rate, gross, fee })
+          if (booking.rate) {
+            await recordSalary({
+              kind: 'agency_rate', source: 'platform_transaction', period: 'hourly',
+              amountMin: Number(booking.rate), amountMax: Number(booking.rate),
+              candidateId: booking.candidate_id, employerId: booking.employer_id,
+            })
+          }
+        } catch { /* best-effort */ }
+
+        const payoutLine = payoutMethod === 'stripe_connect'
+          ? 'Your payout has been sent straight to your connected bank account by Stripe.'
+          : 'Talent House pays you after the shift.'
+
+        if (cand?.user_id) {
+          await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
+            `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. ${payoutLine}`,
+            '/talent/agency')
+          // Preference-gated ('booking_updates'): the therapist's copy
+          // honours their opt-out; the in-app notification above always
+          // fires. The employer's copy below is a payment receipt for
+          // their own payment, so it always sends (transactional).
+          if (await emailAllowed(supabase, cand.user_id, 'booking_updates')) {
+            const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
+            if (u?.user?.email) {
+              await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
+                `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. ${payoutLine}`)
+            }
+          }
+        }
+        if (emp?.user_id) {
+          await createNotification(emp.user_id, 'general', 'Payment received - booking confirmed',
+            `${therapistName}'s shift on ${shiftDate} is confirmed.`,
+            '/employer/agency')
+          const { data: u } = await supabase.auth.admin.getUserById(emp.user_id)
+          if (u?.user?.email) {
+            await sendBookingConfirmedEmail(u.user.email, propertyName,
+              `${therapistName}'s shift on ${shiftDate} is confirmed. Payment received.`)
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error('Booking confirmation notify failed (non-fatal):', e?.message)
+    }
+  }
+
+  if (meta?.type === 'course_public' && meta?.course_slug && meta?.buyer_email) {
+    delivered = true
+    try {
+      const email = String(meta.buyer_email).toLowerCase()
+      const buyerName = session.customer_details?.name || email.split('@')[0]
+
+      let userId: string | null = null
+      const { data: prof } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle()
+      if (prof) userId = prof.id
+      if (!userId) {
+        const { data: created, error: cErr } = await supabase.auth.admin.createUser({
+          email, email_confirm: true, user_metadata: { role: 'talent', full_name: buyerName },
+        })
+        if (created?.user) userId = created.user.id
+        else {
+          const { data: link, error: lErr } = await supabase.auth.admin.generateLink({ type: 'magiclink', email })
+          if (link?.user) userId = link.user.id
+          else console.error('[Academy public] createUser failed:', cErr?.message, lErr?.message)
+        }
+      }
+
+      if (userId) {
+        // Incidental to the enrolment below, but not to the buyer: without a
+        // profiles row she has an auth account that routes nowhere.
+        const { error: profileError } = await supabase.from('profiles').upsert(
+          { id: userId, email, role: 'candidate', full_name: buyerName },
+          { onConflict: 'id', ignoreDuplicates: true }
+        )
+        if (profileError) throw new Error('could not create the account record: ' + profileError.message)
+        // Every write from here to the enrolment row is checked and thrown on.
+        //
+        // They used to be checked by nobody. A learner record that failed to
+        // insert, or an enrolment that failed to upsert, left `userId` set, so
+        // nothing threw: this function returned ok, the webhook answered 200,
+        // Stripe marked the payment fulfilled and never retried, and no
+        // administrator was told. The buyer had paid and owned nothing, and
+        // the platform's own records agreed that all was well. The first
+        // person to find out was the customer.
+        let { data: cand } = await supabase.from('candidate_profiles').select('id').eq('user_id', userId).maybeSingle()
+        if (!cand) {
+          const { data: newCand, error: candError } = await supabase.from('candidate_profiles')
+            .insert({ user_id: userId, full_name: buyerName, approval_status: 'pending' })
+            .select('id').single()
+          if (candError) throw new Error('could not create the learner record: ' + candError.message)
+          cand = newCand
+        }
+        if (!cand) throw new Error('no learner record for ' + email)
+        // Stripe delivers a webhook more than once as a matter of course, and
+        // this handler has to survive that. The enrolment always did: the
+        // upsert ignores a duplicate. The email did not, so a buyer was told
+        // her course was ready twice, five seconds apart, which reads as a
+        // platform that has lost track of her order.
+        //
+        // Asking for the rows back is what makes the difference visible. An
+        // ignored duplicate returns none, and no rows means she was already
+        // enrolled and has already been written to.
+        const { data: enrolled, error: enrolError } = await supabase.from('course_enrollments').upsert(
+          {
+            candidate_id: cand.id,
+            course_slug: meta.course_slug,
+            paid_at: new Date().toISOString(),
+            amount_paid: session.amount_total ?? 1500,
+          },
+          { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
+        ).select('id')
+        if (enrolError) throw new Error('could not record the enrolment: ' + enrolError.message)
+
+        const alreadyEnrolled = !enrolled || enrolled.length === 0
+        if (alreadyEnrolled) {
+          console.log('[Academy public] repeat webhook for', email, meta.course_slug, '- already enrolled, no second email')
+        }
+        if (!alreadyEnrolled) try {
+          const { data: link } = await supabase.auth.admin.generateLink({
+            type: 'magiclink', email,
+            options: { redirectTo: 'https://talenthousecollective.co.uk/talent/academy' },
+          })
+          const action = (link as any)?.properties?.action_link || 'https://talenthousecollective.co.uk/login'
+          const course = await getAcademyCourseBySlug(meta.course_slug, true)
+          await sendCourseAccessEmail(email, buyerName, course?.title || meta.course_slug, action)
+        } catch (e: any) {
+          console.error('[Academy public] access email failed:', e?.message)
+        }
+      }
+      if (!userId) throw new Error('course_public fulfilment: no user for ' + email)
+    } catch (e: any) {
+      console.error('[Academy public] fulfilment failed:', e?.message)
+      // A guest buyer has no account, no dashboard and no support thread. If
+      // this fails they have paid a stranger and have nowhere to say so, so
+      // the only person who can put it right has to be told by name.
+      await notifyAdmins(
+        'A course payment was taken and not delivered',
+        `${String(meta.buyer_email)} paid for ${String(meta.course_slug)} and the enrolment could not be created: ${e?.message || 'unknown error'}. Stripe session ${session.id}.`,
+        '/admin/academy',
+      )
+      return { ok: false, retry: true, message: 'course_public fulfilment failed' }
+    }
+  }
+
+  if (meta?.type === 'course_bundle' && meta?.candidate_id) {
+    delivered = true
+    const coreCourses = (await getAcademyCatalog(false)).filter(course => course.is_core)
+    const total = session.amount_total ?? 7900
+    const { data: owned } = await supabase.from('course_enrollments')
+      .select('course_slug').eq('candidate_id', meta.candidate_id)
+    const ownedSet = new Set((owned ?? []).map((r: any) => r.course_slug))
+    const newCourses = coreCourses.filter(c => !ownedSet.has(c.slug))
+    if (newCourses.length > 0) {
+      const per = Math.floor(total / newCourses.length)
+      let remainder = total - per * newCourses.length
+      for (const course of newCourses) {
+        const { error } = await supabase.from('course_enrollments').upsert(
+          {
+            candidate_id: meta.candidate_id,
+            course_slug: course.slug,
+            paid_at: new Date().toISOString(),
+            amount_paid: per + (remainder-- > 0 ? 1 : 0),
+          },
+          { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
+        )
+        // A bundle that half-delivers is worse than one that fails: the buyer
+        // owns four of eleven courses and nothing says so.
+        if (error) {
+          console.error('[Course bundle] fulfilment failed:', course.slug, error.message)
+          return { ok: false, retry: true, message: 'course_bundle fulfilment failed' }
+        }
+      }
+    }
+  }
+
+  if (meta?.type === 'course' && meta?.candidate_id && meta?.course_slug) {
+    delivered = true
+    const { error } = await supabase.from('course_enrollments').upsert(
+      {
+        candidate_id: meta.candidate_id,
+        course_slug: meta.course_slug,
+        paid_at: new Date().toISOString(),
+        amount_paid: session.amount_total ?? 1000,
+      },
+      { onConflict: 'candidate_id,course_slug' }
+    )
+    if (error) {
+      console.error('[Course] fulfilment failed:', meta.course_slug, error.message)
+      return { ok: false, retry: true, message: 'course fulfilment failed' }
+    }
+  }
+
+  if (meta?.type === 'agency_listing' && meta?.candidate_id) {
+    delivered = true
+    const { error } = await supabase.from('candidate_profiles').update({
+      agency_available: true,
+      agency_tier: meta.tier || 'basic',
+      agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      stripe_customer_id: session.customer as string,
+    }).eq('id', meta.candidate_id)
+    // Paid to be bookable and silently still unbookable is the whole product
+    // failing while the receipt says otherwise.
+    if (error) {
+      console.error('[Agency listing] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'agency_listing fulfilment failed' }
+    }
+    await convertReferral(supabase, meta.candidate_id)
+  }
+
+  if (meta?.type === 'employer_registration' && meta?.employer_id) {
+    delivered = true
+    const { error } = await supabase.from('employer_profiles').update({
+      preferred_employer: true,
+      preferred_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      stripe_customer_id: session.customer as string,
+    }).eq('id', meta.employer_id)
+    if (error) {
+      console.error('[Preferred employer] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'employer_registration fulfilment failed' }
+    }
+  }
+
+  if (meta?.type === 'agency_plus' && meta?.employer_id) {
+    delivered = true
+    const { error } = await supabase.from('employer_profiles').update({
+      agency_plus_active: true,
+      agency_plus_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      stripe_customer_id: session.customer as string,
+    }).eq('id', meta.employer_id)
+    if (error) {
+      console.error('[Agency Plus] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'agency_plus fulfilment failed' }
+    }
+  }
+
+  if (meta?.type === 'job_posting' && meta?.job_id) {
+    delivered = true
+    // Shared with /api/employer/jobs/confirm-payment, which runs the same
+    // publish when the browser comes back from Stripe. Two copies of this
+    // would drift, and the one that drifts is the one nobody watches.
+    // The result was discarded here, so a failed publish reached Stripe as a
+    // success whatever the function returned.
+    const published = await publishPaidJobPosting(supabase, session, {
+      onPublished: jobId => triggerJobAlerts(jobId, ctx?.requestUrl || 'https://talenthousecollective.co.uk'),
+    })
+    if (!published.ok) {
+      console.error('[Paid job posting] fulfilment failed:', published.reason)
+      await notifyAdmins(
+        'A job advert was paid for and not published',
+        `A property paid for a job advert and it could not be published: ${published.reason} Stripe session ${session.id}.`,
+        '/admin/listings',
+      )
+      return { ok: false, retry: true, message: 'job_posting fulfilment failed' }
+    }
+  }
+
+  if (!delivered) return await nothingWasDelivered(session, meta)
+  return { ok: true }
+}

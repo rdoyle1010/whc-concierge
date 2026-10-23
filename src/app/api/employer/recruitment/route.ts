@@ -3,47 +3,46 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { trackEvent } from '@/lib/analytics'
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { administratorEmails } from '@/lib/administrators'
 
-// Managed recruitment intake: the employer asks WHC to run the search.
+// Managed recruitment intake: the employer asks Talent House to run the search.
 // 12.5% of first-year salary (15-20% executive), payable on placement.
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
-const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
 const esc = (v: string) => v.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
 
 async function alertAdmin(propertyName: string, request: { job_title: string; service: string; role_level?: string | null; salary_min?: number | null; salary_max?: number | null; location?: string | null; timeline?: string | null; brief: string }) {
-  if (!RESEND_API_KEY) return
   const salary = request.salary_min || request.salary_max
     ? `£${Number(request.salary_min || 0).toLocaleString()}${request.salary_max ? ` - £${Number(request.salary_max).toLocaleString()}` : ''}`
     : 'Not stated'
-  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 20px;color:#1c1b1a;">
-    <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#1c1b1a;">New managed search request</p>
-    <h2 style="font-family:Georgia,serif;font-weight:500;">${esc(propertyName)} wants WHC to run a search</h2>
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 20px;color:#222321;">
+    <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#222321;">New managed search request</p>
+    <h2 style="font-family:Georgia,serif;font-weight:500;">${esc(propertyName)} wants Talent House to run a search</h2>
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
-      <tr><td style="padding:6px 0;color:#6e6a66;width:110px;">Service</td><td style="text-transform:capitalize;">${esc(request.service)}</td></tr>
-      <tr><td style="padding:6px 0;color:#6e6a66;">Role</td><td><strong>${esc(request.job_title)}</strong>${request.role_level ? ` (${esc(String(request.role_level))})` : ''}</td></tr>
-      <tr><td style="padding:6px 0;color:#6e6a66;">Salary</td><td>${esc(salary)}</td></tr>
-      <tr><td style="padding:6px 0;color:#6e6a66;">Location</td><td>${esc(String(request.location || 'Not stated'))}</td></tr>
-      <tr><td style="padding:6px 0;color:#6e6a66;">Timeline</td><td>${esc(String(request.timeline || 'Not stated'))}</td></tr>
+      <tr><td style="padding:6px 0;color:#6e6a60;width:110px;">Service</td><td style="text-transform:capitalize;">${esc(request.service)}</td></tr>
+      <tr><td style="padding:6px 0;color:#6e6a60;">Role</td><td><strong>${esc(request.job_title)}</strong>${request.role_level ? ` (${esc(String(request.role_level))})` : ''}</td></tr>
+      <tr><td style="padding:6px 0;color:#6e6a60;">Salary</td><td>${esc(salary)}</td></tr>
+      <tr><td style="padding:6px 0;color:#6e6a60;">Location</td><td>${esc(String(request.location || 'Not stated'))}</td></tr>
+      <tr><td style="padding:6px 0;color:#6e6a60;">Timeline</td><td>${esc(String(request.timeline || 'Not stated'))}</td></tr>
     </table>
-    <div style="background:#fafafa;border-radius:8px;padding:14px 16px;margin:18px 0;">
-      <p style="font-size:11px;color:#6e6a66;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;">Brief</p>
+    <div style="background:#ede8df;border-radius:8px;padding:14px 16px;margin:18px 0;">
+      <p style="font-size:11px;color:#6e6a60;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;">Brief</p>
       <p style="font-size:14px;line-height:1.7;white-space:pre-wrap;margin:0;">${esc(request.brief)}</p>
     </div>
     <p style="font-size:13px;color:#516371;">Reply to the employer within one working day - this is the highest-value enquiry the platform takes.</p>
   </div>`
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to: ADMIN_EMAIL, subject: `Managed search request - ${request.job_title} (${propertyName})`, html }),
-  }).catch(() => {})
+  // Every administrator. This is the highest-value enquiry the platform takes
+  // and it used to reach one personal address written into the source, so a
+  // second partner never saw one.
+  for (const to of await administratorEmails()) {
+    await sendTransactionalEmail({ to, subject: `Managed search request - ${request.job_title} (${propertyName})`, html, kind: 'admin_alert' })
+  }
 }
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
   if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
@@ -56,7 +55,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -91,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     const propertyName = employer.property_name || employer.company_name || 'An employer'
     await alertAdmin(propertyName, request)
-    await createNotification(user.id, 'general', 'Managed search request received', `Thank you - WHC has received your ${service === 'executive' ? 'executive search' : 'managed recruitment'} request for ${jobTitle}. We will come back to you within one working day.`, '/employer/recruitment').catch?.(() => {})
+    await createNotification(user.id, 'general', 'Managed search request received', `Thank you - Talent House has received your ${service === 'executive' ? 'executive search' : 'managed recruitment'} request for ${jobTitle}. We will come back to you within one working day.`, '/employer/recruitment').catch?.(() => {})
     await trackEvent('recruitment_request_created', { actorUserId: user.id, employerId: employer.id }, { service, job_title: jobTitle })
 
     return NextResponse.json({ success: true, request })

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import type { User } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -23,7 +24,30 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * This is now the only implementation, and it fails closed: no session, no
  * completed second step, or no admin role, and the caller is nobody.
  */
-export async function adminRequestUser() {
+/**
+ * Why an admin request was refused.
+ *
+ * Every refusal used to reach the administrator as the single word
+ * "Unauthorised", which is true of all four causes and useful for none. The
+ * person who owns the platform, looking at her own admin screen, could not
+ * tell whether her authenticator had lapsed, whether the lookup had failed,
+ * or whether something was broken. The guard still fails closed; it just says
+ * which door it closed.
+ */
+export type AdminRefusal = 'signed-out' | 'second-step' | 'check-failed' | 'not-admin'
+
+export const ADMIN_REFUSAL_MESSAGE: Record<AdminRefusal, string> = {
+  'signed-out': 'Your session has ended. Sign in again to continue.',
+  'second-step': 'Your two-step verification has lapsed. Sign in again and complete the authenticator step.',
+  'check-failed': 'We could not verify your two-step status just now. Reload the page, and sign in again if it persists.',
+  'not-admin': 'This account is not an administrator.',
+}
+
+export type AdminRequestOutcome =
+  | { user: User; refusal: null }
+  | { user: null; refusal: AdminRefusal }
+
+export async function adminRequestOutcome(): Promise<AdminRequestOutcome> {
   const cookieStore = await cookies()
   const auth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +55,7 @@ export async function adminRequestUser() {
     { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
   )
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return null
+  if (!user) return { user: null, refusal: 'signed-out' }
 
   // Two-step verification, on the same terms as everywhere else: an account
   // with a verified authenticator that has not completed the challenge is
@@ -43,10 +67,10 @@ export async function adminRequestUser() {
   // one place where a wrong answer hands over the whole platform.
   try {
     const { data: assurance, error } = await auth.auth.mfa.getAuthenticatorAssuranceLevel()
-    if (error || !assurance) return null
-    if (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') return null
+    if (error || !assurance) return { user: null, refusal: 'check-failed' }
+    if (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') return { user: null, refusal: 'second-step' }
   } catch {
-    return null
+    return { user: null, refusal: 'check-failed' }
   }
 
   const admin = createAdminClient()
@@ -55,7 +79,16 @@ export async function adminRequestUser() {
     .select('role')
     .eq('id', user.id)
     .maybeSingle()
-  return profile?.role === 'admin' ? user : null
+  return profile?.role === 'admin' ? { user, refusal: null } : { user: null, refusal: 'not-admin' }
+}
+
+/**
+ * The one admin check, unchanged for every caller that only needs to know
+ * whether the request may proceed.
+ */
+export async function adminRequestUser(): Promise<User | null> {
+  const outcome = await adminRequestOutcome()
+  return outcome.user
 }
 
 /**

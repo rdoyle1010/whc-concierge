@@ -39,7 +39,7 @@ async function upsertConfig(admin: ReturnType<typeof createAdminClient>, key: st
 
 export async function GET(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const q = String(req.nextUrl.searchParams.get('q') || '').trim()
   const admin = createAdminClient()
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const action = String(body?.action || '')

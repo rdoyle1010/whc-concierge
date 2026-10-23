@@ -5,9 +5,9 @@ import { calculateMatchScore } from '@/lib/matching'
 import { jobAlertEmailHtml } from '@/lib/job-alert-email-template'
 import { isInternalApiRequest } from '@/lib/internal-request'
 import { emailAllowed } from '@/lib/notification-prefs'
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { marketingUnsubscribeUrl } from '@/lib/privacy-consent'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 export async function POST(req: NextRequest) {
   try {
@@ -72,13 +72,6 @@ export async function POST(req: NextRequest) {
       const email = emailMap.get(candidate.user_id)
       if (!email) continue
 
-      // Only process instant alerts for MVP
-      if (candidate.job_alerts_frequency && candidate.job_alerts_frequency !== 'instant') continue
-
-      // Preference-gated ('job_alerts'): also honour the privacy_preferences
-      // opt-out alongside job_alerts_enabled. Fail-open on lookup errors.
-      if (!(await emailAllowed(supabase, candidate.user_id, 'job_alerts'))) continue
-
       // Calculate match score
       const result = calculateMatchScore(candidate, job)
       if (result.hardStop) continue
@@ -101,6 +94,21 @@ export async function POST(req: NextRequest) {
         )
       } catch { /* the email below still goes */ }
 
+      // Both of these are questions about the inbox, and they used to be asked
+      // three lines before the in-app notification above - so choosing "Daily"
+      // or "Weekly" turned off every alert on the platform, not just the
+      // emails, and there is no digest job anywhere to make up the difference.
+      // Somebody who picked Daily to keep their inbox quiet received nothing,
+      // ever, and the setting showed as saved.
+      //
+      // Instant is still the only frequency that emails. The rest now get the
+      // notification the settings page promises them.
+      const wantsInstantEmail = !candidate.job_alerts_frequency || candidate.job_alerts_frequency === 'instant'
+      if (!wantsInstantEmail) continue
+      // Preference-gated ('job_alerts'): also honour the privacy_preferences
+      // opt-out alongside job_alerts_enabled. Fail-open on lookup errors.
+      if (!(await emailAllowed(supabase, candidate.user_id, 'job_alerts'))) continue
+
       // Send email
       const firstName = candidate.full_name?.split(' ')[0] || 'there'
       const html = jobAlertEmailHtml({
@@ -108,24 +116,21 @@ export async function POST(req: NextRequest) {
         matchScore: result.score, location: job.location, salary,
       })
 
-      if (!RESEND_API_KEY) {
-        console.log(`[Job alert skipped] To: ${email}, Job: ${jobTitle}, Score: ${result.score}%`)
-        sent++
-        continue
-      }
-
       try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: FROM_EMAIL, to: email,
-            subject: `New role matching your profile - ${jobTitle} at ${propertyName}, ${result.score}% match`,
-            html,
-          }),
+        // A job alert is the one email the platform sends that a person did
+        // not individually ask for, so it carries the header that lets their
+        // mail client offer them the way out in one click.
+        const delivery = await sendTransactionalEmail({
+          to: email,
+          subject: `New role matching your profile - ${jobTitle} at ${propertyName}, ${result.score}% match`,
+          html,
+          kind: 'job_alert',
+          userId: candidate.user_id,
+          unsubscribeUrl: marketingUnsubscribeUrl(candidate.user_id),
         })
-        sent++
-      } catch (err) {
+        if (delivery.ok || delivery.status === 'skipped') sent++
+        else errors.push(`Failed to send to ${email}`)
+      } catch {
         errors.push(`Failed to send to ${email}`)
       }
     }

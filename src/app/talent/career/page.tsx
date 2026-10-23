@@ -8,7 +8,7 @@ import { TrendingUp, Lock, Check, X, GraduationCap, Target, BarChart3, Eye, Arro
 // Career Intelligence: the Pro tool that answers three questions with live
 // platform data - where do I sit, what is the market asking for, and which
 // course moves me forward. Salary signals appear only when the sample size
-// clears the WHC credibility thresholds.
+// clears the Talent House credibility thresholds.
 
 export default function CareerIntelligencePage() {
   const [data, setData] = useState<any>(null)
@@ -39,7 +39,7 @@ export default function CareerIntelligencePage() {
             <div className="dashboard-card">
               <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-accent mb-2 inline-flex items-center gap-1.5"><Target size={13} /> Where you sit</p>
               <p className="text-[15px] text-ink font-medium">{data.position?.currentLabel || 'Professional'}</p>
-              <p className="mt-1 text-[13px] text-secondary">Your next step on the WHC career ladder: <span className="font-semibold text-ink">{data.position?.nextLabel}</span>.</p>
+              <p className="mt-1 text-[13px] text-secondary">Your next step on the Talent House career ladder: <span className="font-semibold text-ink">{data.position?.nextLabel}</span>.</p>
             </div>
 
             {!data.pro ? (
@@ -128,7 +128,7 @@ export default function CareerIntelligencePage() {
                   ) : (
                     <div className="text-[13px] text-secondary leading-6">
                       {data.salary.p25 != null && data.salary.p75 != null && data.salary.p25 !== data.salary.p75 && (
-                        <p className="mb-2 text-ink">Candidates at your level are typically earning <span className="text-[17px] font-semibold">£{Number(data.salary.p25).toLocaleString('en-GB')}-£{Number(data.salary.p75).toLocaleString('en-GB')}</span> <span className="text-[11.5px] text-muted font-normal">(the middle half of {data.salary.sample} advertised roles on WHC, last 12 months)</span></p>
+                        <p className="mb-2 text-ink">Candidates at your level are typically earning <span className="text-[17px] font-semibold">£{Number(data.salary.p25).toLocaleString('en-GB')}-£{Number(data.salary.p75).toLocaleString('en-GB')}</span> <span className="text-[11.5px] text-muted font-normal">(the middle half of {data.salary.sample} advertised roles on Talent House, last 12 months)</span></p>
                       )}
                       <p>Median advertised salary at your level over the last 12 months: <span className="text-[17px] font-semibold text-ink">£{Number(data.salary.median).toLocaleString('en-GB')}</span></p>
                       <p className="mt-1 text-[11.5px] text-muted">Based on {data.salary.sample} advertised roles{data.salary.confidence === 'early_signal' ? ' - early signal, treat as directional' : ''}.</p>

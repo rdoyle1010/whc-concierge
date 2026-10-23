@@ -1,14 +1,29 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { Suspense, useEffect, useState } from 'react'
 import { useDialog } from '@/components/useDialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import { useTaxonomy } from '@/lib/use-sectors'
+import { doorSlugForSector } from '@/lib/sectors'
+import { fieldAppliesToRole, isBrandRole, WORK_SETTINGS, BRAND_ROLE_NOTE } from '@/lib/role-form-shape'
 import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2, Upload, Image as ImageIcon, X } from 'lucide-react'
 import ResidencySuggestions from '@/components/ResidencySuggestions'
+import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
+import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
+import { PolishButton, StoryDrafter } from '@/components/JobCopyAssistant'
+
+// The same list the app editor and the talent profile use. Three copies is
+// two too many, but making them one is a separate job to giving this form
+// the fields it has always been missing.
+const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
 
 export default function EmployerJobsPage() {
+  // Stripe now sends the session id back, so the same confirm every other
+  // purchase uses runs here too - exact rather than a search by job id.
+  useConfirmPaymentOnReturn()
   return <Suspense fallback={null}><EmployerJobs /></Suspense>
 }
 
@@ -21,6 +36,12 @@ function EmployerJobs() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
+  // A saved role stores only its sector, so the door has to be worked back to.
+  // Without it this form asks a brand about spa opening hours all over again,
+  // one screen after the posting form learned not to.
+  const { taxonomy } = useTaxonomy()
+  const doorSlug = doorSlugForSector(taxonomy, editing?.sector_id || editing?.sector)
+  const applies = (field: string) => fieldAppliesToRole(field, doorSlug)
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   // The checkout redirect has always carried ?success=true, and this page has
@@ -28,22 +49,46 @@ function EmployerJobs() {
   // with no confirmation at all. Worse, because is_live is flipped by the
   // async webhook, the role very often still read "pending_payment" at that
   // moment: they had paid, and the screen said the role was not live.
-  const [banner, setBanner] = useState<{ tone: 'good' | 'quiet'; text: string } | null>(null)
+  const [banner, setBanner] = useState<{ tone: 'good' | 'quiet' | 'bad'; text: string } | null>(null)
   const [resuming, setResuming] = useState('')
 
+  // Everything a role can say about itself. This form used to offer the
+  // title, the salary and little else - so a live role could never have its
+  // matching criteria corrected, and the eleven fields that make somebody
+  // want the job could only be written once, at Post a Role, and never
+  // again. The phone app could edit all of it; the website could not.
   const emptyJob = {
     title: '', description: '', job_image_url: '', location: '', job_type: 'Full-time',
     specialism: '', salary_min: '', salary_max: '', tier: 'Bronze',
     benefits: '', requirements: '', status: 'active',
+    required_skills: [] as string[], required_product_houses: [] as string[],
+    required_qualifications: [] as string[], required_systems: [] as string[],
+    preferred_business_skills: [] as string[],
+    min_years_experience: '', shift_pattern: '',
+    why_role_exists: '', success_90_days: '', reporting_line: '', team_size: '',
+    opening_hours: '', commercial_responsibility: '', membership_size: '', work_setting: '',
+    key_kpis: '', why_move: '', career_progression: '', interview_process: '',
   }
   const [form, setForm] = useState(emptyJob)
+  // What the assistant is allowed to know: the role as the form has it now.
+  const roleContext = {
+    job_title: form.title, job_description: form.description, location: form.location,
+    job_type: form.job_type, salary_min: form.salary_min, salary_max: form.salary_max,
+    required_skills: form.required_skills, required_brands: form.required_product_houses,
+    required_qualifications: form.required_qualifications, required_systems: form.required_systems,
+    shift_pattern: form.shift_pattern, reporting_line: form.reporting_line,
+    team_size: form.team_size, opening_hours: form.opening_hours, work_setting: form.work_setting,
+    membership_size: form.membership_size,
+    benefits: form.benefits ? (form.benefits as string).split('\n').filter(Boolean) : [],
+  }
+
   const formDialog = useDialog(() => setShowForm(false), 'job-form-dialog-heading', { enabled: showForm })
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       setProfile(prof)
       if (prof) {
         const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
@@ -62,14 +107,59 @@ function EmployerJobs() {
     else if (included) setBanner({ tone: 'good', text: 'Role published from your annual allowance. Matched professionals are alerted automatically.' })
     else if (cancelled) setBanner({ tone: 'quiet', text: 'Payment was not completed, so this role is saved and not yet live. Use "Complete payment" on it whenever you are ready.' })
 
-    // Stripe's webhook is what flips the role live, and it lands a moment
-    // after the redirect. Re-read once so the employer is not looking at a
-    // stale "pending payment" on a role they have just paid for.
-    if (paid || included) {
+    // Waiting four seconds and reloading was a hope, not a mechanism: if the
+    // webhook never arrived - late, refused, or pointed at the wrong host -
+    // the reload showed the same "Complete payment" on a role already paid
+    // for, and nothing would ever fix it. Ask Stripe instead.
+    if (paid) {
+      confirmOutstandingPayments()
+      return
+    }
+    if (included) {
       const timer = window.setTimeout(() => { window.location.replace('/employer/jobs') }, 4000)
       return () => window.clearTimeout(timer)
     }
   }, [searchParams])
+
+  // Asks Stripe directly whether a role has been paid for, and publishes it if
+  // so. The webhook does the same thing from the other side; whichever arrives
+  // first wins and the second is a no-op.
+  async function confirmPayment(jobId: string, quiet = false) {
+    try {
+      const res = await fetch('/api/employer/jobs/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (body?.ok) {
+        setBanner({ tone: 'good', text: body.detail || 'Payment confirmed.' })
+        window.setTimeout(() => window.location.replace('/employer/jobs'), 1200)
+        return true
+      }
+      if (!quiet) setBanner({ tone: 'quiet', text: body?.detail || body?.error || 'No completed payment found for this role yet.' })
+      return false
+    } catch {
+      if (!quiet) setBanner({ tone: 'quiet', text: 'We could not check with Stripe just now. Try again in a moment.' })
+      return false
+    }
+  }
+
+  // Straight after checkout: Stripe can take a few seconds to settle, so this
+  // asks twice before giving up rather than once and concluding nothing was
+  // paid.
+  async function confirmOutstandingPayments() {
+    const pending = jobs.filter((job: any) => job.status === 'pending_payment')
+    const targets = pending.length ? pending : []
+    for (const job of targets) {
+      if (await confirmPayment(job.id, true)) return
+    }
+    window.setTimeout(async () => {
+      for (const job of targets) {
+        if (await confirmPayment(job.id, true)) return
+      }
+    }, 4000)
+  }
 
   // A role stuck at pending_payment had no route forward at all: "Activate"
   // told the employer their paid term had ended, and "Repost" only pre-filled
@@ -108,7 +198,8 @@ function EmployerJobs() {
       if (!res.ok) throw new Error(body.error || 'Image upload failed')
       setForm(current => ({ ...current, job_image_url: body.url }))
     } catch (error: any) {
-      alert(error?.message || 'Could not upload image.')
+      console.error('Role image upload failed:', error?.message)
+      setBanner({ tone: 'bad', text: 'That picture could not be uploaded. Try a JPG or PNG under the size limit, and tell us if it keeps happening.' })
     } finally {
       setUploadingImage(false)
     }
@@ -133,17 +224,51 @@ function EmployerJobs() {
       requirements: form.requirements ? (form.requirements as string).split('\n').filter(Boolean) : null,
       status: wantsActive && !wasLive ? 'draft' : form.status,
       is_live: wantsActive && wasLive,
+      // The column is required_brands; the form calls them product houses
+      // because that is what a spa calls them. Post a Role maps it the same
+      // way, and getting this wrong writes the list to a column nothing reads.
+      required_skills: form.required_skills.length ? form.required_skills : null,
+      required_brands: form.required_product_houses.length ? form.required_product_houses : null,
+      required_qualifications: form.required_qualifications.length ? form.required_qualifications : null,
+      required_systems: form.required_systems.length ? form.required_systems : null,
+      preferred_business_skills: form.preferred_business_skills.length ? form.preferred_business_skills : null,
+      min_years_experience: form.min_years_experience ? parseInt(form.min_years_experience as string) : null,
+      shift_pattern: form.shift_pattern || null,
+      why_role_exists: form.why_role_exists || null,
+      success_90_days: form.success_90_days || null,
+      reporting_line: form.reporting_line || null,
+      team_size: form.team_size ? parseInt(form.team_size as string) : null,
+      opening_hours: form.opening_hours || null,
+      work_setting: form.work_setting || null,
+      commercial_responsibility: form.commercial_responsibility || null,
+      membership_size: form.membership_size || null,
+      key_kpis: form.key_kpis ? (form.key_kpis as string).split('\n').map(v => v.trim()).filter(Boolean) : null,
+      why_move: form.why_move || null,
+      career_progression: form.career_progression || null,
+      interview_process: form.interview_process || null,
     }
     if (wantsActive && !wasLive) {
-      alert('Saved as a draft. To take a role live, use Post a Role and complete payment - your details carry over.')
+      setBanner({ tone: 'quiet', text: 'Saved as a draft. To take a role live, use Post a Role and complete payment - your details carry over.' })
     }
 
+    // A database message is written for whoever wrote the query, not for the
+    // person who filled in the form: "violates foreign key constraint" tells a
+    // spa director nothing they can act on, and an alert box makes it feel
+    // like the platform has fallen over.
     if (editing) {
       const { error: saveError } = await supabase.from('job_listings').update(payload).eq('id', editing.id)
-      if (saveError) { alert('Could not save role: ' + saveError.message); setSaving(false); return }
+      if (saveError) {
+        console.error('Role save failed:', saveError.message)
+        setBanner({ tone: 'bad', text: 'This role could not be saved. Check the required fields and try again, and tell us if it keeps happening.' })
+        setSaving(false); return
+      }
     } else {
       const { error: saveError } = await supabase.from('job_listings').insert(payload)
-      if (saveError) { alert('Could not save role: ' + saveError.message); setSaving(false); return }
+      if (saveError) {
+        console.error('Role save failed:', saveError.message)
+        setBanner({ tone: 'bad', text: 'This role could not be saved. Check the required fields and try again, and tell us if it keeps happening.' })
+        setSaving(false); return
+      }
     }
 
     const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('posted_date', { ascending: false })
@@ -161,37 +286,63 @@ function EmployerJobs() {
       salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
       benefits: job.benefits?.join('\n') || '', requirements: job.requirements?.join('\n') || '',
       status: job.status,
+      required_skills: job.required_skills || [],
+      required_product_houses: job.required_brands || job.required_product_houses || [],
+      required_qualifications: job.required_qualifications || [],
+      required_systems: job.required_systems || [],
+      preferred_business_skills: job.preferred_business_skills || [],
+      min_years_experience: job.min_years_experience?.toString() || '',
+      shift_pattern: job.shift_pattern || '',
+      why_role_exists: job.why_role_exists || '', success_90_days: job.success_90_days || '',
+      reporting_line: job.reporting_line || '', team_size: job.team_size?.toString() || '',
+      opening_hours: job.opening_hours || '', work_setting: job.work_setting || '', commercial_responsibility: job.commercial_responsibility || '',
+      membership_size: job.membership_size || '',
+      key_kpis: Array.isArray(job.key_kpis) ? job.key_kpis.join('\n') : (job.key_kpis || ''),
+      why_move: job.why_move || '', career_progression: job.career_progression || '',
+      interview_process: job.interview_process || '',
     })
     setEditing(job)
     setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this listing?')) return
-    const { data, error } = await supabase.from('job_listings').delete().eq('id', id).select('id')
-    if (error || !data?.length) {
-      alert('Could not delete listing' + (error ? ': ' + error.message : '. Please try again.'))
+    if (!confirm('Delete this listing? This cannot be undone.')) return
+    setBanner(null)
+    // A delete straight from the browser, with a raw database error shown in
+    // an alert box, is how this used to work: matches point at job_listings
+    // with no cascade, so a role anybody had matched with simply refused, in
+    // language written for a developer. The decision belongs on the server,
+    // where the history can be counted and explained.
+    const res = await fetch('/api/employer/jobs/status', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: id, action: 'delete' }),
+    }).catch(() => null)
+    const result = res ? await res.json().catch(() => ({})) : {}
+    if (!res?.ok) {
+      setBanner({ tone: 'bad', text: result.error || 'This role could not be deleted. Please try again.' })
       return
     }
     setJobs(jobs.filter(j => j.id !== id))
+    setBanner({ tone: 'good', text: 'Listing deleted.' })
   }
 
   const toggleStatus = async (job: any) => {
     const isCurrentlyActive = job.status === 'active'
     const newIsLive = !isCurrentlyActive
     if (newIsLive) {
-      if (profile?.approval_status !== 'approved') {
-        alert('Your employer account is awaiting WHC approval. Roles go live the moment your account is approved.')
+      // Putting a role back up is a server decision now. The approval and the
+      // paid term used to be checked here, in a page anybody can step around,
+      // and the write went straight to the database.
+      const res = await fetch('/api/employer/jobs/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId: job.id, action: 'reopen' }) })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(result.error || 'Could not put this role back up.')
+        if (result.code === 'TERM_ENDED') router.push(result.repostHref || `/employer/post-role?repost=${job.id}`)
         return
       }
-      const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
-      if (!paidUntil || paidUntil <= Date.now()) {
-        alert('This listing’s paid term has ended. Use Repost to relist it - your details carry over and payment is taken at checkout.')
-        router.push(`/employer/post-role?repost=${job.id}`)
-        return
-      }
+      setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'active', is_live: true } : j))
+      return
     }
-    const newStatus = newIsLive ? 'active' : 'closed'
     if (!newIsLive) {
       // Taking a role down must go through the API so open applications are
       // closed and every applicant is told - a silent client-side write left
@@ -203,12 +354,6 @@ function EmployerJobs() {
       setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'closed', is_live: false } : j))
       return
     }
-    const { data: updated, error } = await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id).select('id')
-    if (error || !updated?.length) {
-      alert('Could not update listing status' + (error ? ': ' + error.message : '') + '. Please try again.')
-      return
-    }
-    setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus, is_live: newIsLive } : j))
   }
 
   const markFilled = async (job: any) => {
@@ -227,7 +372,7 @@ function EmployerJobs() {
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
       {banner && (
-        <div role="status" className={`mb-6 border px-5 py-4 text-[13px] leading-relaxed ${banner.tone === 'good' ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+        <div role="status" className={`mb-6 border px-5 py-4 text-[13px] leading-relaxed ${banner.tone === 'good' ? 'border-green-200 bg-green-50 text-green-800' : banner.tone === 'bad' ? 'border-red-100 bg-red-50 text-red-700' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
           {banner.text}
         </div>
       )}
@@ -238,25 +383,70 @@ function EmployerJobs() {
 
       {!loading && jobs.length > 0 && <div className="dashboard-metrics mb-8"><div className="dashboard-metric"><p className="dashboard-metric-value">{activeCount}</p><p className="dashboard-metric-label">Live roles</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{draftCount}</p><p className="dashboard-metric-label">Drafts</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{filledCount}</p><p className="dashboard-metric-label">Filled</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{jobs.length}</p><p className="dashboard-metric-label">Total listings</p></div></div>}
 
-      {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f0e0d]/55 p-4" onClick={() => setShowForm(false)}><div {...formDialog.panelProps} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#ffffff] p-6 md:p-8">
+      {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#161814]/55 p-4" onClick={() => setShowForm(false)}><div {...formDialog.panelProps} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#ffffff] p-6 md:p-8">
         <p className="dashboard-eyebrow">Listing editor</p><h2 id="job-form-dialog-heading" className="dashboard-section-title mb-2">{editing ? 'Edit role' : 'Create role draft'}</h2><p className="mb-6 text-[12px] leading-5 text-muted">You can change the role image here at any time. It updates the live Browse Roles card once saved.</p>
         <div className="space-y-4">
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job title *</label><input aria-label="Job title" type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
-          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job image</label><div className="grid sm:grid-cols-[180px_1fr] gap-4 items-center rounded-xl border border-border bg-white p-4">{form.job_image_url ? <div className="aspect-[16/10] overflow-hidden rounded-lg"><img src={form.job_image_url} alt="Job preview" className="h-full w-full object-cover" /></div> : <div className="aspect-[16/10] rounded-lg border border-dashed border-border flex items-center justify-center text-muted"><ImageIcon size={26}/></div>}<div className="flex flex-wrap gap-2"><label className="btn-secondary inline-flex items-center gap-2 cursor-pointer"><Upload size={13}/>{uploadingImage?'Uploading...':form.job_image_url?'Replace image':'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={e=>{const file=e.target.files?.[0];if(file)uploadJobImage(file);e.target.value=''}}/></label>{form.job_image_url && <button type="button" onClick={()=>setForm(current=>({...current,job_image_url:''}))} className="btn-secondary inline-flex items-center gap-2"><X size={13}/>Remove</button>}</div></div></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job image</label><div className="grid sm:grid-cols-[180px_1fr] gap-4 items-center rounded-xl border border-border bg-white p-4">{form.job_image_url ? <div className="aspect-[16/10] overflow-hidden rounded-lg"><img decoding="async" src={form.job_image_url} alt="Job preview" className="h-full w-full object-cover" /></div> : <div className="aspect-[16/10] rounded-lg border border-dashed border-border flex items-center justify-center text-muted"><ImageIcon size={26}/></div>}<div className="flex flex-wrap gap-2"><label className="btn-secondary inline-flex items-center gap-2 cursor-pointer"><Upload size={13}/>{uploadingImage?'Uploading...':form.job_image_url?'Replace image':'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={e=>{const file=e.target.files?.[0];if(file)uploadJobImage(file);e.target.value=''}}/></label>{form.job_image_url && <button type="button" onClick={()=>setForm(current=>({...current,job_image_url:''}))} className="btn-secondary inline-flex items-center gap-2"><X size={13}/>Remove</button>}</div></div></div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Location *</label><input aria-label="Location" type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job type</label><select aria-label="Job type" value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="input-field"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option></select></div></div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input aria-label="Min salary (£)" type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input aria-label="Max salary (£)" type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><div className="input-field bg-[#f3f0eb] text-secondary">{form.tier || 'Bronze'}</div><p className="mt-1 text-[10px] text-muted">Set when the listing is purchased.</p></div></div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input aria-label="Min salary (£)" type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input aria-label="Max salary (£)" type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><div className="input-field bg-[#ede8df] text-secondary">{form.tier || 'Bronze'}</div><p className="mt-1 text-[10px] text-muted">Set when the listing is purchased.</p></div></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Specialism</label><input aria-label="Specialism" type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" /></div>
-          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea aria-label="Description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea aria-label="Description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /><PolishButton field="job_description" text={form.description} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, description: value }))} /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Requirements" value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Benefits <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Benefits" value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" /></div>
+
+          <div className="border-t border-border pt-5">
+            <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">Matching criteria</p>
+            <p className="mt-1 text-[12px] leading-5 text-secondary">These feed the match score. Keep genuine must-haves separate from nice-to-have experience - a long list of requirements does not raise the bar, it hides who should apply and stops good people matching at all.</p>
+            <div className="mt-4 space-y-3">
+              <CollapsibleCheckboxSection title="Required services & treatment skills" categories={SERVICES_CATEGORIES} selected={form.required_skills} onChange={v => setForm({ ...form, required_skills: v })} />
+              <CollapsibleCheckboxSection title="Required product houses" flatItems={[...PRODUCT_HOUSES_FULL]} selected={form.required_product_houses} onChange={v => setForm({ ...form, required_product_houses: v })} />
+              <CollapsibleCheckboxSection title="Required qualifications" categories={QUALS_CATEGORIES} selected={form.required_qualifications} onChange={v => setForm({ ...form, required_qualifications: v })} />
+              <CollapsibleCheckboxSection title="Required systems" flatItems={[...SYSTEMS_FULL]} selected={form.required_systems} onChange={v => setForm({ ...form, required_systems: v })} />
+              <CollapsibleCheckboxSection title="Preferred leadership & business skills" flatItems={BUSINESS_SKILLS} selected={form.preferred_business_skills} onChange={v => setForm({ ...form, preferred_business_skills: v })} />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Minimum years of experience</label><input aria-label="Minimum years of experience" type="number" value={form.min_years_experience} onChange={e => setForm({ ...form, min_years_experience: e.target.value })} className="input-field" placeholder="3" /></div>
+              {applies('shift_pattern') && <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Shift pattern</label><input aria-label="Shift pattern" type="text" value={form.shift_pattern} onChange={e => setForm({ ...form, shift_pattern: e.target.value })} className="input-field" placeholder="e.g. 5 days over 7" /></div>}
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-5">
+            <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">The role story</p>
+            <p className="mt-1 text-[12px] leading-5 text-secondary">A salary band is not a reason to move. These are what a Director of Spa reads before deciding whether to apply, and they could previously only be written once, at Post a Role, and never corrected.</p>
+            <div className="mt-3"><StoryDrafter role={roleContext} jobId={editing?.id} onApply={draft => setForm(current => ({ ...current, ...draft }))} /></div>
+            <div className="mt-4 space-y-4">
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why does this role exist?</label><textarea rows={2} aria-label="Why does this role exist?" value={form.why_role_exists} onChange={e => setForm({ ...form, why_role_exists: e.target.value })} className="input-field" placeholder="A new opening, a promotion, a gap left by somebody leaving - say which." /><PolishButton field="why_role_exists" text={form.why_role_exists} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, why_role_exists: value }))} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">What does success look like in ninety days?</label><textarea rows={2} aria-label="What does success look like in ninety days?" value={form.success_90_days} onChange={e => setForm({ ...form, success_90_days: e.target.value })} className="input-field" /><PolishButton field="success_90_days" text={form.success_90_days} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, success_90_days: value }))} /></div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Reporting line</label><input aria-label="Reporting line" type="text" value={form.reporting_line} onChange={e => setForm({ ...form, reporting_line: e.target.value })} className="input-field" placeholder="e.g. General Manager" /></div>
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Team size this role leads</label><input aria-label="Team size this role leads" type="number" value={form.team_size} onChange={e => setForm({ ...form, team_size: e.target.value })} className="input-field" placeholder="12" /></div>
+              </div>
+              {applies('opening_hours') && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Opening hours</label><input aria-label="Opening hours" type="text" value={form.opening_hours} onChange={e => setForm({ ...form, opening_hours: e.target.value })} className="input-field" placeholder="e.g. 7am - 9pm, seven days" /></div>
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Membership size</label><input aria-label="Membership size" type="text" value={form.membership_size} onChange={e => setForm({ ...form, membership_size: e.target.value })} className="input-field" placeholder="e.g. 400 members" /></div>
+              </div>}
+              {isBrandRole(doorSlug) && <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Where this role is worked from</label><select aria-label="Where this role is worked from" value={form.work_setting} onChange={e => setForm({ ...form, work_setting: e.target.value })} className="input-field"><option value="">Select</option>{WORK_SETTINGS.map(w => <option key={w} value={w}>{w}</option>)}</select><p className="mt-1.5 text-[11px] text-secondary">{BRAND_ROLE_NOTE}</p></div>}
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Commercial responsibility</label><textarea rows={2} aria-label="Commercial responsibility" value={form.commercial_responsibility} onChange={e => setForm({ ...form, commercial_responsibility: e.target.value })} className="input-field" placeholder="Budget, revenue line, retail target - whatever this person actually owns." /><PolishButton field="commercial_responsibility" text={form.commercial_responsibility} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, commercial_responsibility: value }))} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Key measures <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Key measures" value={form.key_kpis} onChange={e => setForm({ ...form, key_kpis: e.target.value })} className="input-field" placeholder={'Treatment room occupancy\nRetail per treatment\nGuest satisfaction score'} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why move here?</label><textarea rows={2} aria-label="Why move here?" value={form.why_move} onChange={e => setForm({ ...form, why_move: e.target.value })} className="input-field" placeholder="The honest case for your property over the one they are in now." /><PolishButton field="why_move" text={form.why_move} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, why_move: value }))} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Where does this role lead?</label><textarea rows={2} aria-label="Where does this role lead?" value={form.career_progression} onChange={e => setForm({ ...form, career_progression: e.target.value })} className="input-field" /><PolishButton field="career_progression" text={form.career_progression} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, career_progression: value }))} /></div>
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Interview process</label>
+                <p className="mb-1.5 text-[11px] leading-5 text-muted">How many stages, who they meet, roughly how long. Stated plainly, this is one of the strongest reasons good people apply rather than wonder.</p>
+                <textarea rows={3} aria-label="Interview process" value={form.interview_process} onChange={e => setForm({ ...form, interview_process: e.target.value })} className="input-field" placeholder="Informal call with the Spa Manager, then a treatment assessment and a meeting with the GM. Usually two weeks start to finish." /><PolishButton field="interview_process" text={form.interview_process} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, interview_process: value }))} />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"><button onClick={() => setShowForm(false)} className="btn-secondary sm:min-w-28">Cancel</button><button onClick={handleSave} disabled={saving||uploadingImage} className="btn-primary disabled:opacity-50 sm:min-w-36">{saving ? 'Saving...' : editing ? 'Save changes' : 'Save draft'}</button></div>
         </div>
       </div></div>}
 
-      {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div> : jobs.length === 0 ? <div className="dashboard-panel py-16 text-center"><p className="dashboard-eyebrow">No listings yet</p><h2 className="dashboard-section-title">Start with your first permanent role</h2><p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-secondary">Your full job description, property details and requirements will appear to suitable talent once the listing is live.</p><button onClick={() => router.push('/employer/post-role')} className="btn-primary mt-5 inline-flex items-center gap-2"><Plus size={14} />Post a role</button></div> : <div className="border-y border-[#6e6a66] bg-white/45">{jobs.map((job, index) => <div key={job.id} className={`grid gap-5 px-4 py-5 md:px-5 xl:grid-cols-[96px_minmax(0,1fr)_auto] xl:items-center ${index > 0 ? 'border-t border-[#e0dad2]' : ''}`}>
-        <div className="hidden xl:block h-20 w-24 overflow-hidden rounded-lg border border-border bg-white">{job.job_image_url ? <img src={job.job_image_url} alt="" className="h-full w-full object-cover"/> : <div className="h-full w-full flex items-center justify-center text-muted"><ImageIcon size={20}/></div>}</div>
+      {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div> : jobs.length === 0 ? <div className="dashboard-panel py-16 text-center"><p className="dashboard-eyebrow">No listings yet</p><h2 className="dashboard-section-title">Start with your first permanent role</h2><p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-secondary">Your full job description, property details and requirements will appear to suitable talent once the listing is live.</p><button onClick={() => router.push('/employer/post-role')} className="btn-primary mt-5 inline-flex items-center gap-2"><Plus size={14} />Post a role</button></div> : <div className="border-y border-[#6e6a60] bg-white/45">{jobs.map((job, index) => <div key={job.id} className={`grid gap-5 px-4 py-5 md:px-5 xl:grid-cols-[96px_minmax(0,1fr)_auto] xl:items-center ${index > 0 ? 'border-t border-[#dcd4c8]' : ''}`}>
+        <div className="hidden xl:block h-20 w-24 overflow-hidden rounded-lg border border-border bg-white">{job.job_image_url ? <img loading="lazy" decoding="async" src={job.job_image_url} alt="" className="h-full w-full object-cover"/> : <div className="h-full w-full flex items-center justify-center text-muted"><ImageIcon size={20}/></div>}</div>
         <div className="min-w-0"><div className="mb-2 flex flex-wrap items-center gap-2.5"><h3 className="text-[22px] text-ink">{job.title}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] ${job.status === 'active' ? 'bg-green-50 text-green-700' : job.status === 'draft' ? 'bg-amber-50 text-amber-700' : job.status === 'filled' ? 'bg-[#edf4ef] text-[#42634b]' : 'bg-gray-100 text-secondary'}`}>{job.status}</span>{job.tier && <span className={job.tier === 'Platinum' ? 'badge-platinum' : job.tier === 'Gold' ? 'badge-gold' : 'badge-silver'}>{job.tier}</span>}</div><p className="text-[12px] font-medium text-secondary">{job.location} · {job.job_type}</p>{job.description && <p className="mt-2 max-w-3xl text-[13px] leading-6 text-secondary line-clamp-2">{job.description}</p>}{job.expires_at && <p className="mt-2 text-[11px] text-muted">Paid listing term: {new Date(job.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}{job.is_residency_role && job.status === 'active' && <ResidencySuggestions jobId={job.id} />}</div>
-        <div className="flex flex-wrap items-center gap-2 xl:justify-end">{job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700"><CheckCircle2 size={15} />Mark filled</button>}{job.status === 'pending_payment' && <button onClick={() => completePayment(job)} disabled={resuming === job.id} className="btn-primary !px-3 !py-2 inline-flex items-center gap-1.5 disabled:opacity-50">{resuming === job.id ? 'Opening…' : 'Complete payment'}</button>}{job.status !== 'draft' && job.status !== 'filled' && job.status !== 'pending_payment' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5">{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}<button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button><button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#f3f0eb] hover:text-ink" title="Clone"><Copy size={15} /></button>{(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#f3f0eb] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}<button onClick={() => handleDelete(job.id)} aria-label="Delete job" className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button></div>
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">{job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700"><CheckCircle2 size={15} />Mark filled</button>}{job.status === 'pending_payment' && <><button onClick={() => completePayment(job)} disabled={resuming === job.id} className="btn-primary !px-3 !py-2 inline-flex items-center gap-1.5 disabled:opacity-50">{resuming === job.id ? 'Opening…' : 'Complete payment'}</button><button onClick={() => confirmPayment(job.id)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5" title="Checks Stripe for a payment that has already gone through">Already paid?</button></>}{job.status !== 'draft' && job.status !== 'filled' && job.status !== 'pending_payment' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5">{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}<button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button><button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#ede8df] hover:text-ink" title="Clone"><Copy size={15} /></button>{(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#ede8df] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}<button onClick={() => handleDelete(job.id)} aria-label="Delete job" className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button></div>
       </div>)}</div>}
     </DashboardShell>
   )

@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
+import { candidateNameForEmployer } from '@/lib/private-mode'
 import { createNotification } from '@/lib/notifications'
 import { createMutualMatch } from '@/lib/mutual-match'
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data, error } = await admin
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const targetId = String(body.targetId || '')
@@ -74,7 +75,9 @@ export async function POST(req: NextRequest) {
       employer.user_id,
       'general',
       'A professional is interested in your role',
-      `${candidate.full_name || 'A professional'} is interested in ${job.job_title}.`,
+      // Interest is not yet a match, so a private profile stays private here.
+      // The web route at api/swipe has always used this helper.
+      `${candidateNameForEmployer(candidate)} is interested in ${job.job_title}.`,
       `/employer/candidates?candidate=${candidate.id}`,
     )
     const { data: employerYes } = await admin.from('swipes').select('id')
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   // Resetting the swipe deck clears swipe decisions ONLY. Saved roles are an

@@ -2,26 +2,55 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
+import AiWrite from '@/components/AiWrite'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Upload } from 'lucide-react'
-import { COMPANY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
+import { COMPANY_TYPES, PROPERTY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
+import { externalUrl } from '@/lib/external-url'
 
 const STAR_RATINGS = ['3', '4', '5', 'Boutique', 'Independent']
+
+// A property should be told which of their answers was not kept, in the words
+// the form used, not the name of a database column they have never seen.
+const FIELD_LABELS: Record<string, string> = {
+  company_name: 'Company / brand name', property_name: 'Property name',
+  contact_name: 'Contact name', contact_phone: 'Phone', contact_email: 'Contact email',
+  website: 'Website', location: 'Location', postcode: 'Postcode',
+  company_type: 'Company type', property_type: 'Property type', star_rating: 'Star rating',
+  about_text: 'About', tagline: 'Tagline',
+  product_houses_used: 'Product houses', systems_used: 'Systems', services_offered: 'Services offered',
+  brand_partners: 'Brand partners', qualifications_sought: 'Qualifications sought',
+  num_treatment_rooms: 'Treatment rooms', team_size: 'Team size',
+  commute_car_required: 'Car required', nearest_transport: 'Nearest transport',
+  transport_walk_minutes: 'Walk from transport', parking_available: 'Parking',
+  taxi_support: 'Taxi support', taxi_notes: 'Taxi notes', travel_notes: 'Travel notes',
+  location_guide: 'Location guide', relocation_support: 'Relocation support',
+  hotel_group: 'Hotel group', room_count: 'Room count', spa_size: 'Spa size',
+  facilities: 'Facilities', opening_year: 'Opening year',
+  culture_statement: 'Culture statement', staff_benefits: 'Staff benefits',
+  progression_notes: 'Progression notes', culture_points: 'Culture points',
+  highlights: 'Highlights', agency_available: 'Agency availability', agency_note: 'Agency note',
+}
+const fieldLabel = (column: string) => FIELD_LABELS[column] || column
 
 export default function EmployerProfilePage() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  // Say whether it worked; never infer it from the wording.
+  type Notice = { kind: 'success' | 'error'; text: string } | null
+  const [notice, setNotice] = useState<Notice>(null)
+  const ok = (text: string) => setNotice({ kind: 'success', text })
+  const fail = (text: string) => setNotice({ kind: 'error', text })
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       if (data) {
         // Ensure array fields are always arrays
         data.product_houses_used = data.product_houses_used || []
@@ -43,8 +72,10 @@ export default function EmployerProfilePage() {
 
   const handleSave = async () => {
     setSaving(true)
-    // Single source of truth for the save - the retry loop below strips only
-    // the columns the DB rejects, so no field is ever silently dropped.
+    // Single source of truth for the save. The recovery below drops a column
+    // the database does not have so one missing field cannot lose the whole
+    // form - but it is a net, not a feature: whatever it drops is reported as
+    // a failure, by name, and needs a migration.
     const payload: Record<string, any> = {
         // Company basics
         company_name: profile.company_name,
@@ -97,15 +128,25 @@ export default function EmployerProfilePage() {
         agency_available: profile.agency_available,
         agency_note: profile.agency_note,
     }
+    // Store the address in a form a browser can follow. Saved as
+    // "www.example.com" it renders as a relative link and lands on a 404 of
+    // our own making, which reads to a candidate as a broken property.
+    for (const field of ['website', 'tripadvisor_url'] as const) {
+      if (field in payload && payload[field]) payload[field] = externalUrl(payload[field]) ?? payload[field]
+    }
+
     const { error } = await supabase
       .from('employer_profiles')
       .update(payload)
       .eq('id', profile.id)
 
-    // If a column doesn't exist in the DB, strip just that field and retry
+    // Drop a column the database does not have and try once more. Three
+    // attempts, not ten: past a third missing column the schema is wrong in a
+    // way no amount of retrying fixes, and eleven round trips on a broken save
+    // is a slow failure rather than a fast one.
     let finalError = error
     const stripped: string[] = []
-    for (let i = 0; i < 10 && finalError; i++) {
+    for (let i = 0; i < 3 && finalError; i++) {
       const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
       if (!m || !(m[1] in payload)) break
       stripped.push(m[1])
@@ -116,22 +157,22 @@ export default function EmployerProfilePage() {
 
     setSaving(false)
     if (finalError) {
-      setMessage(finalError.message)
+      fail(finalError.message)
     } else {
       // Best-effort: geocode the postcode so distance features work
       fetch('/api/employer/geocode', { method: 'POST' }).catch(() => {})
       if (stripped.length > 0) {
-        setMessage(`Some fields could not be saved: ${stripped.join(', ')}. Please try again or contact support.`)
+        fail(`Not saved: ${stripped.map(fieldLabel).join(', ')}. Everything else was kept. Please tell us so we can fix it - retrying will not help.`)
       } else {
-        setMessage('Profile saved.')
+        ok('Profile saved.')
       }
     }
-    setTimeout(() => setMessage(''), stripped.length > 0 ? 8000 : 3000)
+    setTimeout(() => setNotice(null), stripped.length > 0 ? 8000 : 3000)
   }
 
   const handleGalleryUpload = async (file: File) => {
     const current: string[] = profile.property_photos || []
-    if (current.length >= 6) { setMessage('Maximum 6 photos - remove one first.'); return }
+    if (current.length >= 6) { fail('Maximum 6 photos - remove one first.'); return }
     const ext = file.name.split('.').pop()
     const formData = new FormData()
     formData.append('file', file)
@@ -139,18 +180,18 @@ export default function EmployerProfilePage() {
     formData.append('path', `${profile.id}-${Date.now()}.${ext}`)
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
-    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
+    if (!res.ok) { fail(`Upload failed: ${data.error}`); return }
     const next = [...current, data.url]
     const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
-    if (error) { setMessage(error.message); return }
+    if (error) { fail(error.message); return }
     update('property_photos', next)
-    setMessage('Photo added.')
+    ok('Photo added.')
   }
 
   const removeGalleryPhoto = async (url: string) => {
     const next = (profile.property_photos || []).filter((u: string) => u !== url)
     const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
-    if (error) { setMessage(`Could not remove photo: ${error.message}`); return }
+    if (error) { fail(`Could not remove photo: ${error.message}`); return }
     update('property_photos', next)
   }
 
@@ -161,16 +202,16 @@ export default function EmployerProfilePage() {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('bucket', 'site-images')
-    formData.append('path', `logos/${profile.id}.${ext}`)
+    formData.append('path', `logos/${profile.id}-${Date.now()}.${ext}`)
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
-    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
+    if (!res.ok) { fail(`Upload failed: ${data.error}`); return }
     const { error: logoError } = await supabase.from('employer_profiles').update({ logo_url: data.url }).eq('id', profile.id)
-    if (logoError) { setMessage(`Could not save the logo: ${logoError.message}`); return }
+    if (logoError) { fail(`Could not save the logo: ${logoError.message}`); return }
 
     update('logo_url', data.url)
-    setMessage('Logo updated.')
-    setTimeout(() => setMessage(''), 3000)
+    ok('Logo updated.')
+    setTimeout(() => setNotice(null), 3000)
   }
 
   if (loading) return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
@@ -190,15 +231,15 @@ export default function EmployerProfilePage() {
           </button>
         </div>
 
-        {message && <div role="status" className={`px-4 py-3 rounded-lg mb-6 text-sm ${message.includes('success') || message.includes('updated') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
+        {notice && <div role={notice.kind === 'error' ? 'alert' : 'status'} className={`px-4 py-3 rounded-lg mb-6 text-sm ${notice.kind === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{notice.text}</div>}
 
         {/* Logo */}
         <div className="dashboard-card mb-6">
           <h3 className="font-serif text-lg font-semibold mb-4">Company Logo</h3>
           <div className="flex items-center space-x-6">
-            <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-xl bg-white border border-border flex items-center justify-center overflow-hidden">
               {profile.logo_url ? (
-                <img src={profile.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                <img decoding="async" src={profile.logo_url} alt={`${profile.company_name || 'Company'} logo`} className="w-full h-full object-contain p-1.5" />
               ) : (
                 <span className="text-2xl font-serif font-bold text-gray-300">{profile.company_name?.[0]}</span>
               )}
@@ -243,7 +284,10 @@ export default function EmployerProfilePage() {
               <input aria-label="Website" type="url" value={profile.website || ''} onChange={(e) => update('website', e.target.value)} className="input-field" placeholder="https://" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          {/* Same fix as the talent onboarding form: three across applies at
+              every width without a breakpoint, phone included, and a label
+              that wraps then pushes its input out of line with its neighbours. */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
               <input aria-label="Location" type="text" value={profile.location || ''} onChange={(e) => update('location', e.target.value)} className="input-field" placeholder="London" />
@@ -269,8 +313,16 @@ export default function EmployerProfilePage() {
               </select>
             </div>
             <div>
+              {/* This asked for "hotel_spa, day_spa, resort" - database slugs,
+                  typed by a spa director. Whatever they wrote appeared on the
+                  public job page, so the field leaked our naming into their
+                  shop window. It is a list now. */}
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Property Type</label>
-              <input aria-label="Property Type" type="text" value={profile.property_type || ''} onChange={(e) => update('property_type', e.target.value)} className="input-field" placeholder="e.g. hotel_spa, day_spa, resort" />
+              <select aria-label="Property Type" value={profile.property_type || ''} onChange={(e) => update('property_type', e.target.value)} className="input-field">
+                <option value="">Select</option>
+                {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <p className="mt-1.5 text-[11px] text-secondary">Where a candidate would actually work. Candidates see this on your roles.</p>
             </div>
           </div>
         </div>
@@ -333,10 +385,12 @@ export default function EmployerProfilePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Tagline</label>
             <input aria-label="Tagline" type="text" value={profile.tagline || ''} onChange={(e) => update('tagline', e.target.value)} className="input-field" placeholder="A short, memorable line about your property" />
+            <AiWrite className="mt-2" field="employer_tagline" value={profile.tagline || ''} onAccept={text => update('tagline', text)} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">About / Description</label>
-            <textarea aria-label="About / Description" rows={5} value={profile.about_text || ''} onChange={(e) => update('about_text', e.target.value)} className="input-field" placeholder="Tell candidates about your property, culture, and what makes it special..." />
+            <textarea aria-label="About / Description" rows={6} value={profile.about_text || ''} onChange={(e) => update('about_text', e.target.value)} className="input-field" placeholder="What this place is actually like to work in. If you would rather not write it, press the button underneath." />
+            <AiWrite className="mt-2" field="employer_about" value={profile.about_text || ''} onAccept={text => update('about_text', text)} />
           </div>
         </div>
 
@@ -457,13 +511,13 @@ export default function EmployerProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {(profile.property_photos || []).map((url: string) => (
               <div key={url} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-surface group">
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
                 <button type="button" onClick={() => removeGalleryPhoto(url)} className="absolute top-2 right-2 bg-white/90 rounded-full w-6 h-6 text-[11px] font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
               </div>
             ))}
             {(profile.property_photos || []).length < 6 && (
               <label className="aspect-[4/3] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-ink/30 transition-colors text-muted">
-                <span className="text-[22px] leading-none mb-1" style={{ color: '#57534e' }}>+</span>
+                <span className="text-[22px] leading-none mb-1" style={{ color: '#57544c' }}>+</span>
                 <span className="text-[11px]">Add photo</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleGalleryUpload(f); e.target.value = '' }} />
               </label>

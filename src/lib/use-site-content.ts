@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
+import { DEFAULT_WEBSITE_CONTENT } from '@/lib/site-content-values'
+import type { WebsiteContent } from '@/lib/site-content'
 
 // Published navigation/footer/brand for client components on pages that do
 // not fetch website content server-side. Cached per page load so the Navbar

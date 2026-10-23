@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminRequestUser } from '@/lib/admin-api-auth'
+import { ADMIN_REFUSAL_MESSAGE, adminRequestOutcome } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { sendCourseGiftEmail } from '@/lib/emails'
@@ -21,18 +21,22 @@ import {
   normaliseContent,
   validateContent,
 } from '@/lib/academy-course-content'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
+import { isRealLearnerName, learnerIdsToLookUp, learnerName, lessonProgress } from '@/lib/academy-learners'
 
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
 
 // Delegated to the shared admin guard, which enforces two-step
-// verification as well as the admin role.
+// verification as well as the admin role. The refusal is passed through so the
+// screen can say which of the four things happened rather than "Unauthorised",
+// which describes all of them and helps with none.
 async function requireAdmin() {
-  return adminRequestUser()
+  return adminRequestOutcome()
 }
 
 function makeCertificateCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  let code = 'WHC-'
+  let code = 'Talent House-'
   for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
   return code
 }
@@ -103,8 +107,8 @@ async function courseDetail(slug: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const { user, refusal } = await requireAdmin()
+  if (!user) return NextResponse.json({ error: ADMIN_REFUSAL_MESSAGE[refusal] }, { status: 401 })
   const admin = createAdminClient()
   try {
     const single = cleanSlug(req.nextUrl.searchParams.get('slug') || '')
@@ -117,19 +121,77 @@ export async function GET(req: NextRequest) {
     const catalogue = await getAcademyCatalog(true)
     const { data: enrolments, error: enrolError } = await admin.from('course_enrollments').select('*').order('created_at', { ascending: false })
     if (enrolError) throw enrolError
-    const candidateIds = Array.from(new Set((enrolments || []).map((enrolment: any) => enrolment.candidate_id)))
-    const { data: candidates } = candidateIds.length
-      ? await admin.from('candidate_profiles').select('id, full_name, user_id').in('id', candidateIds)
-      : { data: [] as any[] }
-    const candidateMap = new Map((candidates || []).map((candidate: any) => [candidate.id, candidate]))
+
+    // Who is actually taking each course.
+    //
+    // Every learner on this screen was called "Therapist". That was not a
+    // missing name, it was a lookup failing quietly and then being spelled as
+    // a person: the error from this read was discarded, and any row it could
+    // not resolve fell through to a word that reads like a job title, so a
+    // broken query and a genuinely nameless account looked identical.
+    //
+    // Two things produced it. candidate_id became nullable when erasure
+    // started detaching records instead of destroying them, and a single null
+    // in an .in() list makes PostgREST reject the whole query - one deleted
+    // account and nobody has a name. And the read was never chunked, so a
+    // long enough list would blow the URL and fail the same silent way.
+    // Both are handled below, and a failure is now reported rather than worn.
+    const candidateIds = learnerIdsToLookUp(enrolments || [])
+    const candidateMap = new Map<string, any>()
+    let learnerLookupError = ''
+    for (let from = 0; from < candidateIds.length; from += 150) {
+      const { data, error } = await admin
+        .from('candidate_profiles')
+        .select('id, full_name, user_id, work_email')
+        .in('id', candidateIds.slice(from, from + 150))
+      if (error) { learnerLookupError = error.message; break }
+      for (const candidate of data || []) candidateMap.set(candidate.id, candidate)
+    }
+
+    // candidate_profiles has no email column, so the address a learner signs
+    // in with lives in auth.users. There is no bulk get-by-id, and one call
+    // per learner would make this screen crawl, so the account list is swept
+    // once in pages of 200 and stopped as soon as every learner is matched.
+    const learnerEmails = new Map<string, string>()
+    const wantedUserIds = new Map<string, string>()
+    for (const candidate of candidateMap.values()) {
+      if (candidate.user_id) wantedUserIds.set(candidate.user_id, candidate.id)
+    }
+    if (wantedUserIds.size) {
+      try {
+        for (let page = 1; page <= 25 && learnerEmails.size < wantedUserIds.size; page++) {
+          const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+          if (error || !data?.users?.length) break
+          for (const account of data.users as any[]) {
+            const candidateId = wantedUserIds.get(account.id)
+            if (candidateId && account.email) learnerEmails.set(candidateId, account.email)
+          }
+          if (data.users.length < 200) break
+        }
+      } catch { /* an address is a convenience. Losing it must not lose the learner. */ }
+    }
+
     const courseMap = new Map(catalogue.map(course => [course.slug, course]))
-    const rows = (enrolments || []).map((enrolment: any) => ({
-      ...enrolment,
-      candidate_name: (candidateMap.get(enrolment.candidate_id) as any)?.full_name || 'Therapist',
-      course_title: courseMap.get(enrolment.course_slug)?.title || enrolment.course_slug,
-      lessons_total: courseMap.get(enrolment.course_slug)?.lessons.length ?? 0,
-      lessons_done: Object.keys(enrolment.progress || {}).length,
-    }))
+    const rows = (enrolments || []).map((enrolment: any) => {
+      const course = courseMap.get(enrolment.course_slug)
+      const candidate = enrolment.candidate_id ? candidateMap.get(enrolment.candidate_id) : null
+      // The first lesson they have not ticked off is the single most useful
+      // thing on the row: it says where somebody stopped, not only how much
+      // of the course is left.
+      const progress = lessonProgress(enrolment.progress, course?.lessons.length ?? 0)
+      return {
+        ...enrolment,
+        candidate_name: learnerName(enrolment.candidate_id, candidate),
+        candidate_named: isRealLearnerName(candidate),
+        candidate_email: (enrolment.candidate_id ? learnerEmails.get(enrolment.candidate_id) : '') || candidate?.work_email || '',
+        course_title: course?.title || enrolment.course_slug,
+        course_archived: course ? course.is_active === false : false,
+        lessons_total: progress.total,
+        lessons_done: progress.done,
+        percent: progress.percent,
+        next_lesson: progress.nextIndex >= 0 ? `${progress.nextIndex + 1}. ${course?.lessons[progress.nextIndex]?.title || ''}`.trim() : '',
+      }
+    })
     // Every course talent can see - the code catalogue merged with any
     // academy_courses overrides - with the same {revenue, enrolments,
     // completions} stat shape the agency dashboard reports.
@@ -159,15 +221,22 @@ export async function GET(req: NextRequest) {
       }
     })
     const { data: approvedCandidates } = await admin.from('candidate_profiles').select('id, full_name').eq('approval_status', 'approved').order('full_name')
-    return NextResponse.json({ enrollments: rows, courses, candidates: approvedCandidates || [] })
+    // Said out loud, on the screen, rather than left to be inferred from a
+    // table of identical names.
+    return NextResponse.json({
+      enrollments: rows,
+      courses,
+      candidates: approvedCandidates || [],
+      learner_lookup_error: learnerLookupError || null,
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const { user, refusal } = await requireAdmin()
+  if (!user) return NextResponse.json({ error: ADMIN_REFUSAL_MESSAGE[refusal] }, { status: 401 })
   const admin = createAdminClient()
   try {
     const body = await req.json()
@@ -203,6 +272,9 @@ export async function POST(req: NextRequest) {
         sort_order: sortOrder,
       }, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
+      // The Academy list and every course page cache for an hour, which is only
+      // safe because saving a course here drops them now.
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, sort_order_saved: result.sortOrderSaved !== false })
     }
 
@@ -223,6 +295,7 @@ export async function POST(req: NextRequest) {
       }
       const result = await saveAcademyCourseContent(admin, slug, doc, 'custom', user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, content: doc, content_source: 'custom' })
     }
 
@@ -238,6 +311,7 @@ export async function POST(req: NextRequest) {
       const source = body.publish === false ? course.content_source : 'custom'
       const result = await saveAcademyCourseContent(admin, slug, doc, source, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, content_source: source, stats: contentStats(doc) })
     }
 
@@ -248,6 +322,7 @@ export async function POST(req: NextRequest) {
       const source = action === 'publish_content' ? 'custom' : 'platform'
       const result = await setAcademyContentSource(admin, slug, source, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug, content_source: source })
     }
 
@@ -260,7 +335,7 @@ export async function POST(req: NextRequest) {
       // worked and change nothing for learners - so it is refused, plainly.
       if (existing?.code_defined) {
         return NextResponse.json({
-          error: 'This is a platform course. Open it in the course content editor and choose "Take editorial control of this course" - that copies the current WHC content in for you to edit, so nothing is ever lost.',
+          error: 'This is a platform course. Open it in the course content editor and choose "Take editorial control of this course" - that copies the current Talent House content in for you to edit, so nothing is ever lost.',
         }, { status: 400 })
       }
       const { error } = await admin.from('academy_courses').upsert({
@@ -296,6 +371,7 @@ export async function POST(req: NextRequest) {
         rich: null,
       })
       const contentResult = validateContent(doc) ? { error: null } : await saveAcademyCourseContent(admin, course.slug, doc, 'custom', user.id)
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true, slug: course.slug, content_saved: !contentResult.error })
     }
 
@@ -311,6 +387,7 @@ export async function POST(req: NextRequest) {
         sort_order: existing.sort_order,
       }, user.id)
       if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 
@@ -326,7 +403,7 @@ export async function POST(req: NextRequest) {
       if (error) throw error
       try {
         if (candidate.user_id) {
-          await createNotification(candidate.user_id, 'general', 'A course has been unlocked for you', `Wellness House Collective has enrolled you on ${course.title}, with our compliments.`, '/talent/academy')
+          await createNotification(candidate.user_id, 'general', 'A course has been unlocked for you', `Talent House Collective has enrolled you on ${course.title}, with our compliments.`, '/talent/academy')
           // Preference-gated ('academy_updates'): the gifted-course email is an
           // Academy notification; the in-app notification above always fires
           // so the gift is never invisible. Fail-open on lookup errors.
@@ -336,12 +413,17 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch { /* best effort */ }
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 
     const { data: enrolment } = await admin.from('course_enrollments').select('*').eq('id', String(body.id || '')).maybeSingle()
     if (!enrolment) return NextResponse.json({ error: 'Enrolment not found' }, { status: 404 })
-    const { data: candidate } = await admin.from('candidate_profiles').select('id, user_id, full_name').eq('id', enrolment.candidate_id).maybeSingle()
+    // candidate_id is nullable since erasure began detaching records, and
+    // .eq('id', null) is a 400 from PostgREST rather than an empty result.
+    const { data: candidate } = enrolment.candidate_id
+      ? await admin.from('candidate_profiles').select('id, user_id, full_name').eq('id', enrolment.candidate_id).maybeSingle()
+      : { data: null as any }
     const course = await getAcademyCourseBySlug(enrolment.course_slug, true)
 
     if (action === 'award') {
@@ -349,8 +431,9 @@ export async function POST(req: NextRequest) {
       const { error } = await admin.from('course_enrollments').update({ completed_at: new Date().toISOString(), certificate_code: await makeUniqueCertificateCode(admin), quiz_score: enrolment.quiz_score ?? 100 }).eq('id', enrolment.id)
       if (error) throw error
       try {
-        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate awarded', `WHC has awarded you the certificate for ${course?.title || enrolment.course_slug}.`, '/talent/academy')
+        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate awarded', `Talent House has awarded you the certificate for ${course?.title || enrolment.course_slug}.`, '/talent/academy')
       } catch { /* best effort */ }
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 
@@ -358,8 +441,9 @@ export async function POST(req: NextRequest) {
       const { error } = await admin.from('course_enrollments').update({ completed_at: null, certificate_code: null }).eq('id', enrolment.id)
       if (error) throw error
       try {
-        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate withdrawn', `Your certificate for ${course?.title || enrolment.course_slug} has been withdrawn by WHC${body.reason ? `: ${String(body.reason).slice(0, 300)}` : ''}.`, '/talent/academy')
+        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate withdrawn', `Your certificate for ${course?.title || enrolment.course_slug} has been withdrawn by Talent House${body.reason ? `: ${String(body.reason).slice(0, 300)}` : ''}.`, '/talent/academy')
       } catch { /* best effort */ }
+      revalidatePublic(PUBLIC_CACHE_TAGS.academy)
       return NextResponse.json({ success: true })
     }
 

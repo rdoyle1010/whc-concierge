@@ -47,10 +47,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           criteria_scores: r.criteria_scores || null,
           created_at: r.created_at,
           verified: true,
-          source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
+          source: r.booking_id ? 'Completed Talent House agency shift' : 'Talent House placement',
           // Published by role, never by name: nobody consented to a public,
           // permanent attribution of their opinion of a named employer.
-          reviewer_name: reviewer?.role_level || 'Verified WHC professional',
+          reviewer_name: reviewer?.role_level || 'Verified Talent House professional',
           reviewer_role: null,
         }
       })

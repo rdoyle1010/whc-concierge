@@ -28,7 +28,7 @@ function safeFileName(name: string) {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('academy_download_resources')
@@ -40,7 +40,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const form = await req.formData()
   const file = form.get('file')
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const id = String(req.nextUrl.searchParams.get('id') || '')
   if (!id) return NextResponse.json({ error: 'Missing download id.' }, { status: 400 })
 

@@ -16,7 +16,7 @@ export default function AcademyResourcesPage() {
     <DashboardShell role="talent">
       <Link href={`/talent/academy/${slug}`} className="mb-5 inline-flex items-center gap-1 text-[13px] text-muted hover:text-ink"><ArrowLeft size={14} /> Back to programme</Link>
       <div className="mb-7">
-        <p className="dashboard-eyebrow">WHC Academy resources</p>
+        <p className="dashboard-eyebrow">Talent House Academy resources</p>
         <h1 className="dashboard-title">{title}</h1>
         <p className="dashboard-intro">Practical working documents included with your programme. Download them, use them with real spa numbers and keep them as part of your management toolkit.</p>
       </div>
@@ -29,7 +29,7 @@ export default function AcademyResourcesPage() {
             const spreadsheet = resource.contentType.startsWith('text/csv')
             return (
               <article key={resource.id} className="dashboard-card flex flex-col">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f3f0eb] text-[#1c1b1a]">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#ede8df] text-[#222321]">
                   {spreadsheet ? <FileSpreadsheet size={19} /> : <FileText size={19} />}
                 </div>
                 <h2 className="text-[16px] font-semibold text-ink">{resource.title}</h2>

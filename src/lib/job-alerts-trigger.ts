@@ -1,4 +1,5 @@
 import { getInternalApiSecret } from '@/lib/internal-request'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 // Fire the job alerts for a role that has just gone live.
 //
@@ -16,6 +17,15 @@ import { getInternalApiSecret } from '@/lib/internal-request'
 // publication somebody has paid for.
 export function triggerJobAlerts(jobId: string, origin: string) {
   if (!jobId) return
+
+  // The public pages that show this role are dropped here, before anything
+  // else, for two reasons. Every path that puts a role on the market calls
+  // this function - there is a readiness check that enforces exactly that - so
+  // it is the one place guaranteed to run on a publish. And it must happen
+  // above the secret check below, or a deployment with no alert secret would
+  // publish a role that stayed invisible for an hour.
+  revalidatePublic(PUBLIC_CACHE_TAGS.jobs)
+
   try {
     const secret = getInternalApiSecret()
     if (!secret) return

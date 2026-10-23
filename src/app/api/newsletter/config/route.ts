@@ -13,7 +13,7 @@ const KEYS = [
 const defaults = {
   enabled: true,
   heading: 'The best of wellness, in your inbox.',
-  text: 'Jobs, industry insight, Academy updates and opportunities from Wellness House Collective.',
+  text: 'Jobs, industry insight, Academy updates and opportunities from Talent House Collective.',
   button: 'Join the newsletter',
   delaySeconds: 6,
   frequencyDays: 14,

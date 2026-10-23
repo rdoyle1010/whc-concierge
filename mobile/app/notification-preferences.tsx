@@ -144,7 +144,7 @@ export default function NotificationPreferencesScreen() {
     </View>
   )
 
-  if (loading) return <View style={styles.center}><ActivityIndicator color="#1c1b1a" /></View>
+  if (loading) return <View style={styles.center}><ActivityIndicator color="#0b2f4d" /></View>
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
@@ -191,30 +191,30 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: '#fff' },
   page: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 110 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
-  back: { color: '#6e6a66', fontSize: 14, marginBottom: 26 },
-  eyebrow: { color: '#6e6a66', fontSize: 8, letterSpacing: 2, marginBottom: 8 },
-  title: { color: '#1c1b1a', fontSize: 29, lineHeight: 34, fontWeight: '500' },
-  intro: { color: '#6e6a66', fontSize: 13, lineHeight: 20, marginTop: 8 },
-  tier: { color: '#1c1b1a', fontSize: 9, letterSpacing: 1.8, fontWeight: '800', marginTop: 28 },
-  tierNote: { color: '#8c8781', fontSize: 10.5, lineHeight: 16, marginTop: 4, marginBottom: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#e0dad2', paddingVertical: 14 },
-  rowTitle: { color: '#1c1b1a', fontSize: 13, fontWeight: '700' },
-  rowCopy: { color: '#6e6a66', fontSize: 10.5, lineHeight: 16, marginTop: 3 },
-  switch: { minWidth: 54, paddingVertical: 10, paddingHorizontal: 10, borderWidth: 1, borderColor: '#e0dad2', alignItems: 'center' },
-  switchOn: { backgroundColor: '#1c1b1a', borderColor: '#1c1b1a' },
-  switchText: { color: '#6e6a66', fontSize: 10, fontWeight: '800' },
+  back: { color: '#66747c', fontSize: 14, marginBottom: 26 },
+  eyebrow: { color: '#71808a', fontSize: 8, letterSpacing: 2, marginBottom: 8 },
+  title: { color: '#0b2f4d', fontSize: 29, lineHeight: 34, fontWeight: '500' },
+  intro: { color: '#66747c', fontSize: 13, lineHeight: 20, marginTop: 8 },
+  tier: { color: '#0b2f4d', fontSize: 9, letterSpacing: 1.8, fontWeight: '800', marginTop: 28 },
+  tierNote: { color: '#8b989f', fontSize: 10.5, lineHeight: 16, marginTop: 4, marginBottom: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#e4e9ec', paddingVertical: 14 },
+  rowTitle: { color: '#173246', fontSize: 13, fontWeight: '700' },
+  rowCopy: { color: '#71808a', fontSize: 10.5, lineHeight: 16, marginTop: 3 },
+  switch: { minWidth: 54, paddingVertical: 10, paddingHorizontal: 10, borderWidth: 1, borderColor: '#d7dfe3', alignItems: 'center' },
+  switchOn: { backgroundColor: '#0b2f4d', borderColor: '#0b2f4d' },
+  switchText: { color: '#71808a', fontSize: 10, fontWeight: '800' },
   switchTextOn: { color: '#fff' },
   disabled: { opacity: 0.45 },
-  block: { borderTopWidth: 1, borderTopColor: '#e0dad2', paddingVertical: 14 },
+  block: { borderTopWidth: 1, borderTopColor: '#e4e9ec', paddingVertical: 14 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 11 },
-  chip: { borderWidth: 1, borderColor: '#e0dad2', paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#1c1b1a', borderColor: '#1c1b1a' },
-  chipText: { color: '#6e6a66', fontSize: 10.5, fontWeight: '700' },
+  chip: { borderWidth: 1, borderColor: '#d7e0e4', paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' },
+  chipActive: { backgroundColor: '#0b2f4d', borderColor: '#0b2f4d' },
+  chipText: { color: '#66747c', fontSize: 10.5, fontWeight: '700' },
   chipTextActive: { color: '#fff' },
   scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 13 },
-  scoreLabel: { color: '#6e6a66', fontSize: 11 },
-  scoreInput: { borderWidth: 1, borderColor: '#e0dad2', paddingHorizontal: 10, paddingVertical: 8, width: 66, color: '#1c1b1a', fontSize: 13, backgroundColor: '#fff' },
-  footnote: { color: '#8c8781', fontSize: 10, lineHeight: 16, marginTop: 12 },
+  scoreLabel: { color: '#66747c', fontSize: 11 },
+  scoreInput: { borderWidth: 1, borderColor: '#d7e0e4', paddingHorizontal: 10, paddingVertical: 8, width: 66, color: '#173246', fontSize: 13, backgroundColor: '#fff' },
+  footnote: { color: '#8b989f', fontSize: 10, lineHeight: 16, marginTop: 12 },
   notice: { color: '#456655', fontSize: 11, marginTop: 14 },
   error: { color: '#9b2c2c', fontSize: 11, lineHeight: 17, marginTop: 14 },
 })

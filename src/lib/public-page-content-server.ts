@@ -25,7 +25,11 @@ async function readPublicPagesContent(key: string): Promise<PublicPagesContent> 
 const getCachedPublishedContent = unstable_cache(
   () => readPublicPagesContent(PUBLIC_PAGES_PUBLISHED_KEY),
   ['public-pages-content-published-v1'],
-  { revalidate: 300, tags: [PUBLIC_PAGES_CACHE_TAG] }
+  // An hour, because saving a page in admin drops this tag on the same request.
+  // Five minutes was a second safety net under an invalidation that already
+  // works, and it held /about, /agency/about and /coming-soon to a five-minute
+  // window they could not get out of.
+  { revalidate: 3600, tags: [PUBLIC_PAGES_CACHE_TAG] }
 )
 
 export async function getPublicPagesContent(useDraft = false): Promise<PublicPagesContent> {

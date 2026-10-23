@@ -3,6 +3,7 @@ import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { reviewSchema, validateRequest } from '@/lib/validations'
 import { getRequestUser } from '@/lib/request-user'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 const REVIEWABLE_BOOKING_STATUSES = ['confirmed', 'completed']
 
@@ -103,7 +104,7 @@ async function hasWorkedTogether(
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json()
     const validation = validateRequest(reviewSchema, body)
@@ -229,11 +230,13 @@ export async function POST(req: NextRequest) {
         ratingInt >= 4 ? `You have a new ${ratingInt}-star review` : 'You have a new review',
         comment
           ? `"${String(comment).slice(0, 120)}${String(comment).length > 120 ? '…' : ''}"`
-          : 'A review has been left on your WHC profile.',
+          : 'A review has been left on your Talent House profile.',
         link,
       )
     } catch { /* the review itself is saved either way */ }
 
+    // The homepage prints review counts as proof, so a new review changes it.
+    revalidatePublic(PUBLIC_CACHE_TAGS.proof)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

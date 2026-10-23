@@ -39,18 +39,19 @@ export async function POST(req: NextRequest) {
     if (!cand?.user_id) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 
     const empName = emp.property_name || emp.company_name || 'A property'
-    const message = `${empName} has suggested a WHC Academy course for you: ${course.title}. Properties can filter the agency directory by Academy certificates, so completing it makes you directly bookable for shifts like theirs. Find it under Academy in your dashboard (£10, certificate included).`
+    const message = `${empName} has suggested a Talent House Academy course for you: ${course.title}. Properties can filter the agency directory by Academy certificates, so completing it makes you directly bookable for shifts like theirs. Find it under Academy in your dashboard (£10, certificate included).`
 
     try {
       await createNotification(cand.user_id, 'general', `${empName} suggested a course for you`, message, '/talent/academy')
     } catch { /* non-fatal */ }
     try {
-      await admin.from('messages').insert({
+      const { error: messageError } = await admin.from('messages').insert({
         sender_id: user.id,
         recipient_id: cand.user_id,
         content: message,
         read: false,
       })
+      if (messageError) console.error('Message not delivered into the thread:', messageError.message)
     } catch { /* non-fatal */ }
 
     return NextResponse.json({ success: true })

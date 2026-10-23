@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { sendCertificateResultEmail } from '@/lib/emails'
 import { trackEvent } from '@/lib/analytics'
 
 // Delegated to the shared admin guard, which enforces two-step
@@ -12,7 +13,7 @@ async function requireAdmin() {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   try {
     const { data: rows } = await admin.from('certificate_submissions')
@@ -33,7 +34,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -63,11 +64,33 @@ export async function POST(req: NextRequest) {
         : decision === 'rejected' ? 'Certificate could not be verified'
         : 'Certificate review - more information needed'
       const message = decision === 'verified'
-        ? `${row.title} has been reviewed and verified by WHC. It now shows as verified on your profile.`
+        ? `${row.title} has been reviewed and verified by Talent House. It now shows as verified on your profile.`
         : decision === 'rejected'
           ? `${row.title} could not be verified: ${note}`
-          : `WHC needs more information to verify ${row.title}: ${note}`
+          : `Talent House needs more information to verify ${row.title}: ${note}`
       await createNotification(candidate.user_id, 'general', title, message, '/talent/profile').catch?.(() => {})
+
+      // And an email, because a bell is only seen by somebody who happens to
+      // log back in. Right-to-work decisions have always sent one; a
+      // certificate decision is the same news to the same person.
+      try {
+        const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+        const email = authUser?.user?.email
+        if (email) {
+          const { data: profile } = await admin.from('candidate_profiles')
+            .select('full_name').eq('id', row.candidate_id).maybeSingle()
+          await sendCertificateResultEmail(
+            email,
+            String(profile?.full_name || 'there').split(' ')[0] || 'there',
+            row.title,
+            decision as 'verified' | 'rejected' | 'more_information',
+            note || null,
+          )
+        }
+      } catch (e: any) {
+        // The decision is recorded either way; a failed email must not undo it.
+        console.error('Certificate result email failed:', e?.message)
+      }
     }
 
     await trackEvent('certificate_reviewed', { actorUserId: user.id, candidateId: row.candidate_id }, { decision, title: row.title })

@@ -109,6 +109,37 @@ check('public Residency data is sanitised and membership-gated', () => {
   assert.doesNotMatch(mapper, /profile_photo_url:/)
   assert.doesNotMatch(mapper, /full_name:/)
 })
+check('the two content security policies say the same thing', () => {
+  // Two CSP headers do not layer - a browser enforces the intersection. So a
+  // directive relaxed in one file and left alone in the other stays blocked,
+  // and nothing anywhere reports it. That is how the newsletter preview came
+  // to show "This content is blocked" where the email should have been.
+  const fromNext = read('next.config.js')
+    .split("key: 'Content-Security-Policy'")[1]
+    .split("].join('; ')")[0]
+    .match(/"([^"]+)"/g)!.map(part => part.slice(1, -1))
+  const fromNetlify = read('netlify.toml')
+    .match(/Content-Security-Policy = "([^"]*)"/)![1]
+    .split('; ')
+  assert.deepEqual(fromNext, fromNetlify, 'both files must carry an identical policy')
+  // The newsletter studio previews an issue in a srcdoc iframe, which is
+  // checked against frame-src.
+  assert.ok(fromNext.some(part => part.startsWith('frame-src') && part.includes("'self'")),
+    "frame-src needs 'self' or the newsletter preview is blocked")
+})
+check('the public Consultancy directory serves only approved, published listings', () => {
+  const route = read('src/app/api/consultancy/public/route.ts')
+  assert.doesNotMatch(route, /select\('\*'\)/)
+  assert.match(route, /eq\('is_live', true\)/)
+  assert.match(route, /eq\('approval_status', 'approved'\)/)
+  // Confidential clients are resolved to what may be shown before the response
+  // leaves the server, not in the browser where the raw name would still be in
+  // the payload.
+  assert.match(route, /client: projectClientLabel\(project\)/)
+  for (const hidden of ['approval_notes', 'view_count', 'enquiry_count']) {
+    assert.doesNotMatch(route, new RegExp(`${hidden}:`), `${hidden} is not public`)
+  }
+})
 check('Residency money has payout and dispute controls', () => {
   const admin = read('src/app/api/admin/residency-money/route.ts')
   assert.match(admin, /mark_paid_out/)
@@ -147,6 +178,30 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/advertising/click/route.ts',
     // Public by design: read-only advert price list (label + pence only).
     'src/app/api/advertising/prices/route.ts',
+    // Public by design: the shop's shelf. Read only, and it lists what is on
+    // sale rather than serving it - approved documents only, and only their
+    // reference, title, department and tier. The content is the product, so
+    // the select names its columns and a test asserts the document body is
+    // not among them.
+    'src/app/api/standards/route.ts',
+    // Public by design, and guarded by a token rather than a session. A spa
+    // director buys a document without creating an account, so the receipt
+    // email carries the only key there is. Both routes look the order up by
+    // that token and serve only what that buyer's own orders cover, and a
+    // test asserts the download refuses a reference they did not buy.
+    'src/app/api/standards/library/route.ts',
+    'src/app/api/standards/download/route.ts',
+    // Public by design: it starts a Stripe checkout and grants nothing. The
+    // price is worked out here against what is signed off, never taken from
+    // the caller.
+    'src/app/api/standards/checkout/route.ts',
+    // Public by design, and the point of it. Three complete documents, free,
+    // to anybody who asks, because a stranger being asked for two and a half
+    // thousand pounds for files has no other way to find out whether they are
+    // any good. The list of what is given away is a constant in samples.ts
+    // and the route serves nothing that is not on it, so widening what is
+    // free is a commit rather than a query string.
+    'src/app/api/standards/sample/route.ts',
     'src/app/api/agency/directory/route.ts',
     'src/app/api/fix-employer-columns/route.ts',
     'src/app/api/fix-null-live/route.ts',
@@ -155,7 +210,6 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/seed-residencies/route.ts',
     'src/app/api/seed-taxonomy/route.ts',
     'src/app/api/seed/route.ts',
-    'src/app/api/update-jobs/route.ts',
     'src/app/api/jobs/public/route.ts',
     'src/app/api/properties/[id]/reviews/route.ts',
     'src/app/api/privacy/marketing/confirm/route.ts',
@@ -169,6 +223,13 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/newsletter/unsubscribe/route.ts',
     'src/app/api/register/init/route.ts',
     'src/app/api/residency/public/route.ts',
+    // Public by design: the Consultancy directory. Unlike Residency, which is
+    // anonymous until a booking, this is a showcase - the practice name, the
+    // projects and the outcomes are the product. It serves only listings the
+    // consultant published and WHC approved, and the shaper drops the columns
+    // that are the consultant's own business (moderation notes, view and
+    // enquiry counts) rather than selecting the row wholesale.
+    'src/app/api/consultancy/public/route.ts',
     'src/app/api/stripe/sponsored-ad-confirm/route.ts',
     // Public by design: aggregate demand counts for the public Academy page -
     // a map of course slug to live-role count, cached, nothing per-listing.
@@ -180,8 +241,52 @@ check('all service-role API routes are protected or deliberately public', () => 
     // pages. Reviews are private to their parties, so only the count - never
     // a row - is read with the service role.
     'src/app/api/public-stats/route.ts',
+    // Public by design: the door and sector taxonomy - slugs, labels and sort
+    // order, nothing per-person. The public jobs page filters on it while
+    // signed out, and the post-a-role and profile forms read the same list.
+    'src/app/api/sectors/route.ts',
+    // Public by design: a spa director asking a brand for its terms. She has
+    // no account here and the whole point is that she does not need one. It
+    // writes an enquiry and reads nothing back but the brand's own name, which
+    // is already on the public page she is reading. Rate limited, honeypotted,
+    // and it refuses a brand that is not published.
+    'src/app/api/brands/enquire/route.ts',
+    // Public by design: a brand applying for a page. Insert only, rate limited
+    // to five an hour per address, honeypotted, and it reads nothing at all.
+    'src/app/api/brands/apply/route.ts',
+    // Public by design: the visit beacon. Counting the people who never sign
+    // up cannot require them to be signed in, and validating a session on
+    // every page view would put a network round trip in front of a number
+    // that only needs to be roughly right. It writes one row - a hash that
+    // rotates every day, a path and a device - reads nothing back, returns
+    // 204 on every path including failure, refuses crawlers and any path
+    // outside the public site, and is rate limited per address.
+    'src/app/api/track-visit/route.ts',
+    // Public by design: "send us your CV and we will do the rest". The entire
+    // point is that somebody with no account, and no intention of filling in
+    // a form, can still end up with a finished profile - so requiring a
+    // session would remove the only thing this route is for. Insert only,
+    // rate limited to five an hour per address, honeypotted, one narrow file
+    // type into a private bucket under a path the sender cannot choose, and
+    // it reads nothing back.
+    'src/app/api/profile-build/route.ts',
   ])
-  const authMarkers = /getUser\(|getRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
+  // adminRequestUser is the actual admin guard on this platform. It was
+  // missing here, so a route passed only if it happened to wrap the helper in
+  // something called requireAdmin - the check was reading naming rather than
+  // substance, and a correctly guarded route failed for calling it directly.
+  // signInWithPassword belongs here for the same reason getUser does: a route
+  // that calls it has established who the caller is before doing anything.
+  // The sign-in route reconciles the copies of a member's email address after
+  // a confirmed change, which needs the service role and cannot happen before
+  // the password has been accepted.
+  // adminRequestOutcome is the same guard as adminRequestUser - the latter now
+  // delegates to it - and it is the one a route calls when it wants to tell the
+  // administrator which of the four refusals happened rather than answering
+  // "Unauthorised" to all of them. Omitting it here would have failed a route
+  // for using the stronger call, which is the naming-over-substance mistake
+  // this list has already made once.
+  const authMarkers = /getUser\(|getRequestUser\(|adminRequestUser\(|adminRequestOutcome\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest|signInWithPassword\(/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
   assert.deepEqual(unguarded, [])
 })
@@ -269,13 +374,80 @@ check('Academy course content leaves the database only when it is owned and comp
   // 6. The commercial settings path is unchanged and still works everywhere.
   assert.match(adminRoute, /save_course_settings/)
   assert.match(adminRoute, /saveAcademyCourseSettings/)
-  // An admin-set image is never overruled by a hard-coded page image.
-  assert.match(read('src/app/academy/page.tsx'), /course\.image_admin_set && course\.image_url/)
+  // An uploaded image is the only image.
+  //
+  // This check has been rewritten twice for the same underlying bug. First it
+  // pinned `image_admin_set && image_url`, which failed its own intent: the
+  // flag is hardcoded false for every course defined in code, so a stock
+  // picture beat the uploaded one and the upload appeared to do nothing. Then
+  // it pinned `image_url || MODERN_COURSE_IMAGES`, which put the uploaded
+  // picture first but left the stock one underneath - so /academy painted
+  // somebody else's spa and swapped in hers three hundred milliseconds later.
+  //
+  // There is now nothing underneath. A course has her photograph or it draws a
+  // charcoal field, and this asserts the absence rather than an ordering.
+  const chooser = read('src/app/academy/AcademyBrowser.tsx')
+  assert.match(chooser, /course\.image_url \|\| ''/)
+  assert.ok(
+    !/image_admin_set && course\.image_url/.test(chooser),
+    'an uploaded image must not be gated behind a flag',
+  )
+  assert.ok(
+    !/unsplash/i.test(chooser.replace(/^\s*\/\/.*$/gm, '')),
+    'no stock photograph may sit behind an uploaded one',
+  )
 
   // 7. Every course surface reads the same merged catalogue, so custom content
   //    reaches talent, the public page and the app together.
-  assert.match(read('src/app/api/academy/catalog/route.ts'), /getAcademyCatalog/)
-  assert.match(read('src/app/talent/academy/[slug]/page.tsx'), /course\?\.rich \|\| getCourseContent\(slug\)/)
+  //
+  //    The list arm now returns summaries rather than whole courses, because it
+  //    was shipping every lesson body to draw a card. The guarantee is unchanged
+  //    and simply sits one call deeper: getAcademySummaries is defined as the
+  //    merged catalogue with the teaching stripped off, so both arms of this
+  //    route still come from the same merge, and this asserts that rather than
+  //    the name that used to appear in the file.
+  const catalogRoute = read('src/app/api/academy/catalog/route.ts')
+  assert.match(catalogRoute, /getAcademySummaries|getAcademyCatalog/)
+  assert.match(catalogRoute, /getAcademyCourseBySlug/)
+  // Both public reads come from the same merge, whatever shape they are
+  // written in. This pinned `export async function getAcademySummaries`, which
+  // broke the day that function was wrapped in a cache - a test asserting a
+  // declaration rather than a guarantee. It now takes the slice between the
+  // name and the end of its body and checks what it actually calls.
+  for (const [name, through] of [
+    ['getAcademySummaries', 'getAcademyCatalog(false)'],
+    ['getCourseSyllabus', 'getAcademyCourseBySlug('],
+  ] as const) {
+    const at = source.indexOf(`export const ${name}`) >= 0
+      ? source.indexOf(`export const ${name}`)
+      : source.indexOf(`export async function ${name}`)
+    assert.ok(at >= 0, `${name} must exist: it is how a course reaches the public`)
+    const fn = source.slice(at, at + 700)
+    assert.ok(fn.includes(through), `${name} must read through ${through}, not the raw table`)
+  }
+  assert.match(source, /courseSummary\(/)
+  assert.match(source, /courseSyllabus\(/)
+  // And a summary must never carry the teaching it exists to leave behind.
+  const summary = source.split('export function courseSummary(')[1].split('\n}')[0]
+  for (const paid of ['lessons:', 'quiz:', 'rich:', 'answer_key']) {
+    assert.equal(summary.includes(paid), false, `a course summary must not carry ${paid}`)
+  }
+  // The syllabus is the public course page, so it may name the lessons and may
+  // never carry them. That distinction is the Academy's entire business model.
+  const syllabus = source.split('export function courseSyllabus(')[1].split('\n}')[0]
+  assert.ok(syllabus.includes('lesson_titles'), 'a syllabus lists what the course covers')
+  for (const paid of ['content', 'answer_key', 'rich:']) {
+    assert.equal(syllabus.includes(paid), false, `a course syllabus must not carry ${paid}`)
+  }
+  // The precedence is the rule: an admin's own version wins, code content is
+  // the fallback. The code content is now fetched for this one course instead
+  // of imported, because the static index pulls all forty-five courses into
+  // whatever bundles it and this page is a client component - every lesson of
+  // every course was being downloaded to read one.
+  const coursePage = read('src/app/talent/academy/[slug]/page.tsx')
+  assert.match(coursePage, /const rich = course\?\.rich \|\| codeContent/)
+  assert.match(coursePage, /loadCourseContent\(slug\)/)
+  assert.match(coursePage, /if \(course\?\.rich\) \{ setCodeContent\(null\); return \}/, "an admin's version needs nothing fetched")
   assert.match(read('src/app/api/academy/manual/route.ts'), /academyRichContent/)
 
   // 8. The additive migration exists and reloads PostgREST.
@@ -292,7 +464,10 @@ check('homepage hero is prioritised and public controls are accessible', () => {
   assert.doesNotMatch(hero, /slides\.map\(\(item, index\)[\s\S]*?<img/)
   assert.match(navigation, /aria-label=\{mobileOpen \? 'Close navigation menu' : 'Open navigation menu'\}/)
   assert.match(navigation, /aria-label="Open account menu"/)
-  assert.match(read('src/app/layout.tsx'), /icons: \{ icon: logo\.url, apple: logo\.url \}/)
+  // The tab icon follows the brand logo. The touch icon deliberately does
+  // not: iOS ignores transparency, drops the file on white and crops it
+  // square, so a wide SVG wordmark reaches a home screen as three letters.
+  assert.match(read('src/app/layout.tsx'), /icons: \{ icon: logo\.url, apple: '\/icons\/apple-touch-icon\.png' \}/)
 })
 check('no literal production secrets are tracked', () => {
   const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
@@ -341,13 +516,379 @@ check('linear-gradient appears only as image overlays or in allowlisted files', 
   assert.deepEqual(offenders, [])
 })
 check('no stray cream or off-white surfaces under src', () => {
-  // The neutral system allows warm white and #f3f0eb only. globals.css keeps the
+  // The neutral system allows warm white and #f1f1f1 only. globals.css keeps the
   // legacy .bg-gray-50 mapping selector, so this check covers ts/tsx.
-  const creamPattern = /bg-\[#fafafa\]|bg-\[#f7f7f7\]|bg-gray-50\b/i
+  //
+  // It used to read Tailwind classes alone, which meant the same two colours
+  // walked straight past it as raw hexes in a style attribute: seventeen inset
+  // panels across the email templates, plus the share image every link to the
+  // site renders with. An email is the brand in somebody's inbox and the share
+  // image is the brand in somebody's feed, so both are covered now.
+  //
+  // site-content-values.ts is exempt: #F7F7F7 there is the CMS "background"
+  // token, deliberately a shade off the "surface" token beside it.
+  const creamPattern = /bg-\[#fafafa\]|bg-\[#f7f7f7\]|bg-gray-50\b|#fafafa|#f7f7f7/i
   const offenders = designSourceFiles()
     .filter(file => /\.(ts|tsx)$/.test(file))
+    .filter(file => !file.endsWith('src/lib/site-content-values.ts'))
     .filter(file => creamPattern.test(read(file)))
   assert.deepEqual(offenders, [])
+})
+
+// The service-role client reached a browser bundle.
+//
+// attachments.ts imported createAdminClient at the top and exported
+// readableSize at the bottom. A client component wanted the formatting
+// helper, got the admin client with it, evaluated it in a browser without
+// the environment it needs, and the shop rendered "Something went wrong" to
+// every visitor. The build said nothing: the import is legal, it just cannot
+// run where it ended up.
+//
+// So: no module reachable from a 'use client' component may import the admin
+// client, directly or through one hop. One hop is where this hid.
+check('no client component can reach the service-role client', () => {
+  const sourceFiles = listFiles('src').filter(file => /\.tsx?$/.test(file))
+  const localImports = (file: string) =>
+    [...read(file).matchAll(/from '(@\/[^']+|\.[^']+)'/g)]
+      .map(match => match[1])
+      .map(specifier => specifier.startsWith('@/')
+        ? `src/${specifier.slice(2)}`
+        : `${file.split('/').slice(0, -1).join('/')}/${specifier}`)
+      .map(path => path.split('/').reduce((parts: string[], part) => {
+        if (part === '.') return parts
+        if (part === '..') { parts.pop(); return parts }
+        return [...parts, part]
+      }, []).join('/'))
+      .flatMap(path => ['.ts', '.tsx', '/index.ts'].map(extension => path + extension))
+      .filter(path => sourceFiles.includes(path))
+
+  const reachesAdmin = new Map<string, boolean>()
+  const walk = (file: string, seen = new Set<string>()): boolean => {
+    if (reachesAdmin.has(file)) return reachesAdmin.get(file)!
+    if (seen.has(file)) return false
+    seen.add(file)
+    const source = read(file)
+    const direct = /from '@\/lib\/supabase\/admin'/.test(source)
+      || /createAdminClient/.test(source) && /supabase\/admin/.test(source)
+    const result = direct || localImports(file).some(next => walk(next, seen))
+    reachesAdmin.set(file, result)
+    return result
+  }
+
+  const offenders = sourceFiles
+    .filter(file => read(file).trimStart().startsWith("'use client'"))
+    .filter(file => localImports(file).some(next => walk(next)))
+  assert.deepEqual(offenders, [])
+})
+
+// The product itself, shipped to the browser, free.
+//
+// The shop lists every title, so a client component imported the catalogue,
+// which imported the entry lists, each of which builds itself from a register
+// that holds the finished text. Nothing in that chain is wrong on its face and
+// the build reported nothing. The result was a four hundred and forty kilobyte
+// public chunk carrying hazard prose out of the seven hundred and fifty pound
+// risk assessment suite: readable in the page source, by anybody, for nothing.
+//
+// A written procedure is the entire product here. So no module reachable from
+// a 'use client' component may reach the drafted text, at any depth. The
+// titles come from catalogue-index, which is flat data with no way back.
+check('no client component can reach the drafted documents', () => {
+  const sourceFiles = listFiles('src').filter(file => /\.tsx?$/.test(file))
+  const localImports = (file: string) =>
+    [...read(file).matchAll(/(?<!import type )from '(@\/[^']+|\.[^']+)'/g)]
+      .map(match => match[1])
+      .map(specifier => specifier.startsWith('@/')
+        ? `src/${specifier.slice(2)}`
+        : `${file.split('/').slice(0, -1).join('/')}/${specifier}`)
+      .map(path => path.split('/').reduce((parts: string[], part) => {
+        if (part === '.') return parts
+        if (part === '..') { parts.pop(); return parts }
+        return [...parts, part]
+      }, []).join('/'))
+      .flatMap(path => ['.ts', '.tsx', '/index.ts'].map(extension => path + extension))
+      .filter(path => sourceFiles.includes(path))
+
+  // Where the writing lives. Two neighbours are deliberately not here:
+  // library-plan, which is four hundred and sixty titles and no text, and
+  // safety.ts, which is a classifier and the warning she signs against. Both
+  // belong in a browser. The drafts do not.
+  const isDrafted = (file: string) =>
+    /^src\/lib\/documents\/(ra|policies|roles|hiring|checklists|finance|nop|eap|guide|tools)\//.test(file)
+    || /^src\/lib\/documents\/(.+-plans|pool-nop|pool-eap|quarter-one|the-last-six|authored|risk-assessments)\.tsx?$/.test(file)
+
+  const reaches = new Map<string, boolean>()
+  const walk = (file: string, seen = new Set<string>()): boolean => {
+    if (reaches.has(file)) return reaches.get(file)!
+    if (seen.has(file)) return false
+    seen.add(file)
+    const result = isDrafted(file) || localImports(file).some(next => walk(next, seen))
+    reaches.set(file, result)
+    return result
+  }
+
+  const offenders = sourceFiles
+    .filter(file => read(file).trimStart().startsWith("'use client'"))
+    .filter(file => localImports(file).some(next => walk(next)))
+  assert.deepEqual(offenders, [])
+})
+
+
+// A status word, handed to a buyer as an explanation.
+//
+// Two hundred and three routes answered a signed-out request with the JSON
+// body { error: 'Unauthorised' }, and the pages in front of them print
+// whatever error the API returns. So the shelf headed "Your documents" showed
+// "Unauthorised" in a box, with "you have not bought any documents yet"
+// underneath it, to somebody who had bought plenty. She read it as her
+// purchases being gone, which is exactly what it says.
+//
+// The status code carries the status. The body is read by a person, so it has
+// to tell them what to do about it.
+check('no API answers a person with a bare status word', () => {
+  const offenders = listFiles('src/app/api')
+    .filter(file => /route\.tsx?$/.test(file))
+    .filter(file => /error:\s*'(Unauthorised|Unauthorized|Forbidden|Bad Request|Not Found|Conflict)'/.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
+
+// Taupe and sage never carry a word.
+//
+// The palette has five colours and only three of them can be read. Warm taupe
+// is 2.10:1 on the ivory and muted sage is 2.99:1, where 4.5 is the floor for
+// body text and 3.0 is the floor for a control somebody has to find. They are
+// there for hairlines, for quiet fills behind dark type, and for detail.
+//
+// This is the kind of rule that holds for a month. Somebody wants a softer
+// caption, reaches for the colour named "muted sage", and ships a sentence
+// most people cannot read on a laptop in daylight. So it is a check rather
+// than a note, and it names the numbers so the next person does not have to
+// measure them again.
+check('nothing readable is written in taupe or sage', () => {
+  const offenders: string[] = []
+  for (const file of listFiles('src').filter(name => /\.(tsx?|css)$/.test(name))) {
+    const source = read(file)
+    for (const [index, line] of source.split('\n').entries()) {
+      // text-taupe, text-sage, and the raw values behind them.
+      if (/\b(text|placeholder|decoration)-(taupe|sage)\b/.test(line)
+        || /\b(color|text)-\[#(b5a898|879080)\]/i.test(line)
+        || /(^|[^-])color:\s*#(b5a898|879080)/i.test(line)) {
+        offenders.push(`${file}:${index + 1}`)
+      }
+    }
+  }
+  assert.deepEqual(offenders, [])
+})
+
+// The accent is not the ink.
+//
+// It was, for the life of the project: accent and ink were both #1c1c1c, so
+// every eyebrow, link and primary button was the same near-black as the
+// paragraph beside it and the site had no accent at all while appearing to
+// have one. Anybody reading the config would have said it was accented.
+check('the accent is a colour of its own', () => {
+  const config = readFileSync(`${root}/tailwind.config.js`, 'utf8')
+  const value = (name: string) => config.match(new RegExp(`\\n\\s+${name}: '#([0-9a-f]{6})'`, 'i'))?.[1]?.toLowerCase()
+  assert.ok(value('accent'), 'accent must be defined')
+  assert.notEqual(value('accent'), value('ink'), 'an accent equal to the ink is not an accent')
+})
+
+
+// Every AI surface writes in the same voice.
+//
+// The rules were written twice and omitted three times. The profile writer had
+// a long careful version, the job advert route had a shorter one that had
+// already drifted, and the three application routes had none at all. So the
+// same brand wrote in three voices depending on which button was pressed, and
+// two of the five banned em dashes while three did not.
+//
+// They also span two AI providers, which is exactly why this is checked rather
+// than trusted: the next route somebody adds will call whichever one is
+// convenient, and the rules belong to the brand rather than to the vendor.
+check('every AI writing route uses the one house style', () => {
+  const routes = listFiles('src/app/api')
+    .filter(file => /route\.tsx?$/.test(file))
+    .filter(file => /api\.openai\.com|@anthropic-ai\/sdk|anthropic\.messages/.test(read(file)))
+  const offenders = routes.filter(file => {
+    const source = read(file)
+    // Either it prepends the rules itself, or it calls a library that does.
+    return !/HOUSE_RULES/.test(source) && !/from '@\/lib\/ai-write'|from '@\/lib\/cv-read'/.test(source)
+  })
+  assert.deepEqual(offenders, [])
+})
+
+
+// One provider, one key, one bill.
+//
+// This platform called two. The profile writer and the CV reader went to
+// Anthropic through the official SDK; the job advert, the three application
+// routes, the certificate helper and both interview-ready routes went to
+// OpenAI through six separate hand-written fetch calls, each with its own
+// timeout, its own response unwrapping and its own idea of what an error
+// looks like. Two invoices, and a platform where half the AI could be dead
+// while the other half worked, depending on which environment variable was
+// missing. Nobody chose that: it accreted, one route at a time.
+//
+// A second provider is a decision, not an accident, so it has to be made
+// deliberately enough to delete this check.
+check('there is one AI provider', () => {
+  const offenders = listFiles('src')
+    .filter(file => /\.tsx?$/.test(file))
+    .filter(file => /api\.openai\.com|OPENAI_API_KEY|from 'openai'|generativelanguage\.googleapis/.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
+// And it is reached through one client.
+//
+// Six copies of the same twenty lines of fetch, retry and unwrap is six places
+// to fix a timeout and six different sentences shown to somebody whose button
+// did not work.
+check('every AI call goes through the one client', () => {
+  const offenders = listFiles('src')
+    .filter(file => /\.tsx?$/.test(file))
+    .filter(file => /@anthropic-ai\/sdk/.test(read(file)))
+    // The client itself, and the three libraries that need the raw SDK: batch
+    // submission, structured output schemas, and PDF input.
+    .filter(file => ![
+      'src/lib/ai.ts', 'src/lib/ai-write.ts', 'src/lib/cv-read.ts',
+      'src/lib/documents/draft.ts', 'src/lib/documents/batch.ts',
+    ].includes(file))
+  assert.deepEqual(offenders, [])
+})
+
+// And every call says what it was.
+//
+// A bill arrives as one number for nine surfaces. Without a label on each
+// call, working out which one spent it means reading the code and guessing,
+// and a guess is not a diagnosis: the first guess here blamed the live site
+// for a cost that turned out to be one batch drafting the document library.
+// Every call logs its own name and token counts, so the Netlify function log
+// answers the question instead of the estimating.
+check('every AI call is labelled, so spend can be attributed', () => {
+  const client = read('src/lib/ai.ts')
+  assert.match(client, /export function logUsage\(/)
+  assert.match(client, /label: string/)
+
+  const unlabelled = listFiles('src')
+    .filter(file => /\.tsx?$/.test(file) && file !== 'src/lib/ai.ts')
+    .flatMap(file => {
+      const source = read(file)
+      // Each askFor call has to carry a label within its own argument object.
+      return [...source.matchAll(/askFor(?:Text|Json)(?:<[^>]*>)?\(\{([\s\S]*?)\}\)/g)]
+        .filter(match => !/\blabel\s*:/.test(match[1]))
+        .map(() => file)
+    })
+  assert.deepEqual(unlabelled, [])
+
+  // The two libraries that hold the raw SDK log their own.
+  for (const file of ['src/lib/ai-write.ts', 'src/lib/cv-read.ts']) {
+    assert.match(read(file), /logUsage\(/, `${file} does not log what it spent`)
+  }
+})
+
+// Nothing half-merged reaches a deploy.
+//
+// All forty-seven of these passed while two route files still carried merge
+// conflict markers, because every check was looking for something specific and
+// none of them was looking at whether the file was a file. A readiness check
+// that reports ready on source that cannot compile is worse than no check, and
+// TypeScript caught it only because it was run separately.
+check('no half-finished merge reaches a deploy', () => {
+  const marker = /^(?:<{7}|={7}|>{7})(?: |$)/m
+  const conflicted = [...listFiles('src'), ...listFiles('scripts'), ...listFiles('tests')]
+    .filter(file => /\.(tsx?|jsx?|css|md|json)$/.test(file))
+    .filter(file => marker.test(read(file)))
+  assert.deepEqual(conflicted, [])
+})
+
+// Nothing that costs money runs unmetered for somebody who has not paid.
+//
+// Members join free, so every AI call is carried before any revenue. The two
+// surfaces that cost real money per press take a claim first and hand it back
+// if the call produced nothing. A third surface added later without a claim
+// would not fail anything, would work perfectly, and would quietly be the one
+// that made the bill unpredictable again.
+check('every metered AI surface claims before it spends', () => {
+  const METERED: [string, string][] = [
+    ['src/app/api/ai/write/route.ts', 'profile_writing'],
+    ['src/app/api/cv/analyse/route.ts', 'cv_reading'],
+  ]
+  for (const [file, bucket] of METERED) {
+    const source = read(file)
+    assert.match(source, new RegExp(`claimAllowance\\([\\s\\S]{0,200}'${bucket}'`),
+      `${file} must claim from ${bucket} before calling the model`)
+    // Near the failure branch rather than merely somewhere in the file. Worth
+    // being honest about the limit of this: reading text cannot tell a refund
+    // that runs from one sitting behind a condition that is never true, and it
+    // was tried. What it does catch is the failure that will actually happen,
+    // which is a third metered route added later with no claim and no refund
+    // at all. The test file holds the shape of the branch itself.
+    assert.match(source, /(?:!result\.ok|!claim\.ok|aiEnhanced)[\s\S]{0,400}?releaseAllowance\(/,
+      `${file} must hand the claim back on the path where the call produced nothing`)
+  }
+
+  // The claim itself is one statement. Read-then-write is the bug that lets a
+  // double-click past a limit, and it is invisible until somebody does it.
+  assert.match(read('src/lib/ai-allowance-server.ts'), /rpc\('claim_ai_allowance'/)
+
+  // And it is decided on the server. A limit a browser enforces is a
+  // suggestion.
+  const clientSide = listFiles('src')
+    .filter(file => /\.tsx$/.test(file) && /^'use client'/.test(read(file).trimStart()))
+    .filter(file => /claimAllowance|claim_ai_allowance/.test(read(file)))
+  assert.deepEqual(clientSide, [])
+})
+
+// The platform has one name.
+//
+// Twenty places still carried the name this platform had before it was Talent
+// House Collective. Most were copy nobody would die over. One was the line
+// item on the Stripe checkout, so a hotel paying for a residency was shown a
+// brand it had never heard of at the exact moment it was deciding whether to
+// trust us with a card. Two were in notification emails, one was the
+// User-Agent sent to a third party's API, and one sentence managed to name
+// both companies at once, which is how you can tell it was a rename that
+// stopped halfway.
+//
+// The needle is assembled rather than written out, because the first version
+// of this check failed on its own comment.
+check('the platform has one name', () => {
+  const old = ['Spa', 'Platform']
+  const needle = new RegExp(`${old[0]}\\s?${old[1]}`)
+  const offenders = [...listFiles('src'), ...listFiles('scripts')]
+    .filter(file => /\.(tsx?|jsx?|md)$/.test(file))
+    .filter(file => needle.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
+// The framework serves every page and every API route on this platform, and
+// its image optimiser takes a URL from anybody who asks. Version 16.3.1 sat in
+// the range with an unauthenticated remote code execution hole in exactly that
+// optimiser, through a crafted AVIF file, and it sat there for a fortnight
+// because nothing on this platform ever looked.
+//
+// A floating range would be worse than a stale pin, not better: the framework
+// is pinned exactly here, as Supabase, React and Stripe are, so an upgrade is
+// a commit somebody read rather than whatever resolved on the deploy machine
+// that morning. This check holds the floor, and it has to be raised by hand
+// when the next advisory lands.
+check('the framework is pinned, and above the version with the image RCE', () => {
+  const pkg = JSON.parse(read('package.json'))
+  const next = pkg.dependencies?.next || ''
+  assert.match(next, /^\d+\.\d+\.\d+$/, `next must be pinned exactly, found "${next}"`)
+  const [major, minor, patch] = next.split('.').map(Number)
+  const atLeast = major > 16 || (major === 16 && (minor > 3 || (minor === 3 && patch >= 8)))
+  assert.ok(atLeast, `next ${next} is at or below the image-optimiser RCE range (16.0.0 - 16.3.5)`)
+
+  // sharp decodes the images that optimiser hands it. Below 0.35.4 it carries
+  // the libheif holes, and it is reached by any upload anybody can make.
+  const sharp = pkg.dependencies?.sharp || ''
+  const sharpParts = sharp.replace(/^[\^~]/, '').split('.').map(Number)
+  assert.ok(
+    sharpParts[0] > 0 || sharpParts[1] > 35 || (sharpParts[1] === 35 && sharpParts[2] >= 4),
+    `sharp ${sharp} carries the libheif vulnerabilities`,
+  )
 })
 
 let passed = 0

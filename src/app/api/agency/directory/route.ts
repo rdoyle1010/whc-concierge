@@ -72,16 +72,25 @@ export async function GET(req: NextRequest) {
   if (hasShiftSearch && !validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
     return NextResponse.json({ error: 'Choose a valid shift date, start time and finish time' }, { status: 400 })
   }
-  if (!isAdmin && !ukWide && !radius) {
-    return NextResponse.json({ error: 'Set a search radius before looking for Agency Talent.' }, { status: 400 })
-  }
+  // No radius set means UK-wide, not an error.
+  //
+  // A property is never asked for a search radius when it signs up, and a
+  // UK-wide search deliberately stores none - so "you have not set one" was a
+  // demand for a preference the product had never requested. It refused
+  // searches, and it refused to open a profile the same search had just
+  // returned. Defaulting to the whole country is the honest reading of an
+  // unset preference, and it shows a property more cover rather than less.
+  // The professional's own travel radius still applies, which is the limit
+  // that actually matters: they decide how far they will go.
 
   const origin = {
     latitude: hasSearchPoint ? requestedLat : employer?.latitude,
     longitude: hasSearchPoint ? requestedLng : employer?.longitude,
   }
-  if (!isAdmin && (origin.latitude == null || origin.longitude == null)) {
-    return NextResponse.json({ error: 'Your property location must be mapped before Agency search can calculate real travel distance.' }, { status: 400 })
+  // A property with no map position still gets the register; distance simply
+  // reads as unknown on each card until they add a postcode.
+  if (!isAdmin && !id && !hasSearchPoint && (origin.latitude == null || origin.longitude == null) && radius != null) {
+    return NextResponse.json({ error: 'Add your property postcode in Company Profile so Agency search can work out travel distance, or search UK-wide.' }, { status: 400 })
   }
 
   let query = admin.from('candidate_profiles')
@@ -89,6 +98,12 @@ export async function GET(req: NextRequest) {
     .eq('approval_status', 'approved')
     .or('profile_visible.eq.true,profile_visible.is.null')
     .eq('agency_available', true)
+    // Agency Cover is a UK product: supplying somebody into a shift makes
+    // Talent House an employment business, licensed country by country. A
+    // professional abroad who has ticked the register must not be offered to a
+    // property, because the booking that follows is one we cannot lawfully
+    // make. Rows written before country existed are null and are British.
+    .or('country_code.eq.GB,country_code.is.null')
 
   if (id) query = query.eq('id', id)
   const [{ data, error }, { data: blocks }] = await Promise.all([
@@ -143,6 +158,15 @@ export async function GET(req: NextRequest) {
 
   const candidates = (data || [])
     .filter((candidate: any) => !candidate.agency_listed_until || new Date(candidate.agency_listed_until).getTime() >= Date.now())
+    // Right to work is a condition of being on the register, not a badge that
+    // makes a profile look better. Supplying somebody into a shift makes
+    // Talent House an employment business, and an employment business that
+    // has not established right to work is the one exposure no disclaimer on
+    // a card covers. This runs alongside the listing rules rather than with
+    // the search filters, so it holds for a direct profile lookup too - a
+    // person who cannot lawfully be supplied must not be openable and
+    // bookable by link.
+    .filter((candidate: any) => isAdmin || rightToWorkVerified(candidate))
     .filter((candidate: any) => isAdmin || canEmployerDiscoverCandidate(candidate, blockedIds))
     .map((candidate: any) => privateIds.has(candidate.id) ? { ...candidate, private_mode: true } : candidate)
     .map((candidate: any) => {
@@ -187,9 +211,18 @@ export async function GET(req: NextRequest) {
         reliability_pct: completed + cancelled >= 3 ? Math.round((completed / (completed + cancelled)) * 100) : null,
       }
     })
-    .filter((candidate: any) => isAdmin || candidate.within_radius)
-    .filter((candidate: any) => !hasShiftSearch || candidate.availability_match === 'confirmed')
-  if (id && candidates.length === 0) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    // Both of these narrow a search. On a single profile the distance and the
+    // availability are computed and returned so the page can show them - being
+    // outside the radius, or busy on the shift searched for, is something a
+    // property needs to read, not a reason to be told the person does not
+    // exist.
+    .filter((candidate: any) => isAdmin || id || candidate.within_radius)
+    .filter((candidate: any) => isAdmin || id || !hasShiftSearch || candidate.availability_match === 'confirmed')
+  if (id && candidates.length === 0) {
+    return NextResponse.json({
+      error: 'This professional is no longer available on the Agency Register.',
+    }, { status: 404 })
+  }
 
   // Reviews of a professional are private to their two parties in the
   // database. The agency profile page used to read them with the browser's

@@ -30,6 +30,23 @@ export function canEmployerDiscoverCandidate(
   candidate: DiscoverableCandidate,
   blockedCandidateIds: ReadonlySet<string>,
 ): boolean {
+  // Fail closed when the column was never selected.
+  //
+  // `stealth_mode` absent and `stealth_mode` null are different facts, and
+  // conflating them is how this control was quietly switched off again. The
+  // mobile talent directory called this function with a field list that
+  // omitted the column, so the value arrived as undefined, `undefined !== true`
+  // passed, and every professional who had asked to be hidden was shown to
+  // every employer with her name and photograph. The guard was running. It was
+  // being asked about a column nobody had fetched.
+  //
+  // null means she never touched the setting, and stays visible. undefined
+  // means we do not know, and not knowing must never resolve to "show her".
+  if (candidate.stealth_mode === undefined) {
+    console.error('[discovery] stealth_mode was not selected for candidate', candidate.id, '- hiding rather than guessing')
+    return false
+  }
+
   return candidate.approval_status === 'approved'
     && candidate.profile_visible !== false
     && candidate.stealth_mode !== true

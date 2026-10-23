@@ -1,0 +1,306 @@
+import type { PlanSection } from '../plan-types'
+
+// Parts G, H and I. The plant, the hygiene and the rhythm of the week.
+//
+// The plant room is the highest-consequence space in the building and the one
+// fewest people may enter. The routines are what turn everything written
+// above into something that actually happens on a Tuesday.
+
+const PLANT = 'G. Plant, water safety and chemicals'
+const HYGIENE = 'H. Cleaning and hygiene'
+const ROUTINE = 'I. The operating routine'
+
+export const PLANT_SECTIONS: PlanSection[] = [
+  {
+    part: PLANT,
+    heading: 'Water treatment',
+    facts: [
+      { label: 'Treatment system in use, by type', long: true, hint: 'Automatic dosing, manual, ozone, ultraviolet, salt electrolysis. By type rather than by brand.' },
+      { label: 'Disinfectant used, and the range held in each body of water', long: true },
+      { label: 'pH range held, and why it matters', hint: 'Out of range, the disinfectant does not work regardless of how much of it there is.' },
+      { label: 'Circulation and turnover period for each body of water' },
+      { label: 'Filtration type, and backwash frequency and procedure' },
+      { label: 'Dilution or fresh water addition, and how much per bather' },
+      { label: 'Calibration of dosing equipment: frequency and by whom' },
+      { label: 'What happens on a dosing failure', long: true },
+      { label: 'Who is competent to operate the plant, and their qualification' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: PLANT,
+    heading: 'Testing and records',
+    table: {
+      columns: ['Water body', 'Parameters tested', 'Frequency', 'Tested by', 'Recorded where'],
+      rows: Array.from({ length: 10 }, () => ['', '', '', '', '']),
+      fillable: true,
+    },
+    facts: [
+      { label: 'Test method and equipment, and how it is calibrated' },
+      { label: 'Action levels: the reading at which something is done', long: true },
+      { label: 'Closure levels: the reading at which the water closes', long: true },
+      { label: 'Who is told, and how quickly, when a reading is out of range' },
+      { label: 'Microbiological sampling: frequency, laboratory and who reviews the result' },
+      { label: 'What is done about an adverse microbiological result', long: true },
+      { label: 'How long records are kept' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: PLANT,
+    heading: 'Water safety and legionella',
+    intro:
+      'Separate from pool water treatment and often confused with it. This covers the building water system: '
+      + 'showers, taps, calorifiers, cold tanks, spa pools and anything that creates an aerosol.',
+    facts: [
+      { label: 'Whether a written water safety risk assessment exists, and when it was last reviewed' },
+      { label: 'Who is the responsible person for water safety' },
+      { label: 'Who is the competent person or contractor advising on it' },
+      { label: 'Temperature monitoring regime: what, where and how often', long: true },
+      { label: 'Flushing regime for infrequently used outlets, and who does it', long: true, hint: 'A treatment room out of use for a fortnight is a dead leg, and it is the commonest one in a spa.' },
+      { label: 'Showerhead cleaning and descaling frequency' },
+      { label: 'Cold water tank inspection frequency' },
+      { label: 'Spa pool drain, clean and refill regime' },
+      { label: 'Sampling regime and who reviews the results' },
+      { label: 'What is done after a period of closure before reopening', long: true, hint: 'Stagnant warm water is the highest-risk condition, and reopening after a shutdown is when it reaches people.' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: PLANT,
+    heading: 'Chemicals and COSHH',
+    facts: [
+      { label: 'Every chemical held, and where', long: true },
+      { label: 'Maximum quantity the store is assessed for' },
+      { label: 'How incompatible chemicals are physically separated', long: true, hint: 'Bunding or separate stores. Labelling is not separation.' },
+      { label: 'Where safety data sheets are held, reachable without entering the store' },
+      { label: 'Who holds a key, and how that list is kept current' },
+      { label: 'Personal protective equipment required, by task, and where it is kept' },
+      { label: 'Spill kit: what it contains and where it is' },
+      { label: 'Eyewash and emergency shower locations, and how they are checked' },
+      { label: 'Ventilation to the store and plant room, and how it is verified as working' },
+      { label: 'Gas detection or alarm, where fitted, and its test frequency' },
+      { label: 'Delivery procedure: who accepts, by what route, and when', long: true },
+      { label: 'Waste chemical disposal route' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: PLANT,
+    heading: 'Plant room access and safety',
+    facts: [
+      { label: 'Who may enter the plant room' },
+      { label: 'Whether lone entry is permitted, and under what arrangement', long: true },
+      { label: 'How somebody knows a person has entered and when they are expected out' },
+      { label: 'Permit to work requirements, and for what' },
+      { label: 'Emergency stop and isolation points, and where they are' },
+      { label: 'Lock-out and tag-out procedure for maintenance' },
+      { label: 'Guarding on pumps and moving parts, and how it is checked' },
+      { label: 'Electrical testing regime, and when it was last done' },
+      { label: 'Lighting and emergency lighting in the plant room' },
+      { label: 'Any confined space, and its own procedure', long: true },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: PLANT,
+    heading: 'Maintenance and inspection',
+    table: {
+      columns: ['Item', 'Inspection', 'Frequency', 'By whom', 'Records held where'],
+      rows: [
+        ['Pool plant and dosing', '', '', '', ''],
+        ['Filtration', '', '', '', ''],
+        ['Ventilation and air handling', '', '', '', ''],
+        ['Sauna and steam generators', '', '', '', ''],
+        ['Thermostatic mixing valves', '', '', '', ''],
+        ['Fixed electrical installation', '', '', '', ''],
+        ['Portable appliances', '', '', '', ''],
+        ['Fire alarm and detection', '', '', '', ''],
+        ['Emergency lighting', '', '', '', ''],
+        ['Fire extinguishers', '', '', '', ''],
+        ['Gym equipment', '', '', '', ''],
+        ['Lifting or pool hoist equipment', '', '', '', ''],
+        ['Defibrillator', '', '', '', ''],
+        ['', '', '', '', ''],
+        ['', '', '', '', ''],
+      ],
+      fillable: true,
+    },
+    mustBeChecked: true,
+  },
+]
+
+export const HYGIENE_SECTIONS: PlanSection[] = [
+  {
+    part: HYGIENE,
+    heading: 'Cleaning standards and schedule',
+    intro:
+      'Daily cleaning holds a standard. It does not restore one. Both belong here, and the second is the one that '
+      + 'gets dropped when the spa is busy.',
+    table: {
+      columns: ['Area', 'Cleaned how often', 'Method or product', 'By whom', 'Checked by'],
+      rows: Array.from({ length: 18 }, () => ['', '', '', '', '']),
+      fillable: true,
+    },
+    mustBeChecked: true,
+  },
+  {
+    part: HYGIENE,
+    heading: 'Products and COSHH in cleaning',
+    facts: [
+      { label: 'Cleaning products in use, and where their assessments are held' },
+      { label: 'Dilution control: dosing system or measured equipment' },
+      { label: 'Products that may be used while guests are present' },
+      { label: 'Products that require the area to be closed and ventilated' },
+      { label: 'Contact times, and how staff know them', hint: 'A disinfectant wiped off early has not worked, and the surface looks identical either way.' },
+      { label: 'Decanting policy and labelling' },
+      { label: 'Colour coding or equipment separation between areas' },
+      { label: 'Training given before a product is used, and where it is recorded' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: HYGIENE,
+    heading: 'Linen, towels and robes',
+    facts: [
+      { label: 'Laundry arrangement, in house or contracted' },
+      { label: 'Wash temperature and process, and how it is verified' },
+      { label: 'Clean linen storage' },
+      { label: 'Soiled linen handling and storage, kept separate' },
+      { label: 'How robes and slippers are issued and returned' },
+      { label: 'What happens to linen contaminated with blood or body fluid', long: true },
+      { label: 'Stock levels held, and the point at which a facility closes for want of linen' },
+    ],
+  },
+  {
+    part: HYGIENE,
+    heading: 'Waste, spillages and sharps',
+    facts: [
+      { label: 'General, recycling and clinical waste streams, and where each goes' },
+      { label: 'Blood and body fluid spillage kit: contents and location' },
+      { label: 'Procedure for a blood or body fluid spillage', long: true },
+      { label: 'Sharps used anywhere in the spa, and the disposal arrangement' },
+      { label: 'What a member of staff does after a needlestick or splash injury', long: true },
+      { label: 'Vaccination offered where the assessment identifies a need' },
+      { label: 'Waste collection frequency and who manages the contract' },
+    ],
+    mustBeChecked: true,
+  },
+]
+
+export const ROUTINE_SECTIONS: PlanSection[] = [
+  {
+    part: ROUTINE,
+    heading: 'Opening the spa',
+    intro: 'In order, every day, by a named role, recorded. Nothing opens until every line is complete.',
+    actions: [
+      { name: 'Enter and check', action: 'Check the building is secure and as it was left. Check the overnight log and the alarm history.', by: '' },
+      { name: 'Plant and water', action: 'Check the plant is running, test every body of water and record the readings. An out of range reading stops the opening of that facility.', by: '' },
+      { name: 'Clarity', action: 'Confirm the floor of the deepest point of every pool is clearly visible from the side.', by: '' },
+      { name: 'Temperatures', action: 'Check and record water and air temperatures for every facility against its stated range.', by: '' },
+      { name: 'Walk every facility', action: 'Walk the wet areas, heat experiences, changing rooms, gym and treatment corridor. Look for damage, standing water, blocked drains and anything left overnight.', by: '' },
+      { name: 'Safety equipment', action: 'Confirm rescue equipment, first aid kits, the defibrillator and every call point are present and working.', by: '' },
+      { name: 'Fire routes', action: 'Confirm escape routes are clear and fire doors close properly.', by: '' },
+      { name: 'Staffing and competence', action: 'Confirm the minimum staffing is met and that the qualifications on duty match the facilities opening.', by: '' },
+      { name: 'Signage and information', action: 'Confirm every required notice is displayed and legible.', by: '' },
+      { name: 'Record and open', action: 'Sign the opening record. Note anything not opened, and why.', by: '' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: ROUTINE,
+    heading: 'Through the day',
+    actions: [
+      { name: 'Test to schedule', action: 'Test and record every body of water at the stated intervals, and again after any significant rise in bather load.', by: '' },
+      { name: 'Check the heat experiences', action: 'Open each sauna and steam room at the stated frequency and look inside. Do not glance through the glass.', by: '' },
+      { name: 'Walk the wet areas', action: 'Check surrounds, changing rooms and showers for standing water, spills and hazards.', by: '' },
+      { name: 'Count the occupancy', action: 'Count against the bather load and the spa capacity, and act at the maximum rather than past it.', by: '' },
+      { name: 'Rotate supervision', action: 'Rotate anybody supervising water at the stated interval.', by: '' },
+      { name: 'Check the gym', action: 'Walk the gym floor, check equipment and rack loose weights.', by: '' },
+      { name: 'Record as you go', action: 'Complete each log at the time, not at the end of the shift. A day written up in one sitting is visible to anybody who looks.', by: '' },
+    ],
+  },
+  {
+    part: ROUTINE,
+    heading: 'Closing the spa',
+    actions: [
+      { name: 'Clear the water', action: 'Check every pool, plunge and feature is empty, including any area not visible from the main poolside.', by: '' },
+      { name: 'Open every enclosed space', action: 'Open every sauna, steam room, cubicle, shower, toilet, treatment room and relaxation area. Somebody asleep in a sauna is the failure this exists for.', by: '' },
+      { name: 'Check the gym and studios', action: 'Clear the gym floor and every studio, including behind equipment and in any store.', by: '' },
+      { name: 'Final water test', action: 'Test and record, and set any overnight dosing or backwash required.', by: '' },
+      { name: 'Secure the plant', action: 'Secure the plant room and the chemical store, and confirm nobody is inside.', by: '' },
+      { name: 'Secure the building', action: 'Lock external doors, set the alarm and confirm the fire routes are clear for the night.', by: '' },
+      { name: 'Record and hand over', action: 'Sign the closing record and note anything the next shift must know.', by: '' },
+    ],
+    mustBeChecked: true,
+  },
+  {
+    part: ROUTINE,
+    heading: 'Weekly, monthly and annually',
+    table: {
+      columns: ['Task', 'Frequency', 'By whom', 'Recorded where', 'Checked by'],
+      rows: [
+        ['First aid kit check and restock', 'Weekly', '', '', ''],
+        ['Rescue equipment inspection', 'Weekly', '', '', ''],
+        ['Emergency lighting test', '', '', '', ''],
+        ['Fire alarm test', 'Weekly', '', '', ''],
+        ['Defibrillator check', '', '', '', ''],
+        ['Deep clean of wet areas', '', '', '', ''],
+        ['Showerhead descaling', '', '', '', ''],
+        ['Flushing of infrequently used outlets', '', '', '', ''],
+        ['Temperature monitoring for water safety', '', '', '', ''],
+        ['Microbiological sampling', '', '', '', ''],
+        ['Spa pool drain, clean and refill', '', '', '', ''],
+        ['Gym equipment service', '', '', '', ''],
+        ['Emergency drill', '', '', '', ''],
+        ['Rescue competence practice', '', '', '', ''],
+        ['Risk assessment review', 'Annually', '', '', ''],
+        ['This document reviewed', 'Annually', '', '', ''],
+        ['Training matrix review', '', '', '', ''],
+        ['Fire risk assessment review', 'Annually', '', '', ''],
+        ['Water safety risk assessment review', '', '', '', ''],
+        ['Insurance and certification review', 'Annually', '', '', ''],
+      ],
+      fillable: true,
+    },
+    mustBeChecked: true,
+  },
+  {
+    part: ROUTINE,
+    heading: 'Records: what is kept, and for how long',
+    table: {
+      columns: ['Record', 'Held where', 'Kept for', 'Responsible role'],
+      rows: [
+        ['Water test results', '', '', ''],
+        ['Opening and closing checks', '', '', ''],
+        ['Incident and accident records', '', '', ''],
+        ['Near miss reports', '', '', ''],
+        ['Training and competence records', '', '', ''],
+        ['Drill records', '', '', ''],
+        ['Maintenance and inspection records', '', '', ''],
+        ['Contractor inductions and permits', '', '', ''],
+        ['Guest consultation and consent forms', '', '', ''],
+        ['Risk assessments', '', '', ''],
+        ['COSHH assessments and safety data sheets', '', '', ''],
+        ['Water safety records', '', '', ''],
+        ['Complaints', '', '', ''],
+        ['', '', '', ''],
+      ],
+      fillable: true,
+    },
+    mustBeChecked: true,
+  },
+  {
+    part: ROUTINE,
+    heading: 'Review of this document',
+    facts: [
+      { label: 'Review frequency', hint: 'Annually at a minimum, and immediately after any incident, any change to the facilities, the team or the operation.' },
+      { label: 'Who reviews it, and who approves the revision' },
+      { label: 'What triggers a review before it is due', long: true },
+      { label: 'How the team is told a procedure has changed, and how that is recorded', long: true, hint: 'A revised document nobody has been briefed on is a revised document nobody follows.' },
+      { label: 'Where the current version is held, and how an old one is withdrawn', long: true },
+      { label: 'Who checks that what is written here is what actually happens', long: true, hint: 'The gap between the two is the whole subject of an internal audit.' },
+    ],
+    mustBeChecked: true,
+  },
+]

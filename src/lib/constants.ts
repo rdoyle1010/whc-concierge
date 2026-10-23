@@ -19,7 +19,7 @@ export const SEPARATE_TRACKS = [
 export const PRODUCT_HOUSES = [
   'ESPA', 'Elemis', 'Decléor', 'Comfort Zone', 'La Stone', 'Kama Ayurveda',
   '111SKIN', 'Wildsmith', 'Dr Barbara Sturm', 'VOYA', 'Bamford',
-  'Subtle Energies', 'Sodashi', 'Ila', 'Thalgo', 'Guinot', 'Dermalogica',
+  'Subtle Energies', 'Sodashi', 'Ila', 'Carol Joy London', 'Thalgo', 'Guinot', 'Dermalogica',
   'IMAGE Skincare', 'Environ', 'Medik8', 'Murad', 'Other',
 ] as const
 
@@ -36,8 +36,51 @@ export const SYSTEMS = [
   'Premier Software', 'Rezlynx', 'Opera', 'Other',
 ] as const
 
+// What kind of organisation is hiring.
+//
+// This was six options and five of them were hotels in disguise. The market
+// this platform serves is much wider than hotel spas: clinics and day spas
+// employ more qualified therapists than hotels do, cruise lines recruit at
+// scale, and a product house hiring an educator is the best-paid role a senior
+// therapist is ever offered. The Brands door has been live and unusable
+// because a brand could not say it was a brand.
+//
+// The original six all survive verbatim, Clinic included. Renaming a value
+// somebody has already saved empties their dropdown the next time they open
+// it, which is a data loss that looks like a design choice.
 export const COMPANY_TYPES = [
-  'Hotel', 'Spa', 'Resort', 'Clinic', 'Cruise', 'Other',
+  'Hotel',
+  'Resort',
+  'Spa',
+  'Day Spa',
+  'Destination Spa',
+  'Clinic',
+  'Salon',
+  'Gym or Health Club',
+  'Wellness Retreat',
+  'Cruise',
+  'Product House or Brand',
+  'Spa Consultancy',
+  'Training Provider',
+  'Other',
+] as const
+
+// Where the work actually happens, which is not always the same thing. A brand
+// educator is employed by a product house and works from a head office and on
+// the road; a therapist at the same company might work a counter.
+export const PROPERTY_TYPES = [
+  'Hotel Spa',
+  'Resort Spa',
+  'Day Spa',
+  'Destination Spa',
+  'Clinic',
+  'Salon',
+  'Gym or Health Club',
+  'Wellness Retreat',
+  'On Board',
+  'Head Office',
+  'Mobile or Multi-site',
+  'Other',
 ] as const
 
 export const CONTRACT_TYPES = [
@@ -121,10 +164,10 @@ export const EXECUTIVE_SEARCH_GUIDE_RATE = 0.18
 export const EXECUTIVE_SEARCH_RATE_RANGE = [0.15, 0.20] as const
 
 // Agency commercial promise: the professional keeps the full agreed rate.
-// WHC charges the property 15% on top of the shift value.
+// Talent House charges the property 15% on top of the shift value.
 export const AGENCY_COMMISSION_RATE = 0.15
 export const AGENCY_PLATFORM_FEE_PCT = 0.15
-// Same-day and next-day cover carries an urgency premium on the WHC fee -
+// Same-day and next-day cover carries an urgency premium on the Talent House fee -
 // the professional still receives the full agreed rate; the premium prices
 // the emergency service the property is buying.
 export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
@@ -136,7 +179,7 @@ export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
 export const AGENCY_PLUS_MONTHLY_PRICE = 9900 // £99/mo
 export const AGENCY_PLUS_FEE_PCT = 0.10      // vs 15% standard
 
-// The WHC fee percentage for a shift, judged by how close the shift date is
+// The Talent House fee percentage for a shift, judged by how close the shift date is
 // to today (both YYYY-MM-DD, Europe/London). Same-day or next-day => premium.
 // Agency Plus members pay the reduced base; the urgency premium applies to
 // everyone because it prices the emergency, not the relationship.

@@ -14,19 +14,22 @@
 .dashboard-shell input:focus,
 .dashboard-shell select:focus,
 .dashboard-shell textarea:focus {
-  border-color: #1c1b1a;
+  border-color: #222321;
   box-shadow: 0 0 0 2px rgba(0,0,0,.06);
 }
 
-/* Sidebar: black, with white/grey states - never coloured. */
+/* Sidebar: light grey, with ink text and grey states - never coloured. */
 .dashboard-sidebar {
-  background: #1c1b1a;
-  border-right-color: rgba(255,255,255,.10);
+  background: #ede8df;
+  border-right-color: #dcd4c8;
 }
 
-/* Neutral notification surfaces. */
-.dashboard-shell [class*="bg-amber-50"],
-.dashboard-shell [class*="bg-yellow-50"] {
+/* Neutral notification surfaces.
+   Matched exactly, not by substring: [class*="bg-amber-50"] also catches
+   bg-amber-500, so a saturated amber anywhere in a portal was quietly being
+   repainted near-white and its element vanished into the card behind it. */
+.dashboard-shell [class~="bg-amber-50"],
+.dashboard-shell [class~="bg-yellow-50"] {
   background-color: #f5f5f5;
 }
 .dashboard-shell [class*="text-amber-"],

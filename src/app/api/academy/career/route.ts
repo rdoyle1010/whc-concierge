@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { getAcademyCatalog } from '@/lib/academy-catalog-server'
-import { courseMeta, coursesForSkill, careerPosition } from '@/lib/academy-meta'
+import { courseMeta, careerPosition } from '@/lib/academy-meta'
+import { coursesForSkill } from '@/lib/academy-meta-server'
 
 // The career engine behind the Academy: where this person is, what the live
 // market is asking for that they don't yet have, and which learning closes
@@ -22,7 +23,7 @@ function has(pool: string[], item: string): boolean {
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: candidate } = await admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()

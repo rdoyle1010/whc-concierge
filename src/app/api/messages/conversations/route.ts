@@ -8,7 +8,7 @@ const MAX_LIMIT = 200
 export async function GET(req: NextRequest) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
   const limit = Number.isFinite(requestedLimit) && requestedLimit > 0

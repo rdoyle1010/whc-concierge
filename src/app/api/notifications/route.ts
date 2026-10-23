@@ -18,7 +18,7 @@ async function getAuthedUser() {
 
 export async function GET() {
   const { data: { user } } = await getAuthedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const supabase = createAdminClient()
 
@@ -52,7 +52,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   try {
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { notificationId, markAll } = await req.json()
 

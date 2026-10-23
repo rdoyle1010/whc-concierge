@@ -1,12 +1,19 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, Manrope, Poppins } from 'next/font/google'
 import './globals.css'
 import './public-clean.css'
 import './portal-clean.css'
 import CookieConsent from '@/components/CookieConsent'
+import DesktopInvite from '@/components/DesktopInvite'
+import TrackVisit from '@/components/TrackVisit'
+import ComingSoonGate from '@/components/ComingSoonGate'
+import { showEntryGate } from '@/lib/platform-access'
 import NewsletterSignupBar from '@/components/NewsletterSignupBar'
 import { SiteBrandProvider } from '@/components/SiteBrandProvider'
 import { DEFAULT_LOGO, safeLogoUrl } from '@/lib/site-content'
+import { SOCIAL_PROFILE_URLS } from '@/lib/social-links'
+import { CONTACT_EMAIL } from '@/lib/contact'
+import { SITE_URL } from '@/lib/site-url'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -19,6 +26,16 @@ const editorial = Cormorant_Garamond({
   variable: '--font-editorial',
   display: 'swap',
   weight: ['500', '600', '700'],
+  // The heading face, and the only one on the site with a voice. It was
+  // loaded on every page and spent entirely on the prices while every heading
+  // rendered in the same grotesk as the body copy, which is a luxury brand
+  // with nothing to say for itself typographically. Three weights, because
+  // headings sit at 600 and a serif without its real weight is synthesised
+  // into something that looks like a rendering fault.
+  // Preloaded now that it sets every heading on the site. It was false while
+  // this was an accent used on prices, and a heading face that arrives late
+  // reflows the first thing anybody reads.
+  preload: true,
 })
 
 const poppins = Poppins({
@@ -28,7 +45,7 @@ const poppins = Poppins({
   weight: ['400', '500', '600'],
 })
 
-const SITE_URL = 'https://talenthousecollective.co.uk'
+
 
 // The logo is uploaded in Website & Brand, so the favicon, the Organization
 // JSON-LD and the header lockup all have to read the published value rather
@@ -48,7 +65,7 @@ const baseMetadata: Metadata = {
     default: 'Talent House Collective | Spa and Wellness Careers',
     template: '%s | Talent House Collective',
   },
-  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
+  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills rather than CV keywords.',
   keywords: [
     'luxury spa jobs', 'wellness careers', 'spa therapist recruitment', 'hotel spa jobs UK',
     'spa manager jobs', 'beauty therapist vacancies', 'wellness recruitment platform',
@@ -63,7 +80,7 @@ const baseMetadata: Metadata = {
     locale: 'en_GB',
     siteName: 'Talent House Collective',
     title: 'Talent House Collective | Spa and Wellness Careers',
-    description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
+    description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills rather than CV keywords.',
     url: 'https://talenthousecollective.co.uk',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Talent House Collective - The professional platform for spa and wellness careers' }],
   },
@@ -75,18 +92,44 @@ const baseMetadata: Metadata = {
   },
   icons: {
     icon: DEFAULT_LOGO.url,
-    apple: DEFAULT_LOGO.url,
+    // The published logo is an SVG wordmark, which is right in a browser tab
+    // and wrong on a home screen: iOS ignores transparency, drops the file on
+    // white and crops it square, so a wide wordmark arrives as three letters.
+    // The touch icon is the monogram, at the size Safari actually asks for.
+    apple: '/icons/apple-touch-icon.png',
   },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Talent House',
+    // Black-translucent lets the page's own charcoal run under the status bar
+    // rather than leaving a white strip above it.
+    statusBarStyle: 'black-translucent',
+  },
+}
+
+// The colour Android paints the address bar and the task switcher. Left unset
+// it uses white, which is the one colour this platform never uses.
+export const viewport: Viewport = {
+  themeColor: '#222321',
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const logo = await publishedLogo()
-  return { ...baseMetadata, icons: { icon: logo.url, apple: logo.url } }
+  return { ...baseMetadata, icons: { icon: logo.url, apple: '/icons/apple-touch-icon.png' } }
 }
 
-// Static pages inherit this: brand changes published in admin reach every
-// page within five minutes without a redeploy.
-export const revalidate = 300
+// The ceiling for every page beneath it, which is the whole site.
+//
+// Next takes the lowest revalidate in a segment chain, so this five minutes was
+// silently capping every page under it: a page asking for an hour got five
+// minutes, and on a site this quiet that is a cold render for most visitors.
+// The number was chosen so that a brand change published in admin reached every
+// page without a redeploy - but the read it protects (getWebsiteContent) is
+// already cached under the 'website-content' tag and already dropped the moment
+// that change is saved, so the short window was buying nothing and costing
+// every page below it.
+export const revalidate = 3600
 
 const organizationJsonLd = (logoUrl: string) => ({
   '@context': 'https://schema.org',
@@ -95,7 +138,15 @@ const organizationJsonLd = (logoUrl: string) => ({
   url: SITE_URL,
   logo: logoUrl.startsWith('http') ? logoUrl : SITE_URL + logoUrl,
   description: 'The professional platform for spa and wellness careers',
-  sameAs: [],
+  sameAs: SOCIAL_PROFILE_URLS,
+  areaServed: { '@type': 'Country', name: 'United Kingdom' },
+  contactPoint: [{
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: CONTACT_EMAIL,
+    areaServed: 'GB',
+    availableLanguage: 'en-GB',
+  }],
 })
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -109,16 +160,33 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     brandStyle = websiteCssVariables(await getWebsiteContent(false))
   } catch { /* fall back to CSS defaults */ }
   const logo = await publishedLogo()
+  // Decided on the server so the gate is in the first response rather than
+  // appearing a moment after the page it is meant to sit in front of.
+  const gate = await showEntryGate()
   return (
     <html lang="en-GB" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
+      <head>
+        {/* Every picture on the site is served from Supabase storage, and a
+            Lighthouse run counts nine separate third-party requests to it. Each
+            one paid for its own DNS lookup and TLS handshake because nothing
+            told the browser that host was coming. Opening the connection while
+            the HTML is still parsing takes that cost off the first image. */}
+        <link rel="preconnect" href="https://klfsemvrxvgrbuzrqyer.supabase.co" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://klfsemvrxvgrbuzrqyer.supabase.co" />
+      </head>
       <body>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#1c1b1a] focus:shadow-xl focus:border focus:border-[#1c1b1a]">Skip to main content</a>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#222321] focus:shadow-xl focus:border focus:border-[#222321]">Skip to main content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(logo.url)) }} />
         <div className="website-theme min-h-screen" style={brandStyle}>
           <SiteBrandProvider logo={logo}>{children}</SiteBrandProvider>
+          {/* Inside the themed wrapper, so the gate follows the brand colours
+              and heading font set in Admin rather than the CSS fallbacks. */}
+          {gate && <ComingSoonGate logo={logo} />}
         </div>
         <NewsletterSignupBar />
         <CookieConsent />
+        <DesktopInvite />
+        <TrackVisit />
       </body>
     </html>
   )

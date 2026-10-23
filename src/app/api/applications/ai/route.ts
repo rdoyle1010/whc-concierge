@@ -1,52 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { HOUSE_RULES } from '@/lib/house-style'
+import { askForJson, AI_MODEL_READING } from '@/lib/ai'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const OPENAI_APPLICATION_MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
+// Twenty-six seconds, and eighteen for the model inside it.
+//
+// This route declared neither, so it inherited the platform default of ten
+// and the model was given no limit at all. A reasoning model asked to rewrite
+// a job description does not reliably answer in ten seconds, so the function
+// was killed mid-request and returned an error page rather than JSON. On
+// screen that is a writing assistant that "just does not work sometimes",
+// which is the hardest kind of broken to report and the easiest to live with.
+export const maxDuration = 26
 
-function extractResponseText(payload: any): string {
-  if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-    }
-  }
-  return ''
-}
 
+
+// One client, one key, one bill. See src/lib/ai.ts.
+//
+// The fence stripping and the JSON parse moved in there with it, because all
+// three routes that wanted JSON had written their own version of the same
+// thing and only one of them handled a model that answered with a sentence
+// before the object.
 async function generateJson(input: string) {
-  if (!OPENAI_API_KEY) throw new Error('AI is not configured yet. Add OPENAI_API_KEY to the production environment.')
-
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: OPENAI_APPLICATION_MODEL,
-      reasoning: { effort: 'low' },
-      input,
-      max_output_tokens: 1800,
-    }),
+  const result = await askForJson<any>({
+    label: 'application analysis',
+    system: HOUSE_RULES,
+    prompt: input,
+    maxTokens: 2800,
   })
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '')
-    console.error(`OpenAI application assistant failed ${response.status}:`, detail.slice(0, 500))
-    throw new Error('The AI assistant is temporarily unavailable. Please try again.')
-  }
-
-  const payload = await response.json()
-  const text = extractResponseText(payload).trim()
-  const cleaned = text.replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
-  return JSON.parse(cleaned)
+  if (!result.ok) throw new Error(result.error)
+  return result.data
 }
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
+  // Each call is a paid AI request: a limit per account, not per address.
+  const limited = await enforceRateLimit(req as unknown as Request, 'applications-ai', { windowMs: 60 * 60 * 1000, maxRequests: 40, key: user.id })
+  if (limited) {
+    return NextResponse.json({ error: 'That is a lot of AI help in one hour. Give it a little while.' },
+      { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+  }
 
   try {
     const body = await req.json()
@@ -127,7 +123,7 @@ Style rules: sophisticated but natural UK English; no clichés such as 'I am wri
       strengths: Array.isArray(result.strengths) ? result.strengths.slice(0, 4).map(String) : [],
       gaps: Array.isArray(result.gaps) ? result.gaps.slice(0, 3).map(String) : [],
       covering_letter: String(result.covering_letter || '').slice(0, 5000),
-      model: OPENAI_APPLICATION_MODEL,
+      model: AI_MODEL_READING,
     })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'AI assistant unavailable' }, { status: 500 })

@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Star, ArrowRight, EyeOff } from 'lucide-react'
 import SponsoredAd from '@/components/SponsoredAd'
+import AmbassadorCodeBox from '@/components/AmbassadorCodeBox'
+import DailyThought from '@/components/DailyThought'
 
 // Talent home - the landing page after login. Greeting, a few live counts
 // (best-effort - failures are silent) and quick links into the main areas.
@@ -28,6 +30,16 @@ export default function TalentDashboard() {
   const [approaches, setApproaches] = useState<any[]>([])
   const [approachBusy, setApproachBusy] = useState('')
   const [approachNote, setApproachNote] = useState('')
+  const [consultancyEnquiries, setConsultancyEnquiries] = useState(0)
+  const isConsultant = profile?.account_focus === 'consultant'
+
+  useEffect(() => {
+    if (!isConsultant) return
+    fetch('/api/consultancy/mine', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => setConsultancyEnquiries((json?.enquiries || []).length))
+      .catch(() => {})
+  }, [isConsultant])
 
   // Confidential approaches: a property has asked for an introduction to this
   // private profile. Accepting reveals the full profile and opens messaging.
@@ -96,15 +108,6 @@ export default function TalentDashboard() {
 
   // The sidebar already navigates everywhere - this list keeps only the
   // destinations a professional actually opens daily.
-  const quickLinks = [
-    { label: 'Browse Jobs', desc: 'Find your next permanent or fixed-term role.', href: '/talent/jobs' },
-    { label: 'Agency Shifts', desc: 'Manage planned cover and urgent shift offers.', href: '/talent/agency' },
-    { label: 'Applications', desc: 'Track every role you have applied for.', href: '/talent/applications' },
-    { label: 'Messages', desc: 'Private conversations with properties and matches.', href: '/talent/messages' },
-    { label: 'Academy', desc: 'Courses, certificates and profile badges.', href: '/talent/academy' },
-    { label: 'My Profile', desc: 'Keep your professional profile polished and current.', href: '/talent/profile' },
-  ]
-
   if (loading) return (
     <DashboardShell role="talent">
       <div className="animate-pulse space-y-6">
@@ -133,20 +136,28 @@ export default function TalentDashboard() {
     || (briefViews !== null && briefViews > 0) || briefOffers > 0
 
   return (
-    <DashboardShell role="talent" userName={profile?.full_name}>
-      <div className="mb-8">
+    <DashboardShell
+      role="talent"
+      userName={profile?.full_name}
+      intro={<>
         <p className="dashboard-eyebrow">Your career</p>
         <h1 className="dashboard-title">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h1>
-        <p className="dashboard-intro">Permanent roles, flexible work, private conversations and your professional profile in one workspace.</p>
-      </div>
+        <p className="dashboard-intro">{isConsultant
+          ? 'Your practice, your enquiries and the Academy, in one workspace.'
+          : 'Permanent roles, flexible work, private conversations and your professional profile in one workspace.'}</p>
+        {/* Inside the intro, so it sits under the greeting rather than below
+            six cards. It was three screens down and she could not find it. */}
+        <DailyThought className="mt-7" />
+      </>}
+    >
 
       <section className="dashboard-card mb-8">
           <p className="dashboard-eyebrow">Your brief</p>
           <h2 className="dashboard-section-title mb-2">What has moved</h2>
           <div className="mt-4 mb-2 grid max-w-md grid-cols-2 gap-x-8">
             <div className="border-t border-border pt-3">
-              <p className="text-[10px] uppercase tracking-[.14em] text-muted">Applications</p>
-              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{stats.applications}</p>
+              <p className="text-[10px] uppercase tracking-[.14em] text-muted">{isConsultant ? 'Enquiries' : 'Applications'}</p>
+              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{isConsultant ? consultancyEnquiries : stats.applications}</p>
             </div>
             <div className="border-t border-border pt-3">
               <p className="text-[10px] uppercase tracking-[.14em] text-muted">Unread messages</p>
@@ -204,15 +215,40 @@ export default function TalentDashboard() {
               <div className="dashboard-list-row">
                 <p className="text-[13px] text-ink">Nothing has moved yet.</p>
                 <p className="text-[12px] text-secondary mt-1 max-w-[54ch]">
-                  Matching runs on what your profile says about your skills, qualifications and
-                  product houses. The more of it that is filled in, the more this brief has to tell
-                  you. <Link href="/talent/profile" className="text-accent hover:underline">Complete your profile</Link>
-                  {' '}or <Link href="/jobs" className="text-accent hover:underline">browse live roles</Link>.
+                  {isConsultant ? (
+                    <>
+                      Properties find you through the directory, so the projects on your listing do the work here.{' '}
+                      <Link href="/talent/consultancy" className="text-accent hover:underline">Open your practice</Link>
+                      {' '}or <Link href="/consultancy" className="text-accent hover:underline">see the directory</Link>.
+                    </>
+                  ) : (
+                    <>
+                      Matching runs on what your profile says about your skills, qualifications and
+                      product houses. The more of it that is filled in, the more this brief has to tell
+                      you. <Link href="/talent/profile" className="text-accent hover:underline">Complete your profile</Link>
+                      {' '}or <Link href="/jobs" className="text-accent hover:underline">browse live roles</Link>.
+                    </>
+                  )}
                 </p>
               </div>
             )}
           </div>
       </section>
+
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <AmbassadorCodeBox audience="talent" />
+        {/* The free reference page, where somebody building a profile is
+            already thinking about qualifications and insurance. It used to be
+            reachable only from the footer under Support. */}
+        <div className="dashboard-card">
+          <p className="text-[13px] font-semibold text-ink">Good to Know</p>
+          <p className="mt-1.5 text-[13px] leading-6 text-secondary">
+            Who governs, insures and qualifies this industry, what each one does for your career,
+            and what we make of them. Free, and worth ten minutes before your next interview.
+          </p>
+          <Link href="/good-to-know" className="btn-secondary mt-4 inline-flex text-[12px]">Read Good to Know</Link>
+        </div>
+      </div>
 
       {(approaches.length > 0 || approachNote) && (
         <section className="dashboard-card mb-8">
@@ -232,7 +268,7 @@ export default function TalentDashboard() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'accept')}
-                    className="px-3 py-2 bg-[#1c1b1a] text-white text-[12px] font-medium disabled:opacity-50">
+                    className="px-3 py-2 bg-[#222321] text-white text-[12px] font-medium disabled:opacity-50">
                     {approachBusy === `accept:${approach.employer_id}` ? 'Accepting...' : 'Accept introduction'}
                   </button>
                   <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'decline')}
@@ -256,21 +292,14 @@ export default function TalentDashboard() {
         </div>
       )}
 
+      {/* The old "Career workspace" list lived here. Every one of its six
+          links is already in the sidebar, two clicks from any page, and it
+          sat directly above a second grid of links to the public site - two
+          near-identical blocks that made the page read as filler. The
+          sidebar is the navigation; this panel is the one thing the
+          dashboard can say that the sidebar cannot. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_.85fr] gap-6">
-        <section className="dashboard-panel">
-          <p className="dashboard-eyebrow">Continue your journey</p>
-          <h2 className="dashboard-section-title mb-4">Career workspace</h2>
-          <div>
-            {quickLinks.map(link => (
-              <Link key={link.href} href={link.href} className="dashboard-list-row group">
-                <span><span className="block text-[13px] font-medium text-ink">{link.label}</span><span className="block text-[12px] text-muted mt-0.5">{link.desc}</span></span>
-                <ArrowRight size={14} className="text-muted group-hover:text-accent shrink-0" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <aside className="dashboard-panel bg-[#1c1b1a] !border-[#1c1b1a] text-white">
+        <aside className="dashboard-panel !bg-[#222321] !border-[#222321] text-white lg:col-start-2">
           <EyeOff size={19} className="text-white/80 mb-5" />
           <p className="text-[9px] uppercase tracking-[.2em] text-white/48 mb-2">Profile privacy</p>
           <h2 className="text-[28px] !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>

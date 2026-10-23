@@ -1,7 +1,7 @@
 'use client'
 
 import type { WebsiteContent } from '@/lib/site-content'
-import { websiteCssVariables } from '@/lib/site-content'
+import { websiteCssVariables } from '@/lib/site-content-values'
 
 export default function WebsiteEditorPreview({ content }: { content: WebsiteContent }) {
   const hero = content.hero.slides[0]
@@ -21,12 +21,14 @@ export default function WebsiteEditorPreview({ content }: { content: WebsiteCont
         </div>
       </div>
       <div className="relative h-[280px]">
-        <img
-          src={hero.image.url}
-          alt={hero.image.alt}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: hero.image.focalX + '% ' + hero.image.focalY + '%' }}
-        />
+        {hero.image.url ? (
+          <img
+            src={hero.image.url}
+            alt={hero.image.alt}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: hero.image.focalX + '% ' + hero.image.focalY + '%' }}
+          />
+        ) : null}
         <div className="absolute inset-0 bg-black/45" />
         <div className="absolute inset-0 p-8 flex flex-col justify-center text-white">
           <p className="text-[7px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--site-accent)' }}>{hero.eyebrow}</p>

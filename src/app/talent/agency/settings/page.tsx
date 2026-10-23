@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Check, Zap, MapPin, CalendarDays, Clock3, Banknote } from 'lucide-react'
+import { AlertCircle, Check, Zap, MapPin, CalendarDays, Clock3, Banknote } from 'lucide-react'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 const dayKey = (d: Date) => d.toLocaleDateString('en-CA')
@@ -52,6 +52,7 @@ export default function AgencySettingsPage() {
   const [notice, setNotice] = useState('')
   const [profileId, setProfileId] = useState<string | null>(null)
   const [live, setLive] = useState<{ available: boolean; tier: string | null; until: string | null }>({ available: false, tier: null, until: null })
+  const [readiness, setReadiness] = useState({ rightToWork: false, insured: false, qualifications: 0 })
   const [form, setForm] = useState({ hourly_rate: '', phone: '', postcode: '', travel_radius_miles: '', tier: 'basic' as 'basic' | 'featured' })
   const [hasCoords, setHasCoords] = useState(false)
   const [days, setDays] = useState<Record<string, 'available' | 'unavailable'>>({})
@@ -61,6 +62,9 @@ export default function AgencySettingsPage() {
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [dayBusy, setDayBusy] = useState<string | null>(null)
+  // The button itself confirms. A line of green text under it was there, but
+  // people press a button and look at the button, not below it.
+  const [daySaved, setDaySaved] = useState(false)
   const [referral, setReferral] = useState<{ code: string | null; total: number; converted: number }>({ code: null, total: 0, converted: 0 })
   const [copied, setCopied] = useState(false)
   const [payoutState, setPayoutState] = useState<'loading' | 'not_started' | 'incomplete' | 'active' | 'unavailable'>('loading')
@@ -98,6 +102,11 @@ export default function AgencySettingsPage() {
           const s = j.settings || {}
           setProfileId(s.profile_id || null)
           setLive({ available: Boolean(s.agency_available), tier: s.agency_tier || null, until: s.agency_listed_until || null })
+          setReadiness({
+            rightToWork: Boolean(s.right_to_work_verified),
+            insured: Boolean(s.has_insurance),
+            qualifications: Number(s.qualifications_count || 0),
+          })
           setForm({
             hourly_rate: s.hourly_rate?.toString() || '',
             phone: s.phone || '',
@@ -165,7 +174,11 @@ export default function AgencySettingsPage() {
         return { ...current, [key]: [nextWindow] }
       })
       setNotice(state === 'available' ? `${prettyDate(key)} saved as available ${startTime}–${endTime}.` : state === 'unavailable' ? `${prettyDate(key)} saved as not available.` : 'Availability cleared.')
-    } catch { setError('Could not save availability.') } finally { setDayBusy(null) }
+    } catch { setError('Could not save availability.') } finally {
+      setDayBusy(null)
+      setDaySaved(true)
+      window.setTimeout(() => setDaySaved(false), 2200)
+    }
   }
 
   async function saveDetails(joining: boolean): Promise<boolean> {
@@ -214,10 +227,59 @@ export default function AgencySettingsPage() {
       <div className="max-w-3xl">
         <p className="dashboard-eyebrow">Agency register</p>
         <h1 className="dashboard-title">Agency Settings</h1>
-        <p className="dashboard-intro mb-6">Be bookable for agency shifts - planned cover and urgent same-day work. You set the rate; properties pay Wellness House Collective, and you receive 100% of the agreed shift rate after the shift. Urgent offers reach you by text.</p>
+        <p className="dashboard-intro mb-6">Be bookable for agency shifts - planned cover and urgent same-day work. You set the rate; properties pay Talent House Collective, and you receive 100% of the agreed shift rate after the shift. Urgent offers reach you by text.</p>
 
         {notice && <div role="status" className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div role="alert" className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+
+        {/* What the register asks for, said before somebody pays rather than
+            after. Right to work is the only requirement: supplying somebody
+            into a shift makes Talent House an employment business, and that is
+            the one check no disclaimer covers. Certificates are what a spa
+            director actually reads. Insurance is genuinely optional - plenty
+            of placements sit under the property's own cover - but properties
+            can filter to insured only, so it is worth having. */}
+        <div className="mb-6 border border-border bg-white p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-ink">What the register asks for</p>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-start gap-3">
+              {readiness.rightToWork
+                ? <Check size={15} className="mt-0.5 shrink-0 text-green-700" />
+                : <AlertCircle size={15} className="mt-0.5 shrink-0 text-amber-600" />}
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink">Right to work <span className="ml-1 text-[10px] font-semibold uppercase tracking-[.1em] text-amber-700">Required</span></p>
+                <p className="text-[12px] leading-5 text-muted">{readiness.rightToWork
+                  ? 'Confirmed. You can be listed for shifts.'
+                  : 'Properties cannot be offered your cover until this is confirmed. It is free, and usually takes a day once your document is uploaded.'}</p>
+                {!readiness.rightToWork && <Link href="/talent/verification" className="btn-primary mt-2 inline-flex !py-2 !px-3 text-[12px]">Upload your document</Link>}
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              {readiness.qualifications > 0
+                ? <Check size={15} className="mt-0.5 shrink-0 text-green-700" />
+                : <AlertCircle size={15} className="mt-0.5 shrink-0 text-muted" />}
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink">Certificates</p>
+                <p className="text-[12px] leading-5 text-muted">{readiness.qualifications > 0
+                  ? `${readiness.qualifications} on your profile. This is what a spa director reads first.`
+                  : 'The single thing a spa director reads first. Upload them on your profile - reviewed certificates are shown apart from self-declared ones.'}</p>
+                {readiness.qualifications === 0 && <Link href="/talent/profile" className="mt-2 inline-flex text-[12px] font-semibold text-[#222321] underline">Add your certificates</Link>}
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              {readiness.insured
+                ? <Check size={15} className="mt-0.5 shrink-0 text-green-700" />
+                : <AlertCircle size={15} className="mt-0.5 shrink-0 text-muted" />}
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink">Insurance <span className="ml-1 text-[10px] font-semibold uppercase tracking-[.1em] text-muted">Optional</span></p>
+                <p className="text-[12px] leading-5 text-muted">{readiness.insured
+                  ? 'On file, and shown to properties as an Insured mark.'
+                  : 'Not every placement needs your own cover - many sit under the property\u2019s. But properties can filter the register to insured professionals only, so having it widens the work you are offered.'}</p>
+                {!readiness.insured && <p className="mt-2 text-[12px] leading-5 text-muted">Freelance and mobile therapist policies are widely available - <a href="https://www.salongold.co.uk/mobile-freelance-insurance" target="_blank" rel="noreferrer noopener" className="font-semibold text-[#222321] underline">Salon Gold</a> is one option. Talent House does not sell insurance or take a commission on it; once you hold a policy, upload it on your profile and the Insured mark appears.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {live.available ? (
           <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
@@ -232,7 +294,7 @@ export default function AgencySettingsPage() {
         )}
 
         {/* Connected payouts mean the property's payment reaches the
-            professional at the moment it clears, instead of waiting on a WHC
+            professional at the moment it clears, instead of waiting on a Talent House
             bank transfer after the shift. */}
         {live.available && payoutState !== 'loading' && payoutState !== 'unavailable' && (
           payoutState === 'active' ? (
@@ -240,19 +302,19 @@ export default function AgencySettingsPage() {
               <Banknote size={18} className="text-green-700 mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-green-800">Payouts are connected</p>
-                <p className="text-[12px] leading-5 text-green-700 mt-0.5">Your full agreed shift amount is sent straight to your bank account by Stripe the moment a property pays. Nothing is deducted and nothing waits on a WHC transfer.</p>
+                <p className="text-[12px] leading-5 text-green-700 mt-0.5">Your full agreed shift amount is sent straight to your bank account by Stripe the moment a property pays. Nothing is deducted and nothing waits on a Talent House transfer.</p>
               </div>
             </div>
           ) : (
-            <div className="mb-6 border border-[#1c1b1a]/25 bg-[#f3f0eb] px-5 py-4">
+            <div className="mb-6 border border-[#222321]/25 bg-[#ede8df] px-5 py-4">
               <div className="flex items-start gap-3">
-                <Banknote size={18} className="text-[#1c1b1a] mt-0.5 shrink-0" />
+                <Banknote size={18} className="text-[#222321] mt-0.5 shrink-0" />
                 <div>
                   <p className="text-[14px] font-medium text-ink">{payoutState === 'incomplete' ? 'Finish connecting your payouts' : 'Get paid the moment a property pays'}</p>
                   <p className="text-[12px] leading-5 text-secondary mt-1">
                     {payoutState === 'incomplete'
-                      ? 'Your Stripe payout setup is not finished, so shift money still comes to you by WHC bank transfer after the shift. Complete it and you are paid automatically instead.'
-                      : 'Connect your bank account securely through Stripe and your full agreed shift amount is paid to you automatically as soon as the property pays, rather than by a WHC bank transfer after the shift. It takes about two minutes, and your rate and fee do not change.'}
+                      ? 'Your Stripe payout setup is not finished, so shift money still comes to you by Talent House bank transfer after the shift. Complete it and you are paid automatically instead.'
+                      : 'Connect your bank account securely through Stripe and your full agreed shift amount is paid to you automatically as soon as the property pays, rather than by a Talent House bank transfer after the shift. It takes about two minutes, and your rate and fee do not change.'}
                   </p>
                   <button type="button" onClick={startPayouts} disabled={payoutBusy} className="btn-primary mt-3 text-[12px] disabled:opacity-50">
                     {payoutBusy ? 'Opening Stripe...' : payoutState === 'incomplete' ? 'Continue payout setup' : 'Connect payouts with Stripe'}
@@ -295,8 +357,8 @@ export default function AgencySettingsPage() {
             <div className="mt-5 border-t border-border pt-5">
               <p className="text-[11px] font-semibold text-ink mb-2">Can you work this day?</p>
               <div className="inline-flex border border-border bg-surface p-1">
-                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#1c1b1a] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
-                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#1c1b1a] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
+                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#222321] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
+                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#222321] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
               </div>
             </div>
 
@@ -313,7 +375,7 @@ export default function AgencySettingsPage() {
                   <button type="button" onClick={() => { setStartTime('09:00'); setEndTime('17:00') }} className="btn-secondary !px-3 !py-2 text-[11px]">Full day · 09:00–17:00</button>
                   <span className="self-center text-[11px] text-muted">or enter any custom hours</span>
                 </div>
-                <div className="mt-4 bg-[#f3f0eb] border border-border px-4 py-3">
+                <div className="mt-4 bg-[#ede8df] border border-border px-4 py-3">
                   <p className="text-[12px] font-semibold text-ink">You are setting: {startTime}–{endTime}{selectedDuration > 0 ? ` · ${selectedDuration % 1 === 0 ? selectedDuration : selectedDuration.toFixed(1)} hours` : ''}</p>
                   <p className="mt-1 text-[11px] leading-5 text-muted">Example: if you set 09:00–13:00, you can be matched to a 4-hour shift inside that window. If you set 09:00–17:00, you can be matched to shifts that start and finish within that full window.</p>
                 </div>
@@ -323,14 +385,14 @@ export default function AgencySettingsPage() {
             )}
 
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-              <button type="button" onClick={() => saveDay(availabilityMode)} disabled={!!dayBusy} className="btn-primary text-[12px]">{dayBusy ? 'Saving...' : availabilityMode === 'available' ? 'Save available hours' : 'Save as not available'}</button>
+              <button type="button" onClick={() => saveDay(availabilityMode)} disabled={!!dayBusy} className={`btn-primary text-[12px] inline-flex items-center gap-2 ${daySaved ? '!bg-emerald-700' : ''}`}>{dayBusy ? 'Saving...' : daySaved ? <><Check size={13} /> Saved</> : availabilityMode === 'available' ? 'Save available hours' : 'Save as not available'}</button>
               {days[selectedDate] && <button type="button" onClick={() => saveDay('clear')} disabled={!!dayBusy} className="text-[12px] underline text-muted">Clear this day</button>}
             </div>
             {(windows[selectedDate] || []).map((w, i) => <p key={i} className="mt-3 text-[12px] font-medium text-green-700">Saved: Available {w.start_time.slice(0,5)}–{w.end_time.slice(0,5)}</p>)}
             {days[selectedDate] === 'unavailable' && <p className="mt-3 text-[12px] font-medium text-secondary">Saved: Not available</p>}
           </div>
 
-          <div className="mb-4 border border-border bg-[#f3f0eb] p-4">
+          <div className="mb-4 border border-border bg-[#ede8df] p-4">
             <p className="text-[11px] font-semibold text-ink mb-2">How availability works</p>
             <div className="grid gap-2 text-[11px] leading-5 text-secondary sm:grid-cols-2">
               <p><strong className="text-ink">Available:</strong> set the real start and finish time you could accept work.</p>
@@ -350,7 +412,7 @@ export default function AgencySettingsPage() {
                 const state = days[key]
                 const window = state === 'available' ? windows[key]?.[0] : undefined
                 return (
-                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-[#f3f0eb] text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#1c1b1a]/20 border-[#1c1b1a]' : ''} ${isToday ? 'font-bold' : ''}`}>
+                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-[#ede8df] text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#222321]/20 border-[#222321]' : ''} ${isToday ? 'font-bold' : ''}`}>
                     <span className="block text-[9px] uppercase tracking-wide opacity-65">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                     <span className="block mt-0.5 text-[13px]">{day.getDate()}</span>
                     <span className="block text-[8px] uppercase opacity-60">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>

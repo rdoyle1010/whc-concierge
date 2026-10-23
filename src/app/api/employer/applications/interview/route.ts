@@ -5,14 +5,10 @@ import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
+import { briefingDetailsHtml, briefingEmailHtml, escapeHtml } from '@/lib/interview-briefing'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 const METHODS = ['teams','video','phone','in_person'] as const
-
-function escapeHtml(value: string) {
-  return value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')
-}
 
 function methodLabel(method: string) {
   return method === 'teams' ? 'Microsoft Teams' : method === 'video' ? 'Video call' : method === 'phone' ? 'Phone call' : 'In person'
@@ -55,7 +51,7 @@ function parseLondonSlot(value: string): Date | null {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -105,12 +101,27 @@ export async function POST(req: NextRequest) {
       if (!previousHeld) return NextResponse.json({ error: 'The previous interview needs to be confirmed by the candidate and to have taken place before arranging the next one.' }, { status: 409 })
     }
 
+    // Re-sending a round that already exists is a reschedule, not a fresh
+    // invitation. Plans change - a manager falls ill, a spa closes for a leak -
+    // and before this the only way to move a time was to leave the platform
+    // and hope the candidate read the email.
+    const { data: existingRound } = await admin.from('application_interviews')
+      .select('id,status,selected_slot,meeting_link,venue_address,contact_name,preparation_required,assessment_type,assessment_details')
+      .eq('application_id', application.id)
+      .eq('round_number', roundNumber)
+      .maybeSingle()
+    const isReschedule = Boolean(existingRound)
+    // Somebody being asked to clear their diary a second time is owed a reason.
+    if (isReschedule && employerNote.length < 10) {
+      return NextResponse.json({ error: 'Tell the candidate why the time is changing.' }, { status: 400 })
+    }
+
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
       admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle(),
     ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const { data: interview, error: interviewError } = await admin.from('application_interviews').upsert({
       application_id: application.id,
@@ -121,22 +132,36 @@ export async function POST(req: NextRequest) {
       status: 'proposed',
       employer_note: employerNote || null,
       candidate_note: null,
-      meeting_link: meetingLink,
-      venue_address: venueAddress,
-      contact_name: contactName,
-      preparation_required: preparationRequired,
-      assessment_type: assessmentType,
-      assessment_details: assessmentDetails,
+      // A reschedule dialog asks for times and a reason, not the address all
+      // over again. Anything it does not send is carried forward.
+      meeting_link: meetingLink ?? existingRound?.meeting_link ?? null,
+      venue_address: venueAddress ?? existingRound?.venue_address ?? null,
+      contact_name: contactName ?? existingRound?.contact_name ?? null,
+      preparation_required: preparationRequired ?? existingRound?.preparation_required ?? null,
+      assessment_type: assessmentType ?? existingRound?.assessment_type ?? null,
+      assessment_details: assessmentDetails ?? existingRound?.assessment_details ?? null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'application_id,round_number' }).select('*').single()
     if (interviewError) return NextResponse.json({ error: 'Could not create interview invitation.' }, { status: 500 })
 
-    await admin.from('applications').update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    // The invitation has gone. If the stage does not move with it, this
+    // candidate stays in the pile as though nothing has happened.
+    const { error: stageError } = await admin.from('applications')
+      .update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (stageError) return NextResponse.json({ error: 'The invitation was sent but the application stage did not move. Refresh before inviting them again.' }, { status: 500 })
 
     const propertyName = employer.property_name || employer.company_name || 'the property'
     const stageLabel = roundLabel(roundNumber)
-    const title = `${stageLabel} invitation - ${job.job_title}`
-    const note = `${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Choose one of the proposed times in My Applications.`
+    // A reschedule that arrives worded as a first invitation reads like a
+    // mistake, and the candidate has to work out which of the two emails is
+    // the live one.
+    const hadConfirmedTime = Boolean(existingRound?.status === 'confirmed' && existingRound?.selected_slot)
+    const title = isReschedule
+      ? `${stageLabel} time changed - ${job.job_title}`
+      : `${stageLabel} invitation - ${job.job_title}`
+    const note = isReschedule
+      ? `${propertyName} has had to change the time of your ${stageLabel.toLowerCase()} for ${job.job_title}.${hadConfirmedTime ? ' The time you confirmed no longer stands.' : ''} Choose one of the new times in My Applications.`
+      : `${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Choose one of the proposed times in My Applications.`
     await createNotification(candidate.user_id, 'general', title, note, '/talent/applications')
 
     // Preference-gated ('application_updates'): the interview invitation email
@@ -145,20 +170,39 @@ export async function POST(req: NextRequest) {
     const wantsEmail = await emailAllowed(admin, candidate.user_id, 'application_updates')
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
-    if (email && RESEND_API_KEY && wantsEmail) {
+    if (email && wantsEmail) {
       const slotHtml = uniqueIso.map((slot: string) => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
-      const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1b1a;"><div style="max-width:560px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#1c1b1a;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(stageLabel)} invitation</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">${escapeHtml(job.job_title)}</h2><p>${escapeHtml(propertyName)} would like to invite you to the <strong>${escapeHtml(stageLabel.toLowerCase())}</strong> via ${escapeHtml(methodLabel(interviewMethod))}.</p><p>Please choose one of the proposed times below to confirm your attendance:</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p><a href="https://talenthousecollective.co.uk/talent/applications" style="display:inline-block;background:#1c1b1a;color:#ffffff;text-decoration:none;padding:12px 18px;">Choose ${escapeHtml(stageLabel.toLowerCase())} time</a></p></div></div></body></html>`
-      const res = await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:FROM_EMAIL,to:email,subject:title,html})})
-      if (!res.ok) console.error('Interview invitation email failed:', res.status)
+      // Everything the candidate needs in order to turn up. These columns were
+      // stored from the first version of this form and never sent, so an
+      // invitation could name Teams and carry no link, or say "in person" and
+      // no address - leaving somebody to guess, or to email and ask, or to
+      // miss it.
+      const detailsHtml = briefingDetailsHtml({
+        interviewMethod, meetingLink, venueAddress, contactName, preparationRequired, assessmentType, assessmentDetails,
+      })
+      const html = briefingEmailHtml({
+        eyebrow: isReschedule ? `${stageLabel} time changed` : `${stageLabel} invitation`,
+        heading: job.job_title,
+        intro: isReschedule
+          ? `${escapeHtml(propertyName)} has had to change the time of your <strong>${escapeHtml(stageLabel.toLowerCase())}</strong>.${hadConfirmedTime ? ' The time you confirmed no longer stands.' : ''}`
+          : `${escapeHtml(propertyName)} would like to invite you to the <strong>${escapeHtml(stageLabel.toLowerCase())}</strong> via ${escapeHtml(methodLabel(interviewMethod))}.`,
+        bodyHtml: `${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p>Please choose one of the ${isReschedule ? 'new ' : ''}times below to confirm your attendance:</p><ul>${slotHtml}</ul>`,
+        detailsHtml,
+        ctaLabel: `Choose ${stageLabel.toLowerCase()} time`,
+        ctaHref: 'https://talenthousecollective.co.uk/talent/applications',
+      })
+      await sendTransactionalEmail({ to: email, subject: title, html, kind: 'interview', userId: candidate.user_id })
     }
 
     const smsSent = await sendSmsIfOptedIn({
       to: candidate.phone,
       optedIn: candidate.sms_opt_in,
-      body: `Talent House Collective: ${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a time.`,
+      body: isReschedule
+        ? `Talent House Collective: ${propertyName} has changed the time of your ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a new time.`
+        : `Talent House Collective: ${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a time.`,
     })
 
-    await trackEvent('interview_scheduled', { actorUserId: user.id, candidateId: application.candidate_id, employerId: employer.id, jobId: job.id, applicationId: application.id }, { round: interview.round || 1 })
+    await trackEvent('interview_scheduled', { actorUserId: user.id, candidateId: application.candidate_id, employerId: employer.id, jobId: job.id, applicationId: application.id }, { round: interview.round || 1, rescheduled: isReschedule })
     return NextResponse.json({ success: true, interview, smsSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create interview invitation.' }, { status: 500 })
@@ -167,7 +211,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   try {
     const body = await req.json()
     const interviewId = String(body.interviewId || '')
@@ -183,7 +227,7 @@ export async function PATCH(req: NextRequest) {
     const { data: application } = await admin.from('applications').select('id,role_id,job_id').eq('id', interview.application_id).maybeSingle()
     const jobId = application?.role_id || application?.job_id
     const { data: job } = jobId ? await admin.from('job_listings').select('id,employer_id').eq('id', jobId).maybeSingle() : { data: null }
-    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     if (interview.status === 'completed') return NextResponse.json({ success: true, interview })
     if (interview.status !== 'confirmed' || !interview.selected_slot) return NextResponse.json({ error: 'The interview needs a confirmed time before it can be marked complete.' }, { status: 409 })

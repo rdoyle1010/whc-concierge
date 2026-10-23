@@ -5,8 +5,15 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Star, ArrowLeft, ExternalLink, BadgeCheck, BookOpen } from 'lucide-react'
+import { externalUrl } from '@/lib/external-url'
+import { OG_DEFAULTS } from '@/lib/og-defaults'
+import { PUBLIC_CACHE_TAGS } from '@/lib/public-cache'
 
-export const revalidate = 60
+// An hour, not a minute. The reads behind this page are tagged, so an edit
+// drops the cached copy at once instead of it expiring on a timer - which is
+// what made a short window necessary and what made nearly every visit a cold
+// render on a site this quiet.
+export const revalidate = 3600
 
 const SITE = 'https://talenthousecollective.co.uk'
 
@@ -102,10 +109,10 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
         comment: r.text || '',
         created_at: r.created_at,
         verified: true,
-        source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
+        source: r.booking_id ? 'Completed Talent House agency shift' : 'Talent House placement',
         // Published by role, never by name: nobody consented to a public,
           // permanent attribution of their opinion of a named employer.
-          reviewer_name: reviewer?.role_level || 'Verified WHC professional',
+          reviewer_name: reviewer?.role_level || 'Verified Talent House professional',
         reviewer_role: null,
       }
     })
@@ -143,7 +150,7 @@ const getPropertyPageData = unstable_cache(async (id: string) => {
   if (!property) return null
   const reviewData = await loadReviews(admin, (property as any).user_id)
   return { property: property as any, jobs: jobs || [], ...reviewData }
-}, ['public-property-destination-v3'], { revalidate: 60 })
+}, ['public-property-destination-v3'], { revalidate: 3600, tags: [PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.jobs, PUBLIC_CACHE_TAGS.proof] })
 
 function normaliseAwards(raw: any): Array<{ name: string; year: string | null }> {
   if (!Array.isArray(raw)) return []
@@ -179,7 +186,9 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   return {
     title: { absolute: `Work at ${name} | Talent House Collective` }, description,
     alternates: { canonical: url },
-    openGraph: { title: `Work at ${name}`, description, url, type: 'website', ...(image ? { images: [image] } : {}) },
+    openGraph: {
+    ...OG_DEFAULTS, title: `Work at ${name}`, description, url, type: 'website', ...(image ? { images: [image] } : {}),
+  },
     twitter: { title: `Work at ${name}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },
   }
 }
@@ -189,7 +198,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   const data = await getPropertyPageData(id)
 
   if (!data) {
-    return <div className="min-h-screen bg-white"><Navbar /><section className="pt-[120px] pb-20"><div className="max-w-6xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-accent font-semibold">Back to Properties</Link></div></section><Footer /></div>
+    return <div className="min-h-screen bg-parchment"><Navbar /><section className="pt-[120px] pb-20"><div className="max-w-6xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-accent font-semibold">Back to Properties</Link></div></section><Footer /></div>
   }
 
   const { property, jobs, reviews: staffReviews, summary: reviewSummary } = data
@@ -250,10 +259,10 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   const showTeam = Boolean(property.team_size) || leadership.length > 0
   const showCulture = Boolean(property.culture_statement) || culturePoints.length > 0
   const showLocation = Boolean(property.location_guide) || travelRows.length > 0
-  const showReputation = awards.length > 0 || Boolean(property.guest_review_summary) || Boolean(reviewScore) || Boolean(property.tripadvisor_url) || Boolean(property.website)
+  const showReputation = awards.length > 0 || Boolean(property.guest_review_summary) || Boolean(reviewScore) || Boolean(externalUrl(property.tripadvisor_url)) || Boolean(externalUrl(property.website))
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-parchment">
       <Navbar />
 
       <div className="border-b border-border bg-white pt-[76px]">
@@ -265,8 +274,8 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       {/* Hero */}
       {heroPhoto ? (
         <header className="relative">
-          <img src={heroPhoto} alt={name} className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,27,26,.92) 0%, rgba(28,27,26,.5) 45%, rgba(28,27,26,.18) 100%)' }} />
+          <img decoding="async" src={heroPhoto} alt={name} className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,28,28,.92) 0%, rgba(28,28,28,.5) 45%, rgba(28,28,28,.18) 100%)' }} />
           <div className="relative max-w-6xl mx-auto px-6 pt-44 md:pt-64 pb-12 md:pb-16">
             <h1 className="text-white text-[40px] md:text-[62px] leading-[1.03] tracking-[-.04em] max-w-4xl">{name}</h1>
             {heroMeta.length > 0 && (
@@ -282,7 +291,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
           </div>
         </header>
       ) : (
-        <header className="bg-accent">
+        <header className="bg-charcoal">
           <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
             <h1 className="text-white text-[40px] md:text-[62px] leading-[1.03] tracking-[-.04em] max-w-4xl">{name}</h1>
             {heroMeta.length > 0 && (
@@ -356,9 +365,19 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
             {productHouses.length > 0 && (
               <div className="mt-10">
                 <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-ink">Product partners</p>
-                <p className="mt-3 text-[19px] md:text-[22px] font-serif font-semibold text-ink leading-relaxed max-w-3xl">
-                  {productHouses.join('  ·  ')}
-                </p>
+                {/* A property that names four houses is making a statement, and
+                    it deserves the serif. A property that has ticked forty-seven
+                    is filling in a form, and setting that at display size turns
+                    the page into a wall of brand names that dwarfs the rooms,
+                    the team and the treatment menu underneath it. Past a handful
+                    they read as a list, in the same rhythm as Services below. */}
+                {productHouses.length <= 6 ? (
+                  <p className="mt-3 text-[19px] md:text-[22px] font-serif font-semibold text-ink leading-relaxed max-w-3xl">
+                    {productHouses.join('  ·  ')}
+                  </p>
+                ) : (
+                  <div className="mt-3"><QuietList items={productHouses} cap={24} noun="brands" /></div>
+                )}
               </div>
             )}
             {services.length > 0 && (
@@ -507,10 +526,10 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 {reviewCount ? <span className="text-secondary">from {reviewCount} review{reviewCount === 1 ? '' : 's'}</span> : null}
               </p>
             )}
-            {(property.website || property.tripadvisor_url) && (
+            {(externalUrl(property.website) || externalUrl(property.tripadvisor_url)) && (
               <div className="mt-7 flex flex-wrap gap-x-8 gap-y-3">
-                {property.website && <a href={property.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">Official website<ExternalLink size={13} /></a>}
-                {property.tripadvisor_url && <a href={property.tripadvisor_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">TripAdvisor<ExternalLink size={13} /></a>}
+                {externalUrl(property.website) && <a href={externalUrl(property.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">Official website<ExternalLink size={13} /></a>}
+                {externalUrl(property.tripadvisor_url) && <a href={externalUrl(property.tripadvisor_url)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">TripAdvisor<ExternalLink size={13} /></a>}
               </div>
             )}
           </section>
@@ -523,7 +542,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
               <div>
                 <p className="public-eyebrow">What it&apos;s actually like to work here</p>
                 <p className="mt-5 text-[12px] leading-6 italic text-muted max-w-2xl">
-                  Verified reviews from professionals who have worked here through WHC - separate from guest reviews and property marketing.
+                  Verified reviews from professionals who have worked here through Talent House - separate from guest reviews and property marketing.
                 </p>
               </div>
               {reviewSummary.average && (
@@ -589,10 +608,10 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       </main>
 
       {/* Closing CTA */}
-      <section className="bg-accent">
+      <section className="bg-charcoal">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[30px] md:text-[38px]">Considering a move?</h2>
-          <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">Browse live roles across WHC properties, or create a profile so employers like {name} can find you.</p>
+          <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">Browse live roles across Talent House properties, or create a profile so employers like {name} can find you.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/jobs" className="bg-white text-accent px-6 py-3 text-[13px] font-semibold hover:bg-surface transition-colors">Browse live roles</Link>
             <Link href="/register" className="border border-white/40 text-white px-6 py-3 text-[13px] font-semibold hover:bg-white/10 transition-colors">Create your profile</Link>

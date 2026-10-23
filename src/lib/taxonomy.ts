@@ -22,7 +22,7 @@ export const PRODUCT_HOUSES_FULL = [
   'ESPA','Elemis','Decléor','Comfort Zone','La Stone','Kama Ayurveda','111SKIN','Wildsmith','Dr Barbara Sturm','VOYA','Bamford',
   'Subtle Energies','Sodashi','Ila Spa','Thalgo','Guinot','Dermalogica','IMAGE Skincare','Environ','Medik8','Murad','Payot','Caudalie',
   'Clarins','Sisley','La Mer','Darphin','Valmont','Biologique Recherche','QMS Medicosmetics','Intraceuticals','Babor','Germaine de Capuccini',
-  'Anne Semonin','Susanne Kaufmann','Aromatherapy Associates','REN Clean Skincare','Eve Lom','Liz Earle','Cowshed','Oriela Frank',
+  'Anne Semonin','Carol Joy London','Susanne Kaufmann','Aromatherapy Associates','REN Clean Skincare','Eve Lom','Liz Earle','Cowshed','Oriela Frank',
   'Grown Alchemist','Mauli Rituals','Temple Spa','Sothys','Repêchage','Other',
 ]
 

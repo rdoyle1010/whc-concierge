@@ -76,7 +76,7 @@ export default function AdminResidencyMoneyPage() {
         <div>
           <p className="dashboard-eyebrow">Residency operations</p>
           <h1 className="dashboard-title">Residency Money</h1>
-          <p className="dashboard-intro">Track property payments, the Spa Platform booking fee and specialist payouts. Payouts stay locked until the Residency has ended and any dispute is resolved.</p>
+          <p className="dashboard-intro">Track property payments, the Talent House Collective booking fee and specialist payouts. Payouts stay locked until the Residency has ended and any dispute is resolved.</p>
         </div>
         <button onClick={load} className="btn-secondary inline-flex items-center gap-2 self-start"><RefreshCw size={14}/>Refresh</button>
       </div>

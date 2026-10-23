@@ -1,5 +1,14 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { categoryPacks, everythingPacks } from '@/lib/documents/pricing'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
+import { kindLabel } from '@/lib/documents/journey'
+
+/** Kept in step with the [reference] route, which decides the same thing. */
+const PAGEABLE_KINDS = new Set([
+  'Job description', 'Policy', 'Risk assessment', 'Checklist', 'Guide', 'Training',
+  'Operating procedure', 'Emergency plan', 'Management report', 'Safe system of work',
+])
 
 // Regenerated hourly. A sitemap built once at deploy would list a role that
 // closed three weeks ago and miss every one posted since.
@@ -36,12 +45,51 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
     { url: `${BASE}/jobs`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    // The only page on this site that takes money directly, and it was the
+    // one URL missing from the sitemap. Twenty-four pages were listed and the
+    // shop was not one of them.
+    { url: `${BASE}/standards`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    // A page per pack and per document worth searching for. These are the
+    // URLs that answer "spa manager job description template", which is what
+    // somebody actually types, and which one page carrying five hundred and
+    // sixty titles could never rank for.
+    ...[...categoryPacks(), ...everythingPacks()].map(pack => ({
+      url: `${BASE}/standards/packs/${pack.slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    })),
+    ...sellableCatalogue()
+      .filter(entry => PAGEABLE_KINDS.has(kindLabel(entry.reference)))
+      .map(entry => ({
+        url: `${BASE}/standards/${entry.reference}`,
+        lastModified: now,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      })),
     { url: `${BASE}/roles`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
-    { url: `${BASE}/agency`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    // /agency/about, not /agency. The sitemap advertised /agency, which renders
+    // a signed-in search tool or a skeleton depending on who is asking, while
+    // the real server-rendered marketing page - the one the navigation links to
+    // - was in no sitemap at all.
+    { url: `${BASE}/agency/about`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/match`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE}/consultancy/join`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/register/talent`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/register/employer`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/advertising-terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${BASE}/career`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/residency`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/properties`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/brands`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/consultancy`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    // The page a product house lands on when it decides it wants one of these.
+    { url: `${BASE}/brands/apply`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/specialisms`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/academy`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/events`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    // The door for somebody who will never fill in a form.
+    { url: `${BASE}/set-up-my-profile`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/intelligence`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/advertise`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
@@ -49,10 +97,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/testimonials`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/how-to-use`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE}/good-to-know`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/register/talent`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${BASE}/register/employer`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    // Only /register/buyer is disallowed now. The talent and employer sign-up
+    // pages are real landing pages with real copy and the strongest commercial
+    // intent on the site, so they are indexed and listed above. The rule this
+    // comment used to defend still holds for the buyer form: a blocked URL in
+    // the sitemap is reported by Search Console as an error against the whole
+    // file, which is the file every other page depends on being trusted.
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ]
@@ -99,6 +152,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   })
 
+  // Published brands. The whole commercial argument for a brand page is that
+  // it puts the house in front of the people choosing one, and a page a
+  // crawler has never been told about cannot do that. Only published rows: a
+  // draft is somebody's unfinished pitch.
+  const brands = safely(async () => {
+    const { data } = await supabase
+      .from('brand_profiles')
+      .select('slug, updated_at')
+      .eq('is_published', true)
+      .limit(500)
+    return (data ?? [])
+      .filter(row => Boolean(row.slug))
+      .map(row => ({
+        url: `${BASE}/brands/${row.slug}`,
+        lastModified: row.updated_at ? new Date(row.updated_at) : now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
+  })
+
   const posts = safely(async () => {
     const { data } = await supabase
       .from('blog_posts')
@@ -116,6 +189,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }))
   })
 
-  const dynamic = await Promise.all([roles, properties, posts])
+  // Published events. Search traffic for "spa masterclass London" or a named
+  // brand launch is exactly the audience this platform wants, and it arrives
+  // with no opinion about job hunting.
+  const events = safely(async () => {
+    const { data } = await supabase
+      .from('events')
+      .select('slug, starts_at, updated_at')
+      .eq('is_published', true)
+      .order('starts_at', { ascending: false })
+      .limit(500)
+    return (data ?? []).map(row => ({
+      url: `${BASE}/events/${row.slug}`,
+      lastModified: new Date(row.updated_at || row.starts_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  })
+
+  // Every course now has a public page, so every course belongs here. This is
+  // the section of the site most likely to be found by somebody who has never
+  // heard of Talent House: "CPD courses for spa therapists" is a search with
+  // intent and almost no UK competition.
+  const courses = safely(async () => {
+    const { getAcademySlugs } = await import('@/lib/academy-catalog-server')
+    return (await getAcademySlugs()).map(slug => ({
+      url: `${BASE}/academy/${slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    }))
+  })
+
+  const dynamic = await Promise.all([roles, properties, brands, posts, events, courses])
   return [...staticPages, ...dynamic.flat()]
 }

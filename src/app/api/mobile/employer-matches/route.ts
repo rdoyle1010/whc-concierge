@@ -4,6 +4,8 @@ import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { createNotification } from '@/lib/notifications'
+import { sendPropertyInterestEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { createMutualMatch } from '@/lib/mutual-match'
 import { candidateNameForEmployer, presentCandidateForEmployer } from '@/lib/private-mode'
 
@@ -23,7 +25,7 @@ async function getEmployer(admin: any, userId: string) {
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const employer = await getEmployer(admin, user.id)
   if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
@@ -84,7 +86,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const candidateId = String(body.candidateId || '')
   const jobId = String(body.jobId || '')
@@ -167,8 +169,20 @@ export async function POST(req: NextRequest) {
         console.error('Mobile mutual match failed:', matchError?.message)
       }
     } else {
+      const propertyName = employer.property_name || employer.company_name || 'A property'
       await createNotification(candidate.user_id, 'general', 'A property is interested in you',
-        `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`, '/talent/jobs')
+        `${propertyName} is interested in you for ${job.job_title}.`, '/talent/jobs')
+      // Same reach on the phone as on the website. Interest registered from
+      // the app used to send no email either.
+      try {
+        if (await emailAllowed(admin, candidate.user_id, 'job_alerts')) {
+          const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+          const address = authUser?.user?.email
+          if (address) await sendPropertyInterestEmail(address, candidate.full_name || '', propertyName, job.job_title)
+        }
+      } catch (emailError: any) {
+        console.error('[Interest email failed]', emailError?.message)
+      }
     }
   }
 
@@ -177,7 +191,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const jobId = String(req.nextUrl.searchParams.get('jobId') || '')
   if (!jobId) return NextResponse.json({ error: 'Choose a role first.' }, { status: 400 })
   const admin = createAdminClient()

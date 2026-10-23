@@ -32,13 +32,23 @@ export default function robots(): MetadataRoute.Robots {
         '/hotel/',
         '/api/',
         '/login',
-        '/register/',
+        // Not '/register/' wholesale. /register/talent and /register/employer
+        // are the two strongest commercial-intent pages on the site - "Spa &
+        // Wellness Jobs: Join Free" and "Hire Spa & Wellness Staff" - with real
+        // copy on both, and a blanket rule was telling Google to ignore them.
+        // Only the buyer flow, which is a bare form, stays out.
+        '/register/buyer',
         '/forgot-password',
         '/reset-password',
         '/mfa-challenge',
         '/verify/',
         '/certificates/',
         '/coming-soon',
+        // The signed-in tools are deliberately NOT listed here. Disallow stops
+        // the crawl, and a page it cannot fetch is a page whose noindex it
+        // never reads - so anything already in the index stays there. Those
+        // four carry noindex in their own layouts instead, which both keeps
+        // them out and takes them out.
       ],
     },
     sitemap: `${base}/sitemap.xml`,
