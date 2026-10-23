@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type JobRow={id:string;title:string;tier:string;daysLive:number;totalApps:number;shortlisted:number;avgScore:number;status:string}
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 
 export default function AnalyticsScreen(){
  const [loading,setLoading]=useState(true);const [error,setError]=useState('');const [stats,setStats]=useState({activeListings:0,totalAppsMonth:0,totalAppsLastMonth:0,avgMatch:0,avgDaysToFirst:0});const [jobs,setJobs]=useState<JobRow[]>([]);const [funnel,setFunnel]=useState<Record<string,number>>({});const [topSkills,setTopSkills]=useState<string[]>([])

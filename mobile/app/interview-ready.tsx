@@ -51,7 +51,7 @@ export default function InterviewReady(){
     setPrep(null)
     const {data:{session}}=await supabase.auth.getSession()
     if(!session?.access_token){setPreparing(null);router.replace('/login');return}
-    const base=(process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk').replace(/\/$/,'')
+    const base=(process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk').replace(/\/$/,'')
     try{
       const response=await fetch(`${base}/api/mobile/interview-ready`,{
         method:'POST',

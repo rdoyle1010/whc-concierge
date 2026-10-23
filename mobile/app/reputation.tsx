@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Te
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 
 type Review = { id:string; rating:number; text?:string|null; property_name?:string|null; created_at?:string|null; criteria_scores?:Record<string,number>|null }
 type Reference = { id:string; status:string; request_message?:string|null; response_text?:string|null; would_rehire?:boolean|null; created_at?:string|null; employer_name?:string|null; candidate_name?:string|null; candidate_title?:string|null }

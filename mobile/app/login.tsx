@@ -74,8 +74,8 @@ export default function LoginScreen() {
 
         <View style={styles.card}>
           <Text style={styles.eyebrow}>WELCOME BACK</Text>
-          <Text style={styles.title}>Your Wellness House account.</Text>
-          <Text style={styles.intro}>Use the same account as the Wellness House website. Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text>
+          <Text style={styles.title}>Your Talent House Collective account.</Text>
+          <Text style={styles.intro}>Use the same account as the Talent House Collective website. Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text>
           <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} placeholder="Email address" placeholderTextColor="#9aa5ac" style={styles.input}/>
           <TextInput ref={passwordRef} value={password} onChangeText={setPassword} secureTextEntry returnKeyType="go" onSubmitEditing={signIn} placeholder="Password" placeholderTextColor="#9aa5ac" style={styles.input}/>
           <Pressable onPress={signIn} disabled={loading} style={({ pressed }) => [styles.button, pressed && { opacity: 0.88 }, loading && { opacity: 0.6 }]}><Text style={styles.buttonText}>{loading ? 'Checking security…' : 'Sign in securely'}</Text></Pressable>

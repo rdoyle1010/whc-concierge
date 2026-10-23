@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Counts = { users:number; employers:number; jobs:number; applications:number; agency:number }
-const WEB = (process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk').replace(/\/$/,'')
+const WEB = (process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk').replace(/\/$/,'')
 
 export default function AdminScreen() {
   const [name,setName]=useState('')

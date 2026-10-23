@@ -15,7 +15,7 @@ import { supabase } from '../src/lib/supabase'
 // offer in each lane, how deep each queue is, and any shortfall against the
 // number requested - rather than a flat "sent".
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 // Mirrors src/lib/constants.ts: 15% base, 10% on Agency Plus, plus a 5%
 // premium on same-day and next-day cover. The professional always keeps their
 // full hourly rate - the fee sits on top and the property pays it.

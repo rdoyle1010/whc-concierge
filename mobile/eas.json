@@ -15,7 +15,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://klfsemvrxvgrbuzrqyer.supabase.co",
         "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_Mw2vimVc2BPr30bpZQx7Ew__rtNiZHQ",
-        "EXPO_PUBLIC_WEB_URL": "https://talent.wellnesshousecollective.co.uk"
+        "EXPO_PUBLIC_WEB_URL": "https://talenthousecollective.co.uk"
       }
     },
     "production": {
@@ -24,7 +24,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://klfsemvrxvgrbuzrqyer.supabase.co",
         "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_Mw2vimVc2BPr30bpZQx7Ew__rtNiZHQ",
-        "EXPO_PUBLIC_WEB_URL": "https://talent.wellnesshousecollective.co.uk"
+        "EXPO_PUBLIC_WEB_URL": "https://talenthousecollective.co.uk"
       }
     }
   },

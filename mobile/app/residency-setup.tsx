@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, S
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 const DURATIONS = ['1-2 months','3-4 months','5-6 months','Flexible']
 const TRAVEL = ['UK Only','Europe','Middle East','Asia Pacific','Global']
 

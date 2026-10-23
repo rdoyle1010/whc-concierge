@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 
 type Lesson={title:string;content:string}
 type Question={q:string;options:string[]}

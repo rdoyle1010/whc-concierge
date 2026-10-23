@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '../src/lib/supabase'
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 const listFromText = (value: string) => value.split('\n').map(v => v.trim()).filter(Boolean)
 const textFromList = (value: unknown) => Array.isArray(value) ? value.join('\n') : ''
 
@@ -68,7 +68,7 @@ export default function PropertyProfileScreen() {
       }
       const data = await authFetch('/api/mobile/employer/property', { method: 'POST', body: JSON.stringify(payload) })
       setProfile({ ...data.profile, property_photos: data.profile?.property_photos || [] })
-      Alert.alert('Property profile saved', 'Your property, travel and staff-access information is now updated across Wellness House.')
+      Alert.alert('Property profile saved', 'Your property, travel and staff-access information is now updated across Talent House Collective.')
     } catch (e: any) { setError(e?.message || 'Could not save property profile.') }
     finally { setSaving(false) }
   }

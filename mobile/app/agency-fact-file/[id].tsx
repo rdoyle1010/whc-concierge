@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleS
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 const list=(value:any)=>Array.isArray(value)?value.filter(Boolean):[]
 const time=(value?:string|null)=>value?value.slice(0,5):''
 function Line({label,value}:{label:string;value:any}){if(value===null||value===undefined||value==='')return null;return <View style={styles.line}><Text style={styles.lineLabel}>{label}</Text><Text style={styles.lineValue}>{String(value)}</Text></View>}

@@ -53,7 +53,7 @@ export default function MessagesScreen() {
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
     <View style={styles.headingRow}><View style={{flex:1}}><Text style={styles.eyebrow}>CONVERSATIONS</Text><Text style={styles.title}>Messages</Text></View>{unreadCount>0?<View style={styles.count}><Text style={styles.countText}>{unreadCount}</Text></View>:null}</View>
-    <Text style={styles.intro}>Your Wellness House conversations in one place. Opening a conversation marks received messages as read.</Text>
+    <Text style={styles.intro}>Your Talent House Collective conversations in one place. Opening a conversation marks received messages as read.</Text>
     {loading ? <ActivityIndicator color="#0b2f4d" style={{ marginTop: 24 }} /> : null}
     {error ? <Text style={styles.error}>{error}</Text> : null}
     {!loading && threads.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>No conversations yet.</Text><Text style={styles.emptyCopy}>Applications, Agency activity and employer conversations will appear here when they begin.</Text></View> : null}

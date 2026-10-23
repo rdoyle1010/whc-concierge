@@ -15,7 +15,7 @@ type ApplicationRow = {
   job_listings?: { job_title?: string | null; location?: string | null } | { job_title?: string | null; location?: string | null }[] | null
 }
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 
 function localDateInput(days: number, hour: number) {
   const date = new Date()

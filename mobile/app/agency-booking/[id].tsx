@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 
 type Booking={id:string;shift_date:string|null;shift_start_time:string|null;shift_end_time:string|null;shift_type?:string|null;hours?:number|null;rate:number;status:string;urgent?:boolean|null;expires_at?:string|null;booking_group?:string|null;cascade_position?:number|null;cascade_total?:number|null;platform_fee?:number|null;paid_at?:string|null;fee_paid_at?:string|null;employer_name?:string|null;employer_location?:string|null;employer_postcode?:string|null;employer_description?:string|null;employer_photos?:string[]|null;employer_review_score?:number|null;employer_review_count?:number|null;employer_star_rating?:number|null;distance_miles?:number|null;nearest_transport?:string|null;transport_walk_minutes?:number|null;parking_available?:boolean|null;taxi_support?:boolean|null;taxi_notes?:string|null;travel_notes?:string|null;candidate_name?:string|null;viewer_role?:'candidate'|'employer'}
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 // The base WHC fee the property pays on top of the professional's rate -
 // AGENCY_PLATFORM_FEE_PCT in src/lib/constants.ts. Only ever a fallback: the
 // stored platform_fee is authoritative because it also carries the same-day

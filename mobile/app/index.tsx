@@ -21,7 +21,7 @@ export default function IndexScreen() {
       <ImageBackground source={{ uri: COVER_IMAGE }} style={styles.heroImage} imageStyle={styles.heroImageInner}>
         <View style={styles.overlay} />
         <View style={styles.heroContent}>
-          <Text style={styles.wordmark}>WELLNESS HOUSE</Text>
+          <Text style={styles.wordmark}>TALENT HOUSE COLLECTIVE</Text>
           <Text style={styles.sub}>TALENT · EMPLOYERS · WELLNESS</Text>
           <View style={styles.heroCopy}>
             <Text style={styles.eyebrowLight}>THE SPA & WELLNESS CAREER PLATFORM</Text>
@@ -38,7 +38,7 @@ export default function IndexScreen() {
           </Pressable>
         ) : (
           <Pressable onPress={() => router.push('/login')} style={styles.primary}>
-            <Text style={styles.primaryText}>Sign in to Wellness House</Text>
+            <Text style={styles.primaryText}>Sign in to Talent House Collective</Text>
           </Pressable>
         )}
 
@@ -60,7 +60,7 @@ export default function IndexScreen() {
 
         <View style={styles.footerNote}>
           <Text style={styles.footerTitle}>One account. One live platform.</Text>
-          <Text style={styles.footerCopy}>The app and website read from the same Wellness House data, so profiles, roles, bookings, messages and account permissions stay connected.</Text>
+          <Text style={styles.footerCopy}>The app and website read from the same Talent House Collective data, so profiles, roles, bookings, messages and account permissions stay connected.</Text>
         </View>
       </View>
     </ScrollView>

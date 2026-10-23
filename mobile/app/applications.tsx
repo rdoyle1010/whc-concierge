@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 type Role='talent'|'employer'
 type Application={id:string;status:string;match_score:number|null;created_at:string|null;archived_at?:string|null;hired_at?:string|null;candidate_id:string;role_id:string;job_listings?:any;candidate_profiles?:any}
 const statusCopy:Record<string,string>={draft:'Ready to Send',pending:'Applied',reviewed:'Reviewed',shortlisted:'Shortlisted',interview:'Interview',offered:'Offer',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}

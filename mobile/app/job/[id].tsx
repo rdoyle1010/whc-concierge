@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressa
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 type Job={id:string;employer_id:string|null;job_title:string;job_description:string|null;job_image_url?:string|null;location:string|null;job_type:string|null;contract_type:string|null;salary_display_text:string|null;requirements:string[]|null;benefits:string[]|null;required_qualifications:string[]|null;required_skills:string[]|null;perks:string[]|null;employer_profiles?:any}
 type AiResult={summary:string;strengths:string[];gaps:string[];covering_letter:string}
 function ListBlock({title,items}:{title:string;items?:string[]|null}){const values=(items||[]).filter(Boolean);if(!values.length)return null;return <View style={styles.section}><Text style={styles.sectionTitle}>{title}</Text>{values.map((item,i)=><View key={`${title}-${i}`} style={styles.bulletRow}><Text style={styles.bullet}>•</Text><Text style={styles.bulletText}>{item}</Text></View>)}</View>}

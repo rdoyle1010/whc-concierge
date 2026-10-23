@@ -22,7 +22,7 @@ const employerSteps: Step[] = [
   { number:'03', title:'Review matched Talent', copy:'See applications and matched professionals in one place, then message the people you want to progress.', action:'Applications', href:'/applications' },
   { number:'04', title:'Use Agency when you need cover', copy:'Find flexible spa professionals based on availability, location and travel practicality, then manage bookings from the same platform.', action:'Agency bookings', href:'/agency' },
   { number:'05', title:'Build your employer reputation', copy:'Your property can collect verified ratings and reviews too. Talent should be able to see what it is genuinely like to work with you.', action:'Reputation', href:'/reputation' },
-  { number:'06', title:'Keep everything together', copy:'Jobs, applications, messages, billing and property information all use the same live Wellness House account as the website.', action:'Messages', href:'/messages' },
+  { number:'06', title:'Keep everything together', copy:'Jobs, applications, messages, billing and property information all use the same live Talent House Collective account as the website.', action:'Messages', href:'/messages' },
 ]
 
 export default function TourScreen(){
@@ -41,10 +41,10 @@ export default function TourScreen(){
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
     <Text style={styles.eyebrow}>60-SECOND TOUR</Text>
-    <Text style={styles.title}>How to use Wellness House.</Text>
+    <Text style={styles.title}>How to use Talent House Collective.</Text>
     <Text style={styles.intro}>{role==='employer'?'The quickest route from property profile to hiring, Agency cover and reputation.':'The quickest route from profile to better matches, stronger applications and a reputation that grows with you.'}</Text>
 
-    <View style={styles.banner}><Text style={styles.bannerTitle}>App + website = one account</Text><Text style={styles.bannerCopy}>Anything you update uses the same live Wellness House platform. Use whichever is easier at the time.</Text></View>
+    <View style={styles.banner}><Text style={styles.bannerTitle}>App + website = one account</Text><Text style={styles.bannerCopy}>Anything you update uses the same live Talent House Collective platform. Use whichever is easier at the time.</Text></View>
 
     {steps.map(step=><View key={step.number} style={styles.step}>
       <Text style={styles.number}>{step.number}</Text>
