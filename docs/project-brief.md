@@ -372,8 +372,9 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-244 API routes, 177 pages, 137 migrations, 189 test files. 1,377 tests and 51
-production-readiness checks, all green as at 12 Oct.
+244 API routes, 177 pages, 137 migrations, 189 test files. 1,378 tests and 51
+production-readiness checks, all green as at 23 Oct. Mobile CI is a separate
+workflow: routes, palette and types.
 
 Legal entity: Wellness House Collective Limited, company 16720845, ICO
 registration ZC235847 (expires 31 August 2027). Every form a visitor can submit
@@ -386,10 +387,34 @@ gets through these.
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
 
+There is also a mobile app, which this brief had never mentioned. It is an Expo
+and React Native build, published as **Talent House**, sharing the website's
+Supabase project and calling its `/api/mobile/*` routes. 50 screens, all of
+them painted out of `mobile/src/lib/theme.ts`. It is the same product rather
+than a companion: jobs, applications, messaging, Agency, Residency, Academy,
+billing and the whole employer side run in it. Nothing reaches a phone from a
+merge, only from `eas update` or `eas build`.
+
+Being undescribed is why it drifted. The site changed palette three times -
+navy to charcoal, charcoal to grey, grey to ivory and stone - and the app
+stayed where it was: two generations behind, still wearing the metal the site
+had removed, and still painting every button with the ink, which is the one
+thing the accent rule forbids. Mobile CI checked routes and types and had no
+opinion about any of it. It does now, and the check reads the website rather
+than a list, so the next palette move breaks the app's build instead of
+quietly leaving it behind.
+
 ## House rules, which are not negotiable
 
 - **British English** everywhere, including code comments and user-facing copy.
 - **No em dashes.** A readiness check enforces this across `src/`.
+- **The app may only wear a colour the website ships.**
+  `mobile/scripts/palette-audit.js` reads its allowlist out of
+  `tailwind.config.js`, so the list cannot drift away from the design system,
+  and the workflow runs when that config changes as well as when `mobile/`
+  does. It also holds the accent apart from the ink, keeps metal out, and stops
+  taupe or sage carrying a word: the mobile halves of three readiness checks
+  that only ever covered `src/`.
 - **One house style for every AI surface**, in `src/lib/house-style.ts`, shared
   by all eight writing routes and checked by readiness check 44. The platform
   calls one provider through one client, `src/lib/ai.ts`, with one key
@@ -447,6 +472,13 @@ stored as `candidate`). Admin is a third role on the same column.
   checks hold it: taupe and sage never carry a word (2.10:1 and 2.99:1 on the
   ivory), and the accent is never equal to the ink. No gold and no brass: brass
   measures 2.89:1, and white on a brass button is 3.2:1 where 4.5 is the floor.
+  Three more were being used as raw values before they had names, and now have
+  them: `faint` `#7E7A70` for the faintest detail that still has to be read,
+  `rule` `#C7BDAE` for an edge meant to be seen rather than merely to separate,
+  and `positive` `#166534` on `positive-wash` `#F3FBF5` for a confirmation
+  panel. Naming them moved nothing on the page; it let the mobile audit check
+  the app against `tailwind.config.js` instead of against a list somebody has
+  to remember.
   The printed documents stay neutral black, because they are printed.
 - **One price per kind of document, not one price for everything.** A
   procedure is 10 pounds, a checklist 35, a job description 29, a policy 39, a

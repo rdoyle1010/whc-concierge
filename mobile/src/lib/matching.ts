@@ -192,8 +192,8 @@ export function calculateMatchScore(candidate:any, job:any): {
   if (!policy.sameFamily && policy.scope!=='open_transferable') score=Math.min(score,25)
   const rounded=Math.max(10,Math.round(score))
   const label=rounded>=90?'Perfect Match':rounded>=75?'Strong Match':rounded>=60?'Good Match':rounded>=45?'Partial Match':'Low Match'
-  const colour=rounded>=90?'#16A34A':rounded>=75?'#1D4ED8':rounded>=60?'#D97706':'#6e6a60'
-  const bgColour=rounded>=90?'#DCFCE7':rounded>=75?'#DBEAFE':rounded>=60?'#FEF3C7':'#ede8df'
+  const colour=rounded>=90?'#166534':rounded>=75?'#1E40AF':rounded>=60?'#854D0E':'#374151'
+  const bgColour=rounded>=90?'#DCFCE7':rounded>=75?'#DBEAFE':rounded>=60?'#FEF9C3':'#F3F4F6'
   const matchingSkills=[...treatmentResult.matches,...brandResult.matches,...qualResult.matches,...bizResult.matches].slice(0,6)
   const reasons:string[]=[]
   if (policy.levelGap===1 && policy.allowed) reasons.push('career progression fit')

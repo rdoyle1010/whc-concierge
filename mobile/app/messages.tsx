@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,maxWidth:365},
   list:{gap:9},
   card:{borderWidth:1,borderColor:palette.line,padding:15,backgroundColor:palette.paper,borderRadius:radius.large},
-  unreadCard:{borderColor:'#BCC8BF',backgroundColor:'#EDE8DF'},
+  unreadCard:{borderColor:palette.positive,backgroundColor:'#EDE8DF'},
   row:{flexDirection:'row',gap:12,alignItems:'center'},
   avatar:{width:42,height:42,borderRadius:21,backgroundColor:palette.stoneDeep,alignItems:'center',justifyContent:'center'},
   avatarUnread:{backgroundColor:palette.sageSoft},

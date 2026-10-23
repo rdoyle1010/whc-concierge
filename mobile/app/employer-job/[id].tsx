@@ -310,7 +310,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Toggle({ label, help, value, onChange, disabled }: { label:string; help:string; value:boolean; onChange:(value:boolean)=>void; disabled:boolean }) {
-  return <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.toggleLabel}>{label}</Text><Text style={styles.toggleHelp}>{help}</Text></View><Switch disabled={disabled} value={value} onValueChange={onChange} trackColor={{false:palette.lineStrong,true:'#BCC8BF'}} thumbColor={palette.paper} /></View>
+  return <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.toggleLabel}>{label}</Text><Text style={styles.toggleHelp}>{help}</Text></View><Switch disabled={disabled} value={value} onValueChange={onChange} trackColor={{false:palette.lineStrong,true:palette.accent}} thumbColor={palette.paper} /></View>
 }
 
 const styles=StyleSheet.create({
@@ -323,7 +323,7 @@ const styles=StyleSheet.create({
   title:{color:palette.inkStrong,fontFamily:type.serif,fontSize:34,lineHeight:40,fontWeight:'400'},
   intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,maxWidth:365},
   statusCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,borderRadius:radius.large,marginBottom:22},
-  statusCardLive:{borderColor:'#BCC8BF',backgroundColor:'#EDE8DF'},
+  statusCardLive:{borderColor:palette.positive,backgroundColor:'#EDE8DF'},
   statusCardClosed:{borderColor:'#D99089',backgroundColor:'#FBE9E7'},
   statusEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700'},
   status:{color:palette.inkStrong,fontSize:13,fontWeight:'800',letterSpacing:.7,marginTop:4},
