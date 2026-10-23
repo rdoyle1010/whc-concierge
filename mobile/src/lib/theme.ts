@@ -4,6 +4,10 @@ import { Platform } from 'react-native'
 // (the site's own commit 2e4ac48e). Every value here is one the website ships.
 // Severity follows the site's ink/edge/wash triples rather than gold.
 export const palette = {
+  // Forest carries anything you press or follow; charcoal anything you read.
+  // The accent is deliberately never equal to the ink.
+  accent: '#28322B',
+  accentStrong: '#3A4239',
   ink: '#222321',
   inkStrong: '#161814',
   text: '#57544C',

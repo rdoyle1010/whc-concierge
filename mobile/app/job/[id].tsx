@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   goodDot:{color:palette.sage,fontWeight:'800'},
   gapDot:{color:'#7A4A00',fontWeight:'800'},
   aiText:{color:palette.muted,fontSize:9.5,lineHeight:15,flex:1,fontFamily:type.sans},
-  primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:12,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.accent,paddingVertical:14,alignItems:'center',marginTop:12,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   secondary:{borderWidth:1,borderColor:palette.lineStrong,paddingVertical:12,alignItems:'center',marginTop:12,backgroundColor:palette.paper,borderRadius:radius.medium},
   secondaryText:{color:palette.ink,fontSize:10,fontWeight:'700',fontFamily:type.sans},

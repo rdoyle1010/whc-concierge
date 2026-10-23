@@ -79,7 +79,7 @@ const styles=StyleSheet.create({
   label:{color:palette.quiet,fontSize:7.5,letterSpacing:1.4,fontWeight:'700',marginBottom:8,fontFamily:type.sans},
   code:{height:58,borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.stone,fontSize:24,letterSpacing:10,textAlign:'center',color:palette.inkStrong,borderRadius:radius.medium,fontFamily:type.sans},
   help:{color:palette.quiet,fontSize:8.5,lineHeight:13,marginTop:7,fontFamily:type.sans},
-  button:{height:52,backgroundColor:palette.inkStrong,alignItems:'center',justifyContent:'center',borderRadius:radius.medium,marginTop:16},
+  button:{height:52,backgroundColor:palette.accent,alignItems:'center',justifyContent:'center',borderRadius:radius.medium,marginTop:16},
   disabled:{opacity:.45},
   buttonText:{color:palette.paper,fontWeight:'700',fontSize:12,fontFamily:type.sans},
   securityNote:{backgroundColor:palette.stoneDeep,padding:16,borderRadius:radius.large,marginTop:12},

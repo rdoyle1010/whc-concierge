@@ -144,7 +144,7 @@ const styles=StyleSheet.create({
  eyebrow:{color:palette.sage,fontSize:9,letterSpacing:2.2,marginBottom:10,fontWeight:'700',fontFamily:type.sans},
  title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif},
  intro:{color:palette.muted,fontSize:14,lineHeight:21,marginTop:10,marginBottom:24,fontFamily:type.sans},
- primaryAction:{backgroundColor:palette.inkStrong,padding:22,borderRadius:radius.medium,marginBottom:18},
+ primaryAction:{backgroundColor:palette.accent,padding:22,borderRadius:radius.medium,marginBottom:18},
  primaryEyebrow:{color:'#BFC9C4',fontSize:8,letterSpacing:1.9,fontWeight:'700',fontFamily:type.sans},
  primaryTitle:{color:'#fff',fontSize:24,lineHeight:29,fontFamily:type.serif,marginTop:8},
  primaryCopy:{color:'#D5DEDA',fontSize:12.5,lineHeight:19,marginTop:10,fontFamily:type.sans},
