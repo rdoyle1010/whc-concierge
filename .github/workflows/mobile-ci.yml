@@ -7,11 +7,13 @@ on:
     paths:
       - 'mobile/**'
       - 'src/app/api/mobile/**'
+      - 'tailwind.config.js'
       - '.github/workflows/mobile-ci.yml'
   pull_request:
     paths:
       - 'mobile/**'
       - 'src/app/api/mobile/**'
+      - 'tailwind.config.js'
       - '.github/workflows/mobile-ci.yml'
 
 concurrency:
@@ -41,5 +43,7 @@ jobs:
         run: npm ci --include=dev --no-audit --no-fund
       - name: Route integrity audit
         run: npm run routecheck
+      - name: Palette audit against the website
+        run: npm run palettecheck
       - name: Typecheck
         run: npm run typecheck

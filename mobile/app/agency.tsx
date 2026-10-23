@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   livePillText:{color:palette.sage,fontSize:8,fontWeight:'800'},
 
   availabilityCard:{borderWidth:1,borderColor:palette.line,padding:16,marginBottom:10,backgroundColor:palette.paper,borderRadius:radius.large},
-  availabilityCardSet:{borderColor:'#BCC8BF',backgroundColor:'#EDE8DF'},
+  availabilityCardSet:{borderColor:palette.positive,backgroundColor:'#EDE8DF'},
   dayHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   rowMain:{color:palette.text,fontSize:14,fontWeight:'700'},
   savedState:{color:palette.quiet,fontSize:8,marginTop:4,letterSpacing:.8,fontWeight:'700'},

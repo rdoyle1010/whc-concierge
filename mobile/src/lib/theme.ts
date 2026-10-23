@@ -20,6 +20,11 @@ export const palette = {
   stoneDeep: '#EDE8DF',
   sage: '#57544C',
   sageSoft: '#E3DCD1',
+  // The site's readable green: its match.perfect text and the border it puts
+  // round a confirmation panel. #22C55E is the site's success token but it is
+  // 2.2:1 on white, so it marks, it never carries a word.
+  positive: '#166534',
+  positiveSoft: '#F3FBF5',
   danger: '#8A1C14',
   dangerSoft: '#FBE9E7',
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette } from '../src/lib/theme'
 
 // Notification preferences, mirroring the web talent settings centre.
 //
@@ -215,6 +216,6 @@ const styles = StyleSheet.create({
   scoreLabel: { color: '#6e6a60', fontSize: 11 },
   scoreInput: { borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 10, paddingVertical: 8, width: 66, color: '#222321', fontSize: 13, backgroundColor: '#fff' },
   footnote: { color: '#7e7a70', fontSize: 10, lineHeight: 16, marginTop: 12 },
-  notice: { color: '#456655', fontSize: 11, marginTop: 14 },
+  notice:{ color: palette.positive, fontSize: 11, marginTop: 14 },
   error: { color: '#8a1c14', fontSize: 11, lineHeight: 17, marginTop: 14 },
 })
