@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   sectionCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
   ratingRow:{flexDirection:'row',gap:7,marginTop:15},
   rating:{flex:1,minHeight:58,borderWidth:1,borderColor:palette.lineStrong,borderRadius:radius.medium,alignItems:'center',justifyContent:'center',backgroundColor:palette.stone},
-  ratingActive:{backgroundColor:palette.ink,borderColor:palette.ink},
+  ratingActive:{backgroundColor:palette.accent,borderColor:palette.accent},
   ratingNumber:{color:palette.text,fontSize:13,fontWeight:'700',fontFamily:type.sans},
   ratingNumberActive:{color:palette.paper},
   star:{color:palette.quiet,fontSize:10,marginTop:3},
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   errorCard:{backgroundColor:palette.dangerSoft,borderWidth:1,borderColor:'#D99089',padding:14,borderRadius:radius.large,marginTop:14},
   errorTitle:{color:palette.danger,fontSize:13,fontWeight:'700',fontFamily:type.sans},
   error:{color:palette.danger,fontSize:10.5,lineHeight:17,marginTop:4,fontFamily:type.sans},
-  primary:{backgroundColor:palette.ink,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.accent,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   disabled:{opacity:.5},
 })

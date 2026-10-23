@@ -54,9 +54,9 @@ const styles = StyleSheet.create({
   line: { borderTopWidth: 1, borderTopColor: palette.line, paddingVertical: 16 },
   lineTitle: { color: palette.inkStrong, fontSize: 14, fontWeight: '700' },
   lineCopy: { color: palette.muted, fontSize: 11.5, lineHeight: 18, marginTop: 5 },
-  primary: { backgroundColor: palette.inkStrong, paddingVertical: 15, alignItems: 'center', marginTop: 30, borderRadius: radius.medium },
+  primary:{ backgroundColor: palette.accent, paddingVertical: 15, alignItems: 'center', marginTop: 30, borderRadius: radius.medium },
   primaryText: { color: palette.paper, fontSize: 11, fontWeight: '700', letterSpacing: .8 },
   secondary: { borderWidth: 1, borderColor: palette.lineStrong, paddingVertical: 14, alignItems: 'center', marginTop: 10, borderRadius: radius.medium },
-  secondaryText: { color: palette.ink, fontSize: 11, fontWeight: '700', letterSpacing: .8 },
+  secondaryText:{ color: palette.accent, fontSize: 11, fontWeight: '700', letterSpacing: .8 },
   footnote: { color: palette.quiet, fontSize: 10.5, lineHeight: 16, textAlign: 'center', marginTop: 26 },
 })

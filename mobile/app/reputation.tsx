@@ -213,7 +213,7 @@ const styles=StyleSheet.create({
   textareaSmall:{borderWidth:1,borderColor:palette.lineStrong,minHeight:70,padding:11,textAlignVertical:'top',color:palette.text,fontSize:10.5,marginTop:11,backgroundColor:palette.paper,borderRadius:radius.medium,fontFamily:type.sans},
   switchRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:12},
   switchLabel:{color:palette.text,fontSize:10.5,flex:1,paddingRight:10,fontFamily:type.sans},
-  primary:{backgroundColor:palette.ink,paddingVertical:13,alignItems:'center',marginTop:13,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.accent,paddingVertical:13,alignItems:'center',marginTop:13,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   decline:{color:palette.danger,fontSize:9.5,textAlign:'center',padding:12,fontFamily:type.sans},
   reviewScore:{color:palette.inkStrong,fontSize:14.5,fontWeight:'700',fontFamily:type.sans},

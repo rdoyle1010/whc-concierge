@@ -202,5 +202,5 @@ const styles = StyleSheet.create({
   statePaid: { color: palette.sage },
   stateHeld: { color: palette.danger },
   secondary: { borderWidth: 1, borderColor: palette.lineStrong, paddingVertical: 12, alignItems: 'center', marginTop: 18, borderRadius: radius.medium },
-  secondaryText: { color: palette.ink, fontSize: 10.5, fontWeight: '700', letterSpacing: .6 },
+  secondaryText:{ color: palette.accent, fontSize: 10.5, fontWeight: '700', letterSpacing: .6 },
 })
