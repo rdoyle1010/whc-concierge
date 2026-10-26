@@ -9,7 +9,7 @@ import Image from 'next/image'
 import Wordmark from '@/components/Wordmark'
 import type { WebsiteContent } from '@/lib/site-content'
 import { usePublicSiteContent } from '@/lib/use-site-content'
-import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
+import { DEFAULT_PUBLIC_PAGES_CONTENT, filledEditorialBand, editorialBandColumns } from '@/lib/public-page-content-values'
 import { SOCIAL_LINKS } from '@/lib/social-links'
 import { Linkedin, Instagram, Facebook, MessageCircle, Mail, Link2, Share2, Check, Youtube, Music2 } from 'lucide-react'
 
@@ -139,10 +139,15 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { key:'youtube', label:'YouTube', url:social.youtube_url, icon:<Youtube size={17}/> },
   ].filter(item => item.url)
 
+  // Only the slots that actually hold a picture. The gradient and the caption
+  // exist to keep white type legible on a photograph; with no photograph they
+  // are a shadow and a word on an empty box.
+  const bandImages = filledEditorialBand(editorialImages)
+
   return <>
-    <section className="bg-white border-t border-[#dcd4c8] overflow-hidden" aria-label="Talent House Collective hospitality photography">
-      <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-8 py-0 md:py-8"><div className="grid grid-cols-2 lg:grid-cols-4 gap-px md:gap-3 bg-[#dcd4c8] md:bg-transparent">{editorialImages.map((image, index) => <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#ede8df] aspect-[4/5] md:aspect-[3/4]">{image.url ? <Image src={image.url} alt={image.alt} fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /> : null}<div className="absolute inset-0 bg-gradient-to-t from-[#161814]/80 via-[#161814]/25 to-transparent" /><p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white [text-shadow:0_1px_3px_rgba(15,15,15,.65)]">{image.label}</p></div>)}</div></div>
-    </section>
+    {bandImages.length ? <section className="bg-white border-t border-[#dcd4c8] overflow-hidden" aria-label="Talent House Collective hospitality photography">
+      <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-8 py-0 md:py-8"><div className={`grid ${editorialBandColumns(bandImages.length)} gap-px md:gap-3 bg-[#dcd4c8] md:bg-transparent`}>{bandImages.map((image, index) => <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#ede8df] aspect-[4/5] md:aspect-[3/4]"><Image src={image.url} alt={image.alt} fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /><div className="absolute inset-0 bg-gradient-to-t from-[#161814]/80 via-[#161814]/25 to-transparent" /><p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white [text-shadow:0_1px_3px_rgba(15,15,15,.65)]">{image.label}</p></div>)}</div></div>
+    </section> : null}
 
     <section className="bg-white border-t border-[#dcd4c8] border-b border-[#dcd4c8]" aria-label="Share and follow Talent House Collective">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 md:py-10 grid lg:grid-cols-2 gap-8 lg:gap-12">

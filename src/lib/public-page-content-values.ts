@@ -21,6 +21,34 @@ import type { PublicPagesContent } from './public-page-content'
 // The labels and the crops stay, because they are the design. The pictures
 // come from the database or the tile stays empty, which is also how the panel
 // backdrops work: a page shows the photography Talent House owns, or none.
+// The footer strip, which ships with no pictures in it.
+//
+// The four captions and the dark gradient that makes them legible used to be
+// drawn whether or not there was a photograph underneath, so a slot nobody had
+// filled rendered as a stone rectangle with a shadow across the bottom and a
+// white word sitting on it. On every page, because the strip lives in the
+// footer. It read as four broken images rather than as four empty slots, which
+// is worse than showing nothing: a visitor cannot tell a site that is waiting
+// for its photography from a site that is failing to load it.
+//
+// The urls were emptied deliberately in September so the strip would wait for
+// Rebecca's own pictures rather than ship stock, so the answer is not to put
+// stock back. It is to draw only the slots that have something in them, and to
+// draw no strip at all when none of them do.
+export function filledEditorialBand<T extends { url: string }>(band: readonly T[]): T[] {
+  return band.filter(image => typeof image.url === 'string' && image.url.trim() !== '')
+}
+
+// Tailwind needs the class strings written out to generate them, so this is a
+// lookup rather than a template. One picture should not sit in a half-width
+// box next to an empty one.
+export function editorialBandColumns(count: number): string {
+  if (count <= 1) return 'grid-cols-1'
+  if (count === 2) return 'grid-cols-2'
+  if (count === 3) return 'grid-cols-2 lg:grid-cols-3'
+  return 'grid-cols-2 lg:grid-cols-4'
+}
+
 export const defaultEditorialBand = [
   { url: '', alt: 'Luxury spa treatment in progress', label: 'Spa & wellness', focalX: 50, focalY: 50 },
   { url: '', alt: 'Contemporary luxury hospitality interior', label: 'Exceptional properties', focalX: 50, focalY: 50 },
