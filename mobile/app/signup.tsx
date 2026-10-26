@@ -56,7 +56,7 @@ export default function TalentSignupScreen(){
   return <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==='ios'?'padding':'height'} keyboardVerticalOffset={8}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Pressable onPress={()=>router.back()}><Text style={styles.back}>← Back</Text></Pressable>
-      <Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>TALENT</Text>
+      <Text style={styles.wordmark}>TALENT HOUSE</Text><Text style={styles.sub}>TALENT</Text>
       <Text style={styles.eyebrow}>CREATE YOUR ACCOUNT</Text>
       <Text style={styles.title}>One profile for your whole career.</Text>
       <Text style={styles.intro}>Create your Talent account, then build your profile, upload your CV, discover roles and manage applications from the app.</Text>

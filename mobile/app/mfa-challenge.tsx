@@ -29,7 +29,7 @@ export default function MobileMfaChallenge() {
 
   return <KeyboardAvoidingView style={styles.page} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <View style={styles.wrap}>
-      <Text style={styles.wordmark}>WELLNESS HOUSE</Text>
+      <Text style={styles.wordmark}>TALENT HOUSE</Text>
       <Text style={styles.submark}>SECURE ACCESS</Text>
 
       <Text style={styles.eyebrow}>TWO-STEP VERIFICATION</Text>

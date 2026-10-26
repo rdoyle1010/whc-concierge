@@ -85,7 +85,7 @@ export default function HomeScreen(){
 
  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
   <View style={styles.topRow}>
-   <View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View>
+   <View><Text style={styles.wordmark}>TALENT HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View>
    <Pressable onPress={signOut} hitSlop={10}><Text style={styles.signOut}>Sign out</Text></Pressable>
   </View>
 
