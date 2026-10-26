@@ -106,7 +106,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={8}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>← Back</Text></Pressable>
-        <View style={styles.header}><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role === 'employer' ? 'EMPLOYER' : 'TALENT'}</Text></View>
+        <View style={styles.header}><Text style={styles.wordmark}>TALENT HOUSE</Text><Text style={styles.sub}>{role === 'employer' ? 'EMPLOYER' : 'TALENT'}</Text></View>
 
         <Text style={styles.eyebrow}>WELCOME BACK</Text>
         <Text style={styles.title}>Sign in to your account.</Text>

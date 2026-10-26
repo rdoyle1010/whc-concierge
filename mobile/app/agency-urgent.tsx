@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette } from '../src/lib/theme'
 
 // Urgent cover, phone-first.
 //
@@ -221,13 +222,13 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#222321', fontSize: 15, fontWeight: '700', marginTop: 26 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 11 },
   chip: { borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 11, paddingVertical: 9, backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#222321', borderColor: '#222321' },
+  chipActive:{ backgroundColor: palette.accent, borderColor: palette.accent },
   chipText: { color: '#6e6a60', fontSize: 10, fontWeight: '700' },
   chipTextActive: { color: '#fff' },
   row: { flexDirection: 'row', gap: 10, marginTop: 11, alignItems: 'flex-start' },
   label: { color: '#222321', fontSize: 9, fontWeight: '700', marginBottom: 5 },
   select: { borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 11, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' },
-  selectOpen: { borderColor: '#222321' },
+  selectOpen:{ borderColor: palette.accent },
   selectText: { color: '#222321', fontSize: 13, fontWeight: '700' },
   chevron: { color: '#6e6a60', fontSize: 8 },
   timePanel: { borderWidth: 1, borderColor: '#dcd4c8', backgroundColor: '#fff', flexDirection: 'row', flexWrap: 'wrap', gap: 4, padding: 6, marginTop: 4, maxHeight: 180, overflow: 'hidden' },
@@ -238,10 +239,10 @@ const styles = StyleSheet.create({
   perHour: { color: '#6e6a60', fontSize: 11, marginLeft: 7 },
   input: { flex: 1, borderWidth: 1, borderColor: '#dcd4c8', paddingHorizontal: 12, paddingVertical: 12, color: '#222321', fontSize: 13, backgroundColor: '#fff', marginTop: 11 },
   notes: { minHeight: 78, textAlignVertical: 'top' },
-  primary: { backgroundColor: '#222321', paddingVertical: 15, alignItems: 'center', marginTop: 22 },
+  primary:{ backgroundColor: palette.accent, paddingVertical: 15, alignItems: 'center', marginTop: 22 },
   primaryText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   secondary: { borderWidth: 1, borderColor: '#dcd4c8', paddingVertical: 14, alignItems: 'center', marginTop: 11 },
-  secondaryText: { color: '#222321', fontSize: 11, fontWeight: '700' },
+  secondaryText:{ color: palette.accent, fontSize: 11, fontWeight: '700' },
   disabled: { opacity: 0.45 },
   confirmBox: { backgroundColor: '#ede8df', padding: 18, marginTop: 18 },
   confirmCopy: { color: '#3a3832', fontSize: 12.5, lineHeight: 20 },
