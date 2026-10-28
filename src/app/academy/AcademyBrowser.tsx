@@ -146,7 +146,7 @@ export default function AcademyBrowser({ initialCourses }: { initialCourses: Cou
             <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-ink md:text-[64px]">{cms.hero.heading}</h1>
             <p className="mt-6 max-w-3xl text-[16px] leading-8 text-secondary md:text-[18px]">{cms.hero.text}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
-              <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink text-white px-6 py-3.5 text-[13px] font-semibold hover:bg-[#3a4239] transition-colors">Explore courses <ArrowRight size={14} /></a>
+              <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent text-white px-6 py-3.5 text-[13px] font-semibold hover:bg-[#3a4239] transition-colors">Explore courses <ArrowRight size={14} /></a>
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dcd4c8] px-6 py-3.5 text-[13px] font-semibold text-ink hover:bg-[#e3dcd1] transition-colors">Build my career profile <ArrowRight size={14} /></Link>
             </div>
             <p className="mt-4 text-[11px] text-muted">No membership required. Talent House members receive member pricing.</p>

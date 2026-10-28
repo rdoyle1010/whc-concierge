@@ -142,7 +142,7 @@ function LoginForm() {
                 <p className="text-[12px] text-secondary">You will stay signed in on this device.</p>
                 <Link href="/forgot-password" className="text-[12px] text-[#222321] hover:underline">Forgot password?</Link>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#222321] hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${doorLabel}`}</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-accent hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${doorLabel}`}</button>
             </form>
 
             <p className="text-[13px] text-muted mt-7">New to Talent House Collective? <Link href={registerHref} className="text-[#222321] font-semibold hover:underline">Create an account →</Link></p>

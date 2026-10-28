@@ -121,7 +121,7 @@ export default function NewsletterSignupBar() {
         <label className="sr-only" htmlFor="whc-newsletter-email">Email address</label>
         <input id="whc-newsletter-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address" className="min-h-11 min-w-0 flex-1 rounded-lg border border-[#dcd4c8] bg-white px-3.5 text-[16px] text-[#222321] outline-none focus:border-[#222321] sm:text-[13px]" />
         <input type="text" tabIndex={-1} autoComplete="off" value={company} onChange={e => setCompany(e.target.value)} className="hidden" aria-hidden="true" />
-        <button type="submit" disabled={busy} className="min-h-11 rounded-lg bg-[#222321] px-5 text-[12px] font-semibold text-white hover:bg-[#3a4239] disabled:opacity-50">{busy ? 'Sending…' : (config?.button || 'Join the newsletter')}</button>
+        <button type="submit" disabled={busy} className="min-h-11 rounded-lg bg-accent px-5 text-[12px] font-semibold text-white hover:bg-[#3a4239] disabled:opacity-50">{busy ? 'Sending…' : (config?.button || 'Join the newsletter')}</button>
         {message && <p className="text-[11px] text-red-600 sm:absolute sm:mt-12" aria-live="polite">{message}</p>}
       </form>}
     </div>

@@ -68,7 +68,7 @@ export default function ConfirmEmailBanner() {
         </div>
         {!sent && (
           <button type="button" onClick={send} disabled={sending}
-            className="shrink-0 border border-[#222321] bg-[#222321] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-50">
+            className="shrink-0 border border-accent bg-accent px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-50">
             {sending ? 'Sending...' : 'Send me the link'}
           </button>
         )}

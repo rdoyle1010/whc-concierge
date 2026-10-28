@@ -58,7 +58,7 @@ export default async function MatchExplainerPage() {
               <h1 className="site-heading text-[48px] font-semibold leading-[0.98] md:text-[68px]">Roles come to you. You decide what feels right.</h1>
               <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#57544c]">Think of it like a dating app for your career. Talent House Collective ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex items-center gap-2 bg-[#222321] px-6 py-3.5 text-[13px] font-semibold text-white">Sign in to start matching <ArrowRight size={15}/></Link>
+                <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex items-center gap-2 bg-accent px-6 py-3.5 text-[13px] font-semibold text-white">Sign in to start matching <ArrowRight size={15}/></Link>
                 <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#6e6a60] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#222321]">Create free profile</Link>
               </div>
               <p className="mt-5 text-[11px] leading-5 text-[#6e6a60]">Nothing is sent to an employer just because you swipe. You stay in control and choose when to submit an application.</p>
@@ -130,7 +130,7 @@ export default async function MatchExplainerPage() {
         <section className="border-y border-[#dcd4c8] bg-[#ede8df] py-16 text-ink">
           <div className="mx-auto flex max-w-6xl flex-col gap-7 px-6 md:flex-row md:items-center md:justify-between lg:px-8">
             <div><p className="text-[10px] font-semibold uppercase tracking-[.17em] text-secondary">Ready?</p><h2 className="mt-2 text-[34px] font-semibold">See the roles built around your profile.</h2></div>
-            <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex w-fit items-center gap-2 bg-ink text-white px-6 py-3.5 text-[13px] font-semibold">Start matching <ArrowRight size={15}/></Link>
+            <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex w-fit items-center gap-2 bg-accent text-white px-6 py-3.5 text-[13px] font-semibold">Start matching <ArrowRight size={15}/></Link>
           </div>
         </section>
       </main>

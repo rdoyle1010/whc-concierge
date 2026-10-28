@@ -102,7 +102,7 @@ export default function MyDocumentsPage() {
               No account? The link in your receipt email opens your documents without one.
             </p>
             <Link href="/login?redirect=%2Fmy-documents"
-              className="mt-5 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
+              className="mt-5 inline-flex items-center gap-1.5 border border-accent bg-accent px-4 py-2 text-[13px] font-semibold text-white">
               Sign in
             </Link>
           </div>
@@ -121,7 +121,7 @@ export default function MyDocumentsPage() {
               with the address you paid with. If it has not, the link in your receipt email still works.
             </p>
             <Link href="/standards"
-              className="mt-5 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
+              className="mt-5 inline-flex items-center gap-1.5 border border-accent bg-accent px-4 py-2 text-[13px] font-semibold text-white">
               <ShoppingBag size={14} /> Browse the library
             </Link>
           </div>
@@ -169,7 +169,7 @@ export default function MyDocumentsPage() {
                 </h2>
                 <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-secondary">{tool.blurb}</p>
                 <a href={`/api/standards/tool?slug=${encodeURIComponent(tool.slug)}`}
-                  className="mt-4 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
+                  className="mt-4 inline-flex items-center gap-1.5 border border-accent bg-accent px-4 py-2 text-[13px] font-semibold text-white">
                   <Download size={13} /> Download it
                 </a>
               </div>
@@ -186,7 +186,7 @@ export default function MyDocumentsPage() {
                   themselves out. The PDFs are how you present the month; this is where you work it out.
                 </p>
                 <a href="/api/standards/workbook"
-                  className="mt-4 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
+                  className="mt-4 inline-flex items-center gap-1.5 border border-accent bg-accent px-4 py-2 text-[13px] font-semibold text-white">
                   <Download size={13} /> Download the workbook
                 </a>
               </div>

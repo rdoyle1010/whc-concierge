@@ -78,7 +78,7 @@ export default function DesktopInvite() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={copy}
-                className="border border-[#222321] bg-[#222321] px-3.5 py-2 text-[12px] font-semibold text-white">
+                className="border border-accent bg-accent px-3.5 py-2 text-[12px] font-semibold text-white">
                 {copied ? 'Link copied' : 'Copy the link for later'}
               </button>
               <button type="button" onClick={dismiss}
