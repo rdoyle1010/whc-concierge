@@ -240,7 +240,7 @@ export default function CoursePlayerPage() {
 
   const navItem = (label: string, active: boolean, complete: boolean, onClick: () => void, sub?: string) => (
     <button key={label} type="button" onClick={onClick}
-      className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-start gap-2.5 ${active ? 'bg-ink text-white' : 'hover:bg-surface text-ink'}`}>
+      className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-start gap-2.5 ${active ? 'bg-accent text-white' : 'hover:bg-surface text-ink'}`}>
       <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5 ${complete ? 'bg-green-600 text-white' : active ? 'bg-white/20 text-white' : 'bg-gray-100 text-secondary'}`}>
         {complete ? <Check size={11} /> : ''}
       </span>

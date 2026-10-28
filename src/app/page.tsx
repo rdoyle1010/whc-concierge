@@ -394,7 +394,7 @@ function SellingBand() {
               <h2 className="site-heading mt-2 text-[24px] font-semibold leading-tight md:text-[28px]">{card.heading}</h2>
               <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-secondary">{card.body}</p>
               <div className="mt-5 flex flex-wrap items-center gap-5">
-                <Link href={card.href} className="border border-[#222321] bg-[#222321] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.1em] text-white">
+                <Link href={card.href} className="border border-accent bg-accent px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.1em] text-white">
                   {card.action}
                 </Link>
                 <Link href={card.secondaryHref} className="text-[12px] font-semibold text-ink underline underline-offset-4">

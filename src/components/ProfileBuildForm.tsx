@@ -212,7 +212,7 @@ export default function ProfileBuildForm() {
       {error && <p className="border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</p>}
 
       <button type="submit" disabled={sending}
-        className="bg-[#222321] px-6 py-3 text-[13px] font-semibold text-white disabled:opacity-50">
+        className="bg-accent px-6 py-3 text-[13px] font-semibold text-white disabled:opacity-50">
         {sending ? 'Sending...' : 'Send it over'}
       </button>
     </form>

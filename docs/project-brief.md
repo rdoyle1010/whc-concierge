@@ -372,8 +372,8 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-244 API routes, 177 pages, 137 migrations, 189 test files. 1,378 tests and 51
-production-readiness checks, all green as at 23 Oct. Mobile CI is a separate
+244 API routes, 177 pages, 137 migrations, 189 test files. 1,384 tests and 51
+production-readiness checks, all green as at 28 Oct. Mobile CI is a separate
 workflow: routes, palette and types.
 
 Legal entity: Wellness House Collective Limited, company 16720845, ICO

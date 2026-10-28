@@ -245,7 +245,7 @@ export default function AdminBrandsPage() {
                   {application.usp ? <p className="mt-3 whitespace-pre-wrap border-l-2 border-border pl-3 text-[13px] leading-6 text-secondary">{application.usp}</p> : null}
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {application.converted_slug
-                      ? <Link href={`/brands/${application.converted_slug}`} target="_blank" className="btn-secondary text-[12px]">Drafted at /brands/{application.converted_slug}</Link>
+                      ? <span className="text-[12px] text-muted">Drafted at /brands/{application.converted_slug} <span className="text-[11px]">(not published yet, so the page is not live)</span></span>
                       : <button type="button" disabled={busy === `convert-${application.id}`} onClick={() => convert(application)} className="btn-primary text-[12px] disabled:opacity-50">
                           {busy === `convert-${application.id}` ? 'Creating...' : 'Turn into a draft page'}
                         </button>}

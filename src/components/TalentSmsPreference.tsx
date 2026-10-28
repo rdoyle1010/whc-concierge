@@ -67,7 +67,7 @@ export default function TalentSmsPreference() {
               <p className="text-[14px] font-semibold text-ink">SMS notifications</p>
               <p className="mt-1 text-[12px] leading-5 text-secondary">Get a short text when you have a new message, interview update, application update, Agency Cover request, urgent cover request or Residency update. Full details stay inside Talent House Collective.</p>
             </div>
-            <button type="button" onClick={toggle} disabled={saving} aria-label={enabled ? 'Turn SMS notifications off' : 'Turn SMS notifications on'} className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-[#222321]' : 'bg-gray-200'} ${saving ? 'opacity-60' : ''}`}>
+            <button type="button" onClick={toggle} disabled={saving} aria-label={enabled ? 'Turn SMS notifications off' : 'Turn SMS notifications on'} className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-accent' : 'bg-gray-200'} ${saving ? 'opacity-60' : ''}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>

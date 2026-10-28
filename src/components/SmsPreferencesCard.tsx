@@ -46,7 +46,7 @@ export default function SmsPreferencesCard() {
           {message && <p className={`mt-2 text-[11px] ${message.includes('enabled') || message.includes('disabled') ? 'text-emerald-700' : 'text-red-600'}`}>{message}</p>}
         </div>
       </div>
-      <button type="button" onClick={toggle} disabled={loading || saving || (!phone && !optIn)} aria-label={optIn ? 'Turn SMS alerts off' : 'Turn SMS alerts on'} className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40 ${optIn ? 'bg-[#222321]' : 'bg-gray-200'}`}>
+      <button type="button" onClick={toggle} disabled={loading || saving || (!phone && !optIn)} aria-label={optIn ? 'Turn SMS alerts off' : 'Turn SMS alerts on'} className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40 ${optIn ? 'bg-accent' : 'bg-gray-200'}`}>
         <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${optIn ? 'translate-x-6' : 'translate-x-1'}`} />
       </button>
     </div>

@@ -71,7 +71,7 @@ export default function HowToUsePage(){
 
       <div className="mt-12 flex flex-col gap-4 bg-[#ede8df] p-7 md:flex-row md:items-center md:justify-between">
         <div><h2 className="text-lg font-semibold text-[#222321]">You do not have to learn the platform first.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Start with the next thing you need to do. The app now includes the same 60-second guide from Home whenever you want it.</p></div>
-        <Link href="/" className="shrink-0 bg-[#222321] px-5 py-3 text-center text-sm font-semibold text-white">Go to Talent House</Link>
+        <Link href="/" className="shrink-0 bg-accent px-5 py-3 text-center text-sm font-semibold text-white">Go to Talent House</Link>
       </div>
     </section>
   </main>

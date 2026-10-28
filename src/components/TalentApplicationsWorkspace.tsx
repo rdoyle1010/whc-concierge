@@ -131,6 +131,12 @@ export default function TalentApplicationsWorkspace(){
     const job=app.job_listings
     const match=app.match_detail
     if(!job)return null
+    // /jobs/[id] selects on is_live AND on expiry, so a role that has closed or
+    // run out 404s. The card already works this out further down to label the
+    // application closed, but this panel linked to the role regardless, so
+    // somebody reading their own application to a role that had since closed
+    // was sent to a dead page.
+    const roleGone=!job.is_live||(job.expires_at&&new Date(job.expires_at).getTime()<=Date.now())
     return <div className={`${compact?'mt-5':'mt-4'} space-y-4`}>
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-surface/60 p-3"><p className="text-[10px] uppercase tracking-[.12em] text-muted mb-1">Location</p><p className="flex items-center gap-1.5 text-[12px] font-medium text-ink"><MapPin size={12}/>{job.location||'Not stated'}</p></div>
@@ -140,7 +146,9 @@ export default function TalentApplicationsWorkspace(){
       <div className="rounded-xl border border-border p-4">
         <p className="text-[10px] uppercase tracking-[.14em] text-[#222321] font-semibold mb-2">Job description</p>
         <p className="text-[13px] leading-6 text-secondary whitespace-pre-line">{job.job_description||job.description||'The property has not added a full job description.'}</p>
-        <Link href={`/jobs/${job.id}`} className="mt-3 inline-flex text-[12px] font-semibold text-[#222321] hover:underline">View full role →</Link>
+        {roleGone
+          ? <p className="mt-3 text-[12px] text-muted">This role has closed, so there is no longer a page for it.</p>
+          : <Link href={`/jobs/${job.id}`} className="mt-3 inline-flex text-[12px] font-semibold text-accent hover:underline">View full role →</Link>}
       </div>
       {match&&<div className="rounded-xl border border-[#dcd4c8] bg-[#ede8df] p-4">
         <div className="flex items-start justify-between gap-3 mb-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[#222321] font-semibold">Why you match</p><p className="mt-1 text-[13px] leading-5 text-secondary">{match.matchExplanation||'Your profile has been compared with the requirements of this role.'}</p></div><span className="rounded-full bg-white border border-[#dcd4c8] px-3 py-1 text-[13px] font-semibold text-ink shrink-0">{match.score}%</span></div>

@@ -126,7 +126,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           {event.booking_url && !past && (
             <p className="mt-9">
               <a href={event.booking_url} target="_blank" rel="noopener noreferrer"
-                className="inline-block bg-[#222321] px-6 py-3 text-[13px] font-semibold text-white">
+                className="inline-block bg-accent px-6 py-3 text-[13px] font-semibold text-white">
                 Book your place
               </a>
             </p>

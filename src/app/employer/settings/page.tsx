@@ -19,7 +19,7 @@ function PrefRow({ title, description, on, onToggle }: { title: string; descript
         <p className="text-[12px] leading-5 text-muted mt-0.5">{description}</p>
       </div>
       <button type="button" onClick={onToggle} aria-pressed={on} aria-label={`${on ? 'Turn off' : 'Turn on'} ${title}`}
-        className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 ${on ? 'bg-ink border-ink' : 'bg-gray-200 border-border'}`}>
+        className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 ${on ? 'bg-accent border-accent' : 'bg-gray-200 border-border'}`}>
         <span className={`inline-block h-4 w-4 transform bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
       </button>
     </div>
