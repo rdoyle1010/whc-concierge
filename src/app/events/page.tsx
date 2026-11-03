@@ -99,7 +99,7 @@ export default async function EventsPage() {
             </p>
             <p className="mt-5">
               <Link href="/register/talent"
-                className="inline-block bg-[#222321] px-6 py-3 text-[13px] font-semibold text-white">
+                className="inline-block bg-accent px-6 py-3 text-[13px] font-semibold text-white">
                 Create your free profile
               </Link>
             </p>

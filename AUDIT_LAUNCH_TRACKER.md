@@ -1,4 +1,4 @@
-# Wellness House Collective — Mobile Audit & Launch Tracker
+# Talent House — Mobile Audit & Launch Tracker
 
 > Numbering system: JOB 001/1000 onward. The `/1000` is only a permanent job-ID range, **not** a percentage complete.
 >
@@ -12,12 +12,15 @@
 
 ## Current checkpoint
 
-- Pull request: #47 — `Full mobile workflow audit and stage hardening`
-- Branch: `full-app-audit-hardening`
+- Branch: the work this tracker was opened against (`full-app-audit-hardening`,
+  PR #47) is long gone; everything code-side has since landed on `main` through
+  later pull requests. The pointers are removed rather than updated, because the
+  code side of this tracker is no longer the part that is outstanding.
 - Base production branch: `main`
-- PR state: draft / not merged
-- Current PR scope at tracker creation: **63 commits / 50 changed files**
-- Netlify preview: healthy
+- What is still live in this file: **the device-test column**. Every journey
+  below is ✅ on code and CI and 📱 on a real handset, and that has been true
+  throughout. The app has never been run on a device as part of this work.
+- Netlify: deploying from `main`
 - Latest Mobile CI: green
 - Latest Platform Quality CI: green
 - Native iOS visual/device review: **PENDING**

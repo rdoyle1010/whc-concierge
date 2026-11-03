@@ -175,7 +175,7 @@ export default function ResidencySetupScreen(){
           <View style={styles.rateCol}><Field label="Weekly rate £"><TextInput value={weeklyRate} onChangeText={setWeeklyRate} keyboardType="numeric" placeholder="2000" placeholderTextColor={palette.quiet} style={styles.input}/></Field></View>
         </View>
         <Field label="Monthly rate £"><TextInput value={monthlyRate} onChangeText={setMonthlyRate} keyboardType="numeric" placeholder="7500" placeholderTextColor={palette.quiet} style={styles.input}/></Field>
-        <View style={styles.switchRow}><View style={{flex:1,paddingRight:12}}><Text style={styles.switchEyebrow}>OFFER FLEXIBILITY</Text><Text style={styles.switchTitle}>Rates negotiable</Text><Text style={styles.switchCopy}>Employers can still send structured offers and you can counter before anything is agreed.</Text></View><Switch value={negotiable} onValueChange={setNegotiable} trackColor={{false:palette.lineStrong,true:'#A8B9C3'}} thumbColor={negotiable?palette.ink:palette.paper}/></View>
+        <View style={styles.switchRow}><View style={{flex:1,paddingRight:12}}><Text style={styles.switchEyebrow}>OFFER FLEXIBILITY</Text><Text style={styles.switchTitle}>Rates negotiable</Text><Text style={styles.switchCopy}>Employers can still send structured offers and you can counter before anything is agreed.</Text></View><Switch value={negotiable} onValueChange={setNegotiable} trackColor={{false:palette.lineStrong,true:'#7e7a70'}} thumbColor={negotiable?palette.ink:palette.paper}/></View>
       </View>
 
       <Pressable disabled={busy} onPress={save} style={[styles.primary,busy&&styles.disabled]}><Text style={styles.primaryText}>{busy?'Saving specialist profile…':listing?'Save Residency changes':'Create Residency listing'}</Text></Pressable>
@@ -210,25 +210,25 @@ const styles=StyleSheet.create({
   eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.1,marginBottom:9,fontWeight:'700',fontFamily:type.sans},
   title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif,maxWidth:360},
   intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,fontFamily:type.sans},
-  errorCard:{backgroundColor:palette.dangerSoft,borderWidth:1,borderColor:'#E8D7D4',padding:14,borderRadius:radius.large,marginBottom:12},
+  errorCard:{backgroundColor:palette.dangerSoft,borderWidth:1,borderColor:'#D99089',padding:14,borderRadius:radius.large,marginBottom:12},
   errorTitle:{color:palette.danger,fontSize:13,fontWeight:'700',fontFamily:type.sans},
   error:{color:palette.danger,fontSize:10.5,lineHeight:17,marginTop:4,fontFamily:type.sans},
   membershipCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,borderRadius:radius.large,marginBottom:10},
   membershipCardActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
   membershipTop:{flexDirection:'row',gap:12,alignItems:'flex-start'},
   membershipEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
-  membershipEyebrowActive:{color:'#CBD5D9'},
+  membershipEyebrowActive:{color:'#dcd4c8'},
   membershipTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:5},
   membershipTitleActive:{color:palette.paper},
   membershipCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
-  membershipCopyActive:{color:'#DCE4E7'},
+  membershipCopyActive:{color:'#dcd4c8'},
   priceBadge:{alignItems:'flex-end'},
   priceBadgeActive:{},
   price:{color:palette.inkStrong,fontSize:19,fontWeight:'700',fontFamily:type.sans},
   priceActive:{color:palette.paper},
   pricePeriod:{color:palette.quiet,fontSize:8.5,fontFamily:type.sans},
-  pricePeriodActive:{color:'#CBD5D9'},
-  membershipButton:{backgroundColor:palette.ink,paddingVertical:13,alignItems:'center',marginTop:15,borderRadius:radius.medium},
+  pricePeriodActive:{color:'#dcd4c8'},
+  membershipButton:{backgroundColor:palette.accent,paddingVertical:13,alignItems:'center',marginTop:15,borderRadius:radius.medium},
   membershipButtonText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   refreshButton:{paddingVertical:10,alignItems:'center',marginTop:3},
   refresh:{color:palette.muted,fontSize:9.5,fontWeight:'700',fontFamily:type.sans},
@@ -258,7 +258,7 @@ const styles=StyleSheet.create({
   choiceBlock:{marginBottom:15},
   chips:{flexDirection:'row',flexWrap:'wrap',gap:7},
   chip:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:10,paddingVertical:8,borderRadius:999,backgroundColor:palette.stone},
-  chipActive:{backgroundColor:palette.ink,borderColor:palette.ink},
+  chipActive:{backgroundColor:palette.accent,borderColor:palette.accent},
   chipText:{color:palette.muted,fontSize:9.5,fontFamily:type.sans},
   chipTextActive:{color:palette.paper,fontWeight:'700'},
   rateGrid:{flexDirection:'row',gap:9},
@@ -267,7 +267,7 @@ const styles=StyleSheet.create({
   switchEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.1,fontWeight:'700',fontFamily:type.sans},
   switchTitle:{color:palette.inkStrong,fontSize:12.5,fontWeight:'700',marginTop:4,fontFamily:type.sans},
   switchCopy:{color:palette.muted,fontSize:9.5,lineHeight:15,marginTop:4,fontFamily:type.sans},
-  primary:{backgroundColor:palette.ink,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.accent,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   note:{backgroundColor:palette.stoneDeep,padding:17,borderRadius:radius.large,marginTop:18},
   noteEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700',fontFamily:type.sans},

@@ -76,7 +76,7 @@ export default function AdminSignInPage() {
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#222321] hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">
+            <button type="submit" disabled={loading} className="w-full rounded-xl bg-accent hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">
               {loading ? 'Signing in...' : 'Sign in to Admin'}
             </button>
           </form>

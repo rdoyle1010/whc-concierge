@@ -70,10 +70,22 @@ export default function SavedJobsPage() {
                   {job.contract_type && <span>{job.contract_type.replace('_', ' ')}</span>}
                   {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
                 </div>
-                <div className="flex gap-2">
-                  <Link href={`/jobs/${saved.job_id || job.id}`} className="btn-primary flex-1 text-center text-[12px]">View & Apply</Link>
-                </div>
-                {!job.is_live && <p className="text-[11px] text-red-400 mt-2">This role is no longer active</p>}
+                {/* A closed role 404s: /jobs/[id] selects on is_live and calls
+                    notFound(). Offering View & Apply on one sends somebody who
+                    saved a job they liked to a dead page, so a role that has
+                    closed offers the way forward instead. */}
+                {job.is_live ? (
+                  <div className="flex gap-2">
+                    <Link href={`/jobs/${saved.job_id || job.id}`} className="btn-primary flex-1 text-center text-[12px]">View &amp; Apply</Link>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[11px] text-secondary mb-2">This role has closed.</p>
+                    <div className="flex gap-2">
+                      <Link href={`/jobs?search=${encodeURIComponent(job.job_title || '')}`} className="btn-secondary flex-1 text-center text-[12px]">Find similar roles</Link>
+                    </div>
+                  </>
+                )}
               </div>
             )
           })}

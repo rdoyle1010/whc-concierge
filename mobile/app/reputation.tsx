@@ -145,7 +145,7 @@ export default function ReputationScreen(){
         {ref.request_message?<Text style={styles.requestBox}>{ref.request_message}</Text>:null}
         {ref.status==='pending'?<>
           <TextInput value={responses[ref.id]||''} onChangeText={v=>setResponses(s=>({...s,[ref.id]:v}))} placeholder="Write a useful professional reference…" placeholderTextColor={palette.quiet} multiline style={styles.textarea}/>
-          <View style={styles.switchRow}><Text style={styles.switchLabel}>I would hire this person again</Text><Switch value={Boolean(rehire[ref.id])} onValueChange={v=>setRehire(s=>({...s,[ref.id]:v}))} trackColor={{false:palette.lineStrong,true:'#AEBCC4'}} thumbColor={palette.ink}/></View>
+          <View style={styles.switchRow}><Text style={styles.switchLabel}>I would hire this person again</Text><Switch value={Boolean(rehire[ref.id])} onValueChange={v=>setRehire(s=>({...s,[ref.id]:v}))} trackColor={{false:palette.lineStrong,true:'#7e7a70'}} thumbColor={palette.ink}/></View>
           <Pressable disabled={!!busy} onPress={()=>respondReference(ref,'completed')} style={styles.primary}><Text style={styles.primaryText}>{busy===`completed-${ref.id}`?'Submitting…':'Submit verified reference'}</Text></Pressable>
           <Pressable disabled={!!busy} onPress={()=>respondReference(ref,'declined')}><Text style={styles.decline}>Decline request</Text></Pressable>
         </>:ref.status==='completed'?<><Text style={styles.referenceText}>“{ref.response_text}”</Text><Text style={styles.rehire}>{ref.would_rehire?'Would hire again ✓':'Rehire not confirmed'}</Text></>:<Text style={styles.muted}>Request declined.</Text>}
@@ -181,10 +181,10 @@ const styles=StyleSheet.create({
   heroDivider:{width:1,backgroundColor:'rgba(255,255,255,.18)'},
   score:{color:palette.paper,fontSize:39,lineHeight:44,fontWeight:'400',fontFamily:type.serif},
   heroStars:{color:palette.paper,fontSize:15,letterSpacing:1.2,marginTop:3},
-  scoreCopy:{color:'#D6E0E5',fontSize:9.5,lineHeight:15,marginTop:7,fontFamily:type.sans},
-  verifiedLabel:{color:'#C8D3D9',fontSize:7.5,letterSpacing:1.5,fontWeight:'700',fontFamily:type.sans},
+  scoreCopy:{color:'#dcd4c8',fontSize:9.5,lineHeight:15,marginTop:7,fontFamily:type.sans},
+  verifiedLabel:{color:'#dcd4c8',fontSize:7.5,letterSpacing:1.5,fontWeight:'700',fontFamily:type.sans},
   verifiedTitle:{color:palette.paper,fontSize:16,lineHeight:20,fontWeight:'400',fontFamily:type.serif,marginTop:6},
-  verifiedCopy:{color:'#D6E0E5',fontSize:9.5,lineHeight:15,marginTop:5,fontFamily:type.sans},
+  verifiedCopy:{color:'#dcd4c8',fontSize:9.5,lineHeight:15,marginTop:5,fontFamily:type.sans},
   summaryGrid:{flexDirection:'row',gap:8,marginBottom:10},
   summaryCard:{flex:1,borderWidth:1,borderColor:palette.line,padding:14,backgroundColor:palette.paper,borderRadius:radius.medium},
   summaryNumber:{color:palette.inkStrong,fontSize:22,fontWeight:'400',fontFamily:type.serif},
@@ -213,7 +213,7 @@ const styles=StyleSheet.create({
   textareaSmall:{borderWidth:1,borderColor:palette.lineStrong,minHeight:70,padding:11,textAlignVertical:'top',color:palette.text,fontSize:10.5,marginTop:11,backgroundColor:palette.paper,borderRadius:radius.medium,fontFamily:type.sans},
   switchRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:12},
   switchLabel:{color:palette.text,fontSize:10.5,flex:1,paddingRight:10,fontFamily:type.sans},
-  primary:{backgroundColor:palette.ink,paddingVertical:13,alignItems:'center',marginTop:13,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.accent,paddingVertical:13,alignItems:'center',marginTop:13,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
   decline:{color:palette.danger,fontSize:9.5,textAlign:'center',padding:12,fontFamily:type.sans},
   reviewScore:{color:palette.inkStrong,fontSize:14.5,fontWeight:'700',fontFamily:type.sans},

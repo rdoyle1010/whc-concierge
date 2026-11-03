@@ -137,7 +137,7 @@ const styles=StyleSheet.create({
  actionEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700',fontFamily:type.sans},
  actionTitle:{color:palette.inkStrong,fontSize:17,lineHeight:22,fontWeight:'400',fontFamily:type.serif,marginTop:5},
  actionCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
- primary:{backgroundColor:palette.ink,paddingVertical:13,alignItems:'center',marginTop:12,borderRadius:radius.medium},
+ primary:{backgroundColor:palette.accent,paddingVertical:13,alignItems:'center',marginTop:12,borderRadius:radius.medium},
  primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
  ack:{backgroundColor:palette.stoneDeep,padding:13,borderRadius:radius.medium,marginTop:15},
  ackEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700',fontFamily:type.sans},

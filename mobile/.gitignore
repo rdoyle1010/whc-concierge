@@ -1,0 +1,4 @@
+# Expo writes these while bundling. They are build output, not source.
+.expo/
+dist/
+web-build/

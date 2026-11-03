@@ -28,9 +28,16 @@ test('no page paints a picture it has not been given', () => {
   assert.match(band, /label: 'Spa & wellness'/)
   assert.match(band, /focalX: 50, focalY: 50/)
 
-  // The tile already renders as a labelled empty box when there is no picture,
-  // which is what makes starting empty safe.
-  assert.match(read('src/components/Footer.tsx'), /\{image\.url \? <Image/)
+  // Starting empty is safe because nothing is drawn, not because an empty tile
+  // is drawn. A labelled empty box was the original answer here and it was
+  // wrong: on the live site those four stone rectangles, each with a gradient
+  // across the bottom and a white caption on it, read as four photographs
+  // failing to load rather than as four slots waiting to be filled. The strip
+  // now draws only the slots that hold a picture, and no strip at all when
+  // none of them do.
+  const footer = read('src/components/Footer.tsx')
+  assert.match(footer, /const bandImages = filledEditorialBand\(editorialImages\)/)
+  assert.match(footer, /\{bandImages\.length \? <section/, 'no pictures must mean no strip')
 })
 
 // no-store meant a cold function call on every page load of the site to fetch

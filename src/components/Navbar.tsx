@@ -185,7 +185,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           <div className="mr-3"><UniversalSearch variant="navbar" /></div>
           {user ? (
             <>
-              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white hover:bg-[#3a4239]"><LayoutDashboard size={13}/>My dashboard</Link>
+              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white hover:bg-[#3a4239]"><LayoutDashboard size={13}/>My dashboard</Link>
               <div className="mr-2 border-r border-[#dcd4c8] pr-3 text-ink"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
                 <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu" aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-body transition-colors hover:text-ink">
@@ -240,7 +240,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <div className="mt-5 border-t border-[#dcd4c8] pt-5">
               {user ? (
                 <>
-                  <Link href={dashboardHref} className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-[12px] font-semibold text-white" onClick={() => setMobileOpen(false)}><LayoutDashboard size={14}/>My dashboard</Link>
+                  <Link href={dashboardHref} className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-[12px] font-semibold text-white" onClick={() => setMobileOpen(false)}><LayoutDashboard size={14}/>My dashboard</Link>
                   <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[13px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
                   <button type="button" onClick={handleSignOut} className="block w-full py-2 text-left text-[13px] text-secondary">Sign Out</button>
                 </>

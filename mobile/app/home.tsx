@@ -85,7 +85,7 @@ export default function HomeScreen(){
 
  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
   <View style={styles.topRow}>
-   <View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View>
+   <View><Text style={styles.wordmark}>TALENT HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View>
    <Pressable onPress={signOut} hitSlop={10}><Text style={styles.signOut}>Sign out</Text></Pressable>
   </View>
 
@@ -144,10 +144,10 @@ const styles=StyleSheet.create({
  eyebrow:{color:palette.sage,fontSize:9,letterSpacing:2.2,marginBottom:10,fontWeight:'700',fontFamily:type.sans},
  title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif},
  intro:{color:palette.muted,fontSize:14,lineHeight:21,marginTop:10,marginBottom:24,fontFamily:type.sans},
- primaryAction:{backgroundColor:palette.inkStrong,padding:22,borderRadius:radius.medium,marginBottom:18},
- primaryEyebrow:{color:'#BFC9C4',fontSize:8,letterSpacing:1.9,fontWeight:'700',fontFamily:type.sans},
+ primaryAction:{backgroundColor:palette.accent,padding:22,borderRadius:radius.medium,marginBottom:18},
+ primaryEyebrow:{color:palette.stone,fontSize:8,letterSpacing:1.9,fontWeight:'700',fontFamily:type.sans},
  primaryTitle:{color:'#fff',fontSize:24,lineHeight:29,fontFamily:type.serif,marginTop:8},
- primaryCopy:{color:'#D5DEDA',fontSize:12.5,lineHeight:19,marginTop:10,fontFamily:type.sans},
+ primaryCopy:{color:palette.stone,fontSize:12.5,lineHeight:19,marginTop:10,fontFamily:type.sans},
  primaryLink:{color:'#fff',fontSize:12,fontWeight:'700',marginTop:18,fontFamily:type.sans},
  snapshotRow:{flexDirection:'row',alignItems:'stretch',borderTopWidth:1,borderBottomWidth:1,borderColor:palette.line,marginBottom:20},
  snapshotItem:{flex:1,paddingVertical:16,alignItems:'center'},
@@ -158,14 +158,14 @@ const styles=StyleSheet.create({
  attentionHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingBottom:8},
  attentionTitle:{color:palette.danger,fontSize:13,fontWeight:'700',fontFamily:type.sans},
  attentionTotal:{color:palette.danger,fontSize:13,fontWeight:'800'},
- attentionRow:{borderTopWidth:1,borderTopColor:'#EEDDD9',paddingVertical:12,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
- attentionText:{color:'#6E4540',fontSize:12,fontFamily:type.sans},
+ attentionRow:{borderTopWidth:1,borderTopColor:'#D99089',paddingVertical:12,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+ attentionText:{color:'#8A1C14',fontSize:12,fontFamily:type.sans},
  attentionArrow:{color:palette.danger,fontSize:15},
  profilePrompt:{backgroundColor:palette.sageSoft,borderRadius:radius.medium,padding:16,marginBottom:24},
  profilePromptTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
  profilePromptTitle:{color:palette.inkStrong,fontSize:13,fontWeight:'700',fontFamily:type.sans},
  profilePromptPct:{color:palette.sage,fontSize:11,fontWeight:'700'},
- progressTrack:{height:4,backgroundColor:'#DDE5DE',borderRadius:2,marginTop:12,overflow:'hidden'},
+ progressTrack:{height:4,backgroundColor:palette.line,borderRadius:2,marginTop:12,overflow:'hidden'},
  progressFill:{height:4,backgroundColor:palette.sage,borderRadius:2},
  profilePromptCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:9,fontFamily:type.sans},
  sectionHeader:{marginTop:4,marginBottom:9},

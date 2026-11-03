@@ -152,10 +152,10 @@ const styles = StyleSheet.create({
   meta: { color: palette.muted, fontSize: 10.5, lineHeight: 16, marginTop: 6 },
   closed: { color: palette.danger, fontSize: 10, lineHeight: 15, marginTop: 8 },
   actions: { flexDirection: 'row', gap: 9, marginTop: 14 },
-  primary: { backgroundColor: palette.inkStrong, paddingVertical: 13, paddingHorizontal: 20, alignItems: 'center', borderRadius: radius.medium },
-  primaryCompact: { flex: 1, backgroundColor: palette.inkStrong, paddingVertical: 12, alignItems: 'center', borderRadius: radius.medium },
+  primary:{ backgroundColor: palette.accent, paddingVertical: 13, paddingHorizontal: 20, alignItems: 'center', borderRadius: radius.medium },
+  primaryCompact:{ flex: 1, backgroundColor: palette.accent, paddingVertical: 12, alignItems: 'center', borderRadius: radius.medium },
   primaryText: { color: palette.paper, fontSize: 10.5, fontWeight: '700', letterSpacing: .6 },
   secondaryCompact: { borderWidth: 1, borderColor: palette.lineStrong, paddingVertical: 11, paddingHorizontal: 16, alignItems: 'center', borderRadius: radius.medium },
-  secondaryText: { color: palette.ink, fontSize: 10.5, fontWeight: '700', letterSpacing: .6 },
+  secondaryText:{ color: palette.accent, fontSize: 10.5, fontWeight: '700', letterSpacing: .6 },
   disabled: { opacity: .5 },
 })

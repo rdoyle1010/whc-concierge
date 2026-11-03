@@ -15,7 +15,7 @@ import { deletionSummary } from '@/lib/account-deletion'
 function PrefSwitch({ on, onClick, disabled, label }: { on: boolean; onClick: () => void; disabled?: boolean; label: string }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-pressed={on} aria-label={label}
-      className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 disabled:opacity-50 ${on ? 'bg-ink border-ink' : 'bg-gray-200 border-border'}`}>
+      className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 disabled:opacity-50 ${on ? 'bg-accent border-accent' : 'bg-gray-200 border-border'}`}>
       <span className={`inline-block h-4 w-4 transform bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
   )

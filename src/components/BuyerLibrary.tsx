@@ -110,7 +110,7 @@ function Library() {
             The PDFs are how you present the month; this is where you work it out.
           </p>
           <a href={`/api/standards/workbook?t=${encodeURIComponent(state.token)}`}
-            className="mt-4 inline-flex items-center gap-1.5 border border-[#222321] bg-[#222321] px-4 py-2 text-[13px] font-semibold text-white">
+            className="mt-4 inline-flex items-center gap-1.5 border border-accent bg-accent px-4 py-2 text-[13px] font-semibold text-white">
             <Download size={14} /> Download the workbook
           </a>
         </div>

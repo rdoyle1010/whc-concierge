@@ -1,20 +1,32 @@
 import { Platform } from 'react-native'
 
+// The website's live tokens: ivory, stone and charcoal, and no metal
+// (the site's own commit 2e4ac48e). Every value here is one the website ships.
+// Severity follows the site's ink/edge/wash triples rather than gold.
 export const palette = {
-  ink: '#0B2F4D',
-  inkStrong: '#10283B',
-  text: '#263746',
-  muted: '#65717A',
-  quiet: '#7F8A91',
-  line: '#DFE5E8',
-  lineStrong: '#CBD4D9',
+  // Forest carries anything you press or follow; charcoal anything you read.
+  // The accent is deliberately never equal to the ink.
+  accent: '#28322B',
+  accentStrong: '#3A4239',
+  ink: '#222321',
+  inkStrong: '#161814',
+  text: '#57544C',
+  muted: '#6E6A60',
+  quiet: '#7E7A70',
+  line: '#DCD4C8',
+  lineStrong: '#C7BDAE',
   paper: '#FFFFFF',
-  stone: '#F7F9FA',
-  stoneDeep: '#F0F3F5',
-  sage: '#6F7F88',
-  sageSoft: '#F3F6F7',
-  danger: '#A33A3A',
-  dangerSoft: '#FBF4F3',
+  stone: '#F6F3ED',
+  stoneDeep: '#EDE8DF',
+  sage: '#57544C',
+  sageSoft: '#E3DCD1',
+  // The site's readable green: its match.perfect text and the border it puts
+  // round a confirmation panel. #22C55E is the site's success token but it is
+  // 2.2:1 on white, so it marks, it never carries a word.
+  positive: '#166534',
+  positiveSoft: '#F3FBF5',
+  danger: '#8A1C14',
+  dangerSoft: '#FBE9E7',
 }
 
 export const type = {

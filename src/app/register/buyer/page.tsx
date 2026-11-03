@@ -170,7 +170,7 @@ function Form() {
         </label>
 
         <button type="button" onClick={submit} disabled={busy}
-          className="inline-flex w-full items-center justify-center gap-2 border border-[#222321] bg-[#222321] px-5 py-3 text-[14px] font-semibold text-white disabled:opacity-50">
+          className="inline-flex w-full items-center justify-center gap-2 border border-accent bg-accent px-5 py-3 text-[14px] font-semibold text-white disabled:opacity-50">
           {busy && <Loader2 size={15} className="animate-spin" />}
           {busy ? 'Creating your account...' : 'Create account and continue'}
         </button>

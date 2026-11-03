@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   search:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:11,paddingVertical:10,color:palette.text,fontSize:11,backgroundColor:palette.paper,borderRadius:radius.medium,fontFamily:type.sans},
   options:{flexDirection:'row',flexWrap:'wrap',gap:6,marginTop:9},
   option:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:9,paddingVertical:8,borderRadius:radius.small,backgroundColor:palette.paper},
-  optionActive:{backgroundColor:palette.ink,borderColor:palette.ink},
+  optionActive:{backgroundColor:palette.accent,borderColor:palette.accent},
   optionText:{color:palette.muted,fontSize:9,fontFamily:type.sans},
   optionTextActive:{color:palette.paper,fontWeight:'700'},
   empty:{color:palette.muted,fontSize:10,marginTop:10,fontFamily:type.sans},

@@ -28,7 +28,7 @@
   .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: #28322b; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
   .btn-primary:hover { background: #3a4239; }
   .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #222321); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #28322b); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
   .btn-accent:hover { background: #3a4239; }
   .btn-primary:active, .btn-secondary:active, .btn-accent:active { transform: translateY(1px); }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
@@ -52,7 +52,7 @@
 
   .public-page { @apply min-h-screen bg-parchment text-body; }
   .public-hero { @apply bg-white border-b border-border; }
-  .public-eyebrow { color:var(--site-accent, #222321); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
+  .public-eyebrow { color:var(--site-accent, #28322b); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
   .public-title { @apply text-ink font-semibold leading-[1.06]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -0.02em; font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
   .public-intro { @apply text-secondary text-[15px] leading-7; }
   .public-panel { @apply bg-white border border-border; border-radius: 0; box-shadow: none; }
@@ -163,8 +163,17 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-shell textarea,
 .dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 0; }
 .dashboard-shell table { border-radius: 0; }
+/* The signed-in product presses the same colour as the public site.
+   This rule used to pin both buttons to the ink, which was right when the
+   accent WAS the ink. 2e4ac48e made the accent forest and moved .btn-primary
+   with it, and moved this rule's hover to #3a4239 - but left its rest state
+   on the neutral-to-warm translation, #1c1c1c to #222321, rather than on the
+   ink-to-accent one. So every button in every dashboard sat at charcoal and
+   turned forest on hover, against the platform's own rule that forest carries
+   anything you press. There is nothing left to pin: .btn-primary is forest
+   and .btn-accent follows --site-accent, which defaults to forest too. */
 .dashboard-shell .btn-primary,
-.dashboard-shell .btn-accent { background: #222321; color:#fff; }
+.dashboard-shell .btn-accent { color: #fff; }
 
 /* A disabled button has to look disabled. Half-opacity on a mid-grey button is
    indistinguishable from an enabled one, which is how every button on the
@@ -270,8 +279,8 @@ html { scroll-behavior:smooth; }
   color: var(--site-ink, #222321);
   letter-spacing: -0.02em;
 }
-.website-theme .site-accent { color: var(--site-accent, #222321); }
-.website-theme .site-accent-bg { background-color: var(--site-accent, #222321); }
+.website-theme .site-accent { color: var(--site-accent, #28322b); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #28322b); }
 .website-theme .site-surface { background-color: var(--site-surface, #ede8df); }
 .website-theme .site-section {
   padding-top: calc(5rem * var(--site-space, 1));

@@ -310,7 +310,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Toggle({ label, help, value, onChange, disabled }: { label:string; help:string; value:boolean; onChange:(value:boolean)=>void; disabled:boolean }) {
-  return <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.toggleLabel}>{label}</Text><Text style={styles.toggleHelp}>{help}</Text></View><Switch disabled={disabled} value={value} onValueChange={onChange} trackColor={{false:palette.lineStrong,true:'#BCC8BF'}} thumbColor={palette.paper} /></View>
+  return <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.toggleLabel}>{label}</Text><Text style={styles.toggleHelp}>{help}</Text></View><Switch disabled={disabled} value={value} onValueChange={onChange} trackColor={{false:palette.lineStrong,true:palette.accent}} thumbColor={palette.paper} /></View>
 }
 
 const styles=StyleSheet.create({
@@ -323,8 +323,8 @@ const styles=StyleSheet.create({
   title:{color:palette.inkStrong,fontFamily:type.serif,fontSize:34,lineHeight:40,fontWeight:'400'},
   intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,maxWidth:365},
   statusCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,borderRadius:radius.large,marginBottom:22},
-  statusCardLive:{borderColor:'#BCC8BF',backgroundColor:'#FBFCFA'},
-  statusCardClosed:{borderColor:'#E1CFCF',backgroundColor:'#FBF7F6'},
+  statusCardLive:{borderColor:palette.positive,backgroundColor:'#EDE8DF'},
+  statusCardClosed:{borderColor:'#D99089',backgroundColor:'#FBE9E7'},
   statusEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700'},
   status:{color:palette.inkStrong,fontSize:13,fontWeight:'800',letterSpacing:.7,marginTop:4},
   statusCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:6},
@@ -343,7 +343,7 @@ const styles=StyleSheet.create({
   flex:{flex:1},
   scopeRow:{flexDirection:'row',flexWrap:'wrap',gap:7},
   scope:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:10,paddingVertical:9,borderRadius:radius.medium,backgroundColor:palette.paper},
-  scopeActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
+  scopeActive:{backgroundColor:palette.accent,borderColor:palette.accent},
   scopeText:{color:palette.muted,fontSize:9,fontWeight:'600'},
   scopeTextActive:{color:palette.paper},
   toggleGroup:{borderWidth:1,borderColor:palette.line,backgroundColor:palette.paper,borderRadius:radius.large,paddingHorizontal:15,marginBottom:20},
@@ -353,12 +353,12 @@ const styles=StyleSheet.create({
   actions:{gap:11,marginTop:6},
   secondary:{borderWidth:1,borderColor:palette.lineStrong,paddingVertical:14,alignItems:'center',borderRadius:radius.medium,backgroundColor:palette.paper},
   secondaryText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},
-  primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:12,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.accent,paddingVertical:14,alignItems:'center',marginTop:12,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700'},
-  danger:{paddingVertical:14,alignItems:'center',borderWidth:1,borderColor:'#D9BCBC',borderRadius:radius.medium,backgroundColor:palette.paper},
+  danger:{paddingVertical:14,alignItems:'center',borderWidth:1,borderColor:'#D99089',borderRadius:radius.medium,backgroundColor:palette.paper},
   dangerText:{color:palette.danger,fontSize:10.5,fontWeight:'700'},
   priceCard:{borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,backgroundColor:palette.paper},
-  featuredCard:{borderColor:'#C9B99D',backgroundColor:'#FCFAF5'},
+  featuredCard:{borderColor:'#C7BDAE',backgroundColor:'#EDE8DF'},
   priceTop:{flexDirection:'row',justifyContent:'space-between',gap:12,alignItems:'flex-start'},
   priceEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'800'},
   priceTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:19,lineHeight:24,fontWeight:'400',marginTop:4},

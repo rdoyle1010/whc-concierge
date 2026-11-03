@@ -47,6 +47,23 @@ module.exports = {
         // page rather than as a material: there is nothing for the eye to
         // place it against. Ivory on this is 11.99:1 and white is 13.28:1.
         charcoal: '#28322b',
+        // Three colours the site already shipped without ever naming them: 16
+        // text-[#7e7a70], 9 border-[#c7bdae] and 16 bg-[#f3fbf5] reached for the
+        // raw value because there was nothing to reach for. Naming them changes
+        // nothing on the page - the hexes are the ones already in use - but it
+        // lets the mobile palette audit check the app against this file rather
+        // than against a list somebody has to remember to update.
+        //
+        // A step below muted, for the faintest detail that still has to be read.
+        faint: '#7e7a70',
+        // The stronger hairline: an edge meant to be seen against the surface
+        // rather than merely to separate it.
+        rule: '#c7bdae',
+        // Confirmation. The profile and CV forms already pair these two as
+        // border-[#166534] on bg-[#f3fbf5]. The green repeats match.perfect.text
+        // deliberately: same value, different job, and a confirmation panel
+        // should not have to borrow a name from the match scale.
+        positive: { DEFAULT: '#166534', wash: '#f3fbf5' },
         success: '#22C55E',
         // No gold, and no brass, which is the same thing wearing a better
         // name. It was declared here and used nowhere for the life of the

@@ -291,7 +291,7 @@ export default function TalentRegisterPage() {
                 </span>
               </label>
 
-              <button type="button" onClick={createAccount} disabled={loading || !agreedTerms} className="w-full bg-[#222321] hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
+              <button type="button" onClick={createAccount} disabled={loading || !agreedTerms} className="w-full bg-accent hover:bg-[#3a4239] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
                 {loading ? 'Creating account...' : 'Create account and build profile'}
               </button>
             </div>
