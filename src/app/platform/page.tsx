@@ -20,6 +20,15 @@ import RoleListingMockup from '@/components/homepage-mockups/RoleListingMockup'
 // promises more than the pages it links to is the fastest way to lose the
 // second meeting.
 
+// WellAssure is Wellness House Collective's spa operations app, called
+// SpaSuite until November 2026. It is a separate product with its own account:
+// it is not in the grid above, because that grid's promise is one account and
+// one shared record, and that is not true of this.
+//
+// Put its address here and the link below appears. While it is empty the band
+// still reads, and nothing on the page points at a page that is not there.
+const WELLASSURE_URL = ''
+
 type Module = {
   name: string
   href: string
@@ -140,6 +149,41 @@ export default function PlatformPage() {
                 <Link href="/contact?type=demo" className="btn-primary mt-auto inline-flex self-start pt-2.5">
                   Book a demo
                 </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* The second product, named as a second product.
+            The honest thing on this page for a buyer is not that Talent House
+            does everything; it is that there are two products and they share
+            content. A brand masterclass a therapist completes in the Academy
+            here is the same brand pack inside the spa's own operations. */}
+        <section className="border-b border-border bg-surface" aria-label="Also from us">
+          <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
+            <div className="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-14">
+              <div>
+                <p className="eyebrow">Also from us</p>
+                <h2 className="mt-2.5 text-[24px] md:text-[28px] text-ink">WellAssure</h2>
+              </div>
+              <div className="lg:border-l lg:border-border lg:pl-14">
+                <p className="max-w-2xl text-[14px] leading-7 text-secondary">
+                  The spa operations app we also build, and a separate product with its own
+                  account. The two meet in the content: a brand masterclass a therapist completes
+                  in the Academy here is the same brand pack inside WellAssure, so the standard
+                  somebody is trained to is the standard their spa runs on.
+                </p>
+                {WELLASSURE_URL ? (
+                  <a
+                    href={WELLASSURE_URL}
+                    target="_blank"
+                    rel="noopener"
+                    className="mt-5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-accent"
+                  >
+                    Visit WellAssure
+                    <ArrowRight size={13} />
+                  </a>
+                ) : null}
               </div>
             </div>
           </div>
