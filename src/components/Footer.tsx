@@ -92,6 +92,9 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
   // crawler finds every page, and an orphan page earns no internal link
   // equity however good the copy on it is.
   const primary = [
+    // The suite page. It is not in the top bar: that nav is capped at eight
+    // deliberately, and this is where the full map lives.
+    { href: '/platform', label: 'The platform' },
     { href: '/jobs', label: content.navigation.jobs },
     { href: '/agency/about', label: content.navigation.agency },
     { href: '/residency', label: content.navigation.residency },

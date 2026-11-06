@@ -19,6 +19,9 @@ const TYPES = [
   { value: 'complaint', label: 'Complaint' },
   { value: 'partnership', label: 'Partnership' },
   { value: 'certification', label: 'Certification help' },
+  // The enterprise lane. /platform links here with ?type=demo so an operator
+  // who has read the product page lands on the right form already chosen.
+  { value: 'demo', label: 'Book a demo' },
 ] as const
 
 export default function ContactPage() {
@@ -34,6 +37,15 @@ export default function ContactPage() {
   }, [])
 
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', type: 'general' })
+
+  // Read from window rather than useSearchParams: this page is prerendered,
+  // and useSearchParams would need a Suspense boundary around it to stay so.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('type')
+    if (wanted && TYPES.some(option => option.value === wanted)) {
+      setForm(current => ({ ...current, type: wanted }))
+    }
+  }, [])
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
