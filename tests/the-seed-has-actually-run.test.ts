@@ -33,13 +33,25 @@ type Row = Record<string, any>
 const REQUIRED: Record<string, string[]> = {
   employer_profiles: ['user_id', 'company_name', 'property_name'],
   candidate_profiles: ['user_id', 'full_name'],
-  job_listings: ['employer_id', 'job_title'],
-  applications: ['candidate_id', 'role_id'],
+  // sector_id is NOT NULL by the phase 0 sector migration, and was the second
+  // constraint this seed hit in production after property_name.
+  job_listings: ['employer_id', 'sector_id', 'job_title'],
+  applications: ['candidate_id', 'role_id', 'job_id'],
 }
 
 /** The smallest thing that answers the slice of the Supabase API the seed uses. */
 function fakeSupabase() {
   const tables = new Map<string, Row[]>()
+  // The taxonomy the seed looks its sector up in. Real slugs, because the seed
+  // files skin roles under beauty and everything else under spa.
+  const seeded = new Map<string, Row[]>([
+    ['sectors', [
+      { id: 'sector-spa', slug: 'spa' },
+      { id: 'sector-beauty', slug: 'beauty' },
+      { id: 'sector-fitness', slug: 'fitness' },
+    ]],
+  ])
+  for (const [name, value] of seeded) tables.set(name, value)
   const users: Row[] = []
   let nextId = 1
   const rows = (table: string) => {
