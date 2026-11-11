@@ -53,7 +53,10 @@ const SEED_RESIDENCIES = [
   },
 ]
 
-export async function GET() {
+// POST, not GET. src/proxy.ts blocks this path outright, so that list is the
+// only thing standing between a browser prefetch and a write. A verb a
+// prefetch will not use means a mistake in one array is not a mass write.
+export async function POST() {
   if (!(await isAdminRequest())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const supabase = createAdminClient()
 

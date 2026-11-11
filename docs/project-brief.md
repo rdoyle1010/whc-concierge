@@ -372,9 +372,18 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-244 API routes, 177 pages, 137 migrations, 189 test files. 1,384 tests and 51
-production-readiness checks, all green as at 28 Oct. Mobile CI is a separate
+242 API routes, 178 pages, 137 migrations, 194 test files. 1,395 tests and 51
+production-readiness checks, all green as at 11 Nov. Mobile CI is a separate
 workflow: routes, palette and types.
+
+Demonstration data for a sales call is a script, not a page:
+`npm run seed:demo` puts in three invented properties, eight roles and six
+people, then scores the applications with the platform's own matcher so the
+numbers on screen are the product's own output. `npm run seed:demo:clear`
+takes it out again. It needs NEXT_PUBLIC_SUPABASE_URL and
+SUPABASE_SERVICE_ROLE_KEY, both of which are in Netlify. The properties are
+invented on purpose: a fabricated vacancy attributed to a real hotel is a job
+somebody could apply for at a company that never advertised it.
 
 Legal entity: Wellness House Collective Limited, company 16720845, ICO
 registration ZC235847 (expires 31 August 2027). Every form a visitor can submit

@@ -115,3 +115,27 @@ function countFiles(dir: string, name: string): number {
   }
   return total
 }
+
+// `next dev` regenerates the HTML-comment marker block at the foot of
+// CLAUDE.md and deletes whatever it finds between the markers. The Shipping
+// instruction and the note about working alongside ChatGPT were written inside
+// that block and were silently wiped the first time a dev server ran here.
+//
+// Worse, the generator locates the opening marker with indexOf and takes the
+// first match, so quoting the marker's full text in prose above the block is
+// enough to make it swallow everything down to the closing marker. Both
+// failure modes are cheap to assert and neither is obvious from reading.
+test('the standing instructions sit above the block Next.js regenerates', () => {
+  const claude = read('CLAUDE.md')
+  const marker = '<!-- BEGIN:nextjs-agent-rules -->'
+
+  const occurrences = claude.split(marker).length - 1
+  assert.equal(occurrences, 1, 'the opening marker is quoted more than once, which makes Next.js eat the text above it')
+
+  const block = claude.indexOf(marker)
+  for (const heading of ['## Shipping', '## Working alongside another assistant']) {
+    const at = claude.indexOf(heading)
+    assert.notEqual(at, -1, `${heading} has gone from CLAUDE.md`)
+    assert.ok(at < block, `${heading} is inside the block Next.js regenerates, so a dev server will delete it`)
+  }
+})

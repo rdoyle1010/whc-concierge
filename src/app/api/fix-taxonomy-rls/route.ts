@@ -22,6 +22,6 @@ export async function GET() {
 
   return NextResponse.json({
     results,
-    note: 'If tables show 0 count, run migration 020 then visit /api/seed-taxonomy. If tables have data but onboarding shows empty, run migration 021 in SQL Editor to fix RLS policies.',
+    note: 'If tables show 0 count, run migration 020 then POST to /api/seed-taxonomy. If tables have data but onboarding shows empty, run migration 021 in SQL Editor to fix RLS policies.',
   })
 }
