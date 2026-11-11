@@ -20,6 +20,23 @@ import { DEMO_CANDIDATES, DEMO_JOBS, DEMO_PROPERTIES } from '../src/lib/demo-dat
 
 type Row = Record<string, any>
 
+// Columns the live database refuses to accept as null.
+//
+// The stub used to accept anything, which is why it passed a seed that never
+// set employer_profiles.property_name. Production rejected all three property
+// inserts - and because the roles hang off the property, that took all eight
+// roles and every application with them. Six people and nothing to apply to.
+//
+// property_name is evidence: it is the exact constraint the live database
+// named. The rest mirror what sanitiseEmployerRegistration and the real
+// registration routes write, so the stub refuses what production would.
+const REQUIRED: Record<string, string[]> = {
+  employer_profiles: ['user_id', 'company_name', 'property_name'],
+  candidate_profiles: ['user_id', 'full_name'],
+  job_listings: ['employer_id', 'job_title'],
+  applications: ['candidate_id', 'role_id'],
+}
+
 /** The smallest thing that answers the slice of the Supabase API the seed uses. */
 function fakeSupabase() {
   const tables = new Map<string, Row[]>()
@@ -57,6 +74,13 @@ function fakeSupabase() {
       delete(options?: { count?: string }) { pending = 'delete'; counting = !!options?.count; return api },
       async maybeSingle() {
         if (pending === 'insert') {
+          const missing = (REQUIRED[table] || []).filter(c => payload![c] === undefined || payload![c] === null)
+          if (missing.length) {
+            return {
+              data: null,
+              error: { message: `null value in column "${missing[0]}" of relation "${table}" violates not-null constraint` },
+            }
+          }
           const row = { id: `${table}-${nextId++}`, ...payload }
           rows(table).push(row)
           return { data: row, error: null }

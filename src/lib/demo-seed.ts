@@ -1,6 +1,7 @@
 import { calculateMatchScore } from '@/lib/matching'
 import {
   DEMO_CANDIDATES, DEMO_EMAIL_DOMAIN, DEMO_JOBS, DEMO_MARKER, DEMO_PROPERTIES, demoEmail,
+  demoPropertyEmail,
 } from '@/lib/demo-data'
 
 // Demonstration data, and why it is a script rather than an endpoint.
@@ -79,6 +80,35 @@ async function insertTolerant(
   return { data: null, dropped, error: 'too many unknown columns' }
 }
 
+/**
+ * A sign-in for a demonstration account, created once and found again after.
+ *
+ * Returns the user id, or null when neither creating nor finding it worked.
+ * Used for both sides: the properties and the professionals.
+ */
+async function ensureDemoUser(
+  supabase: any, email: string, fullName: string, role: 'employer' | 'candidate',
+): Promise<string | null> {
+  let userId: string | null = null
+  const { data: created, error: authError } = await supabase.auth.admin.createUser({
+    email, email_confirm: true,
+    password: crypto.randomUUID() + 'Aa1!',
+    user_metadata: { full_name: fullName, demo: true },
+  })
+  if (created?.user?.id) userId = created.user.id
+  else if (authError && /already|registered|exists/i.test(authError.message)) {
+    const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
+    userId = list?.users?.find((u: any) => u.email === email)?.id || null
+  }
+  if (!userId) return null
+
+  await supabase.from('profiles').upsert(
+    { id: userId, email, role, full_name: fullName },
+    { onConflict: 'id' },
+  )
+  return userId
+}
+
 export async function seedDemoData(supabase: any): Promise<SeedReport> {
   const report: SeedReport = { properties: 0, roles: 0, people: 0, applications: 0, dropped: [], notes: [] }
   const dropped = new Set<string>()
@@ -91,9 +121,31 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       .select('id').eq('company_name', property.company_name).maybeSingle()
     if (existing?.id) { propertyIds.set(property.company_name, existing.id); continue }
 
+    // Each property gets its own sign-in, for two reasons. The first is that
+    // employer_profiles.user_id is how the platform decides who owns a listing,
+    // so a property with no user is a property whose roles nobody can manage.
+    // The second is that a demonstration to a hotel is far better if the
+    // employer side can be shown from the inside - their roles, their
+    // applications, their shortlist - rather than described.
+    const propertyEmail = demoPropertyEmail(property.company_name)
+    const employerUserId = await ensureDemoUser(supabase, propertyEmail, property.company_name, 'employer')
+    if (!employerUserId) {
+      notes.push(`property "${property.company_name}": could not create the sign-in`)
+      continue
+    }
+
     const { data, dropped: lost, error } = await insertTolerant(supabase, 'employer_profiles', {
+      user_id: employerUserId,
       company_name: property.company_name,
+      // Not the same column, and not optional. The live table has
+      // property_name NOT NULL, and the real registration path writes the same
+      // value to both - see sanitiseEmployerRegistration. Seeding only
+      // company_name failed every property insert, and because the roles hang
+      // off the property, it took all eight roles and every application with
+      // it: six people and nothing to apply to.
+      property_name: property.company_name,
       contact_name: 'Spa Director',
+      contact_email: propertyEmail,
       location: property.location,
       postcode: property.postcode,
       latitude: property.latitude,
@@ -160,23 +212,8 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     const email = demoEmail(person)
     const fullName = `${person.first_name} ${person.last_name}`
 
-    let userId: string | null = null
-    const { data: created, error: authError } = await supabase.auth.admin.createUser({
-      email, email_confirm: true,
-      password: crypto.randomUUID() + 'Aa1!',
-      user_metadata: { full_name: fullName, demo: true },
-    })
-    if (created?.user?.id) userId = created.user.id
-    else if (authError && /already|registered|exists/i.test(authError.message)) {
-      const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
-      userId = list?.users?.find((u: any) => u.email === email)?.id || null
-    }
+    const userId = await ensureDemoUser(supabase, email, fullName, 'candidate')
     if (!userId) { notes.push(`person "${fullName}": could not create the sign-in`); continue }
-
-    await supabase.from('profiles').upsert(
-      { id: userId, email, role: 'candidate', full_name: fullName },
-      { onConflict: 'id' },
-    )
 
     const { data: existingProfile } = await supabase.from('candidate_profiles')
       .select('*').eq('user_id', userId).maybeSingle()
