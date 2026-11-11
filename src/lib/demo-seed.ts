@@ -276,6 +276,45 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
   return report
 }
 
+/**
+ * What demonstration data is currently in place.
+ *
+ * Read only. The admin screen needs to say "this is on and visitors can see
+ * it" rather than make somebody guess, because the whole risk of this feature
+ * is leaving it switched on after the call.
+ */
+export async function demoDataStatus(supabase: any): Promise<ClearReport & { live: boolean }> {
+  const { data: employers } = await supabase.from('employer_profiles')
+    .select('id').in('company_name', DEMO_PROPERTIES.map(p => p.company_name))
+  const employerIds = (employers || []).map((e: any) => e.id)
+
+  const { data: jobs } = employerIds.length
+    ? await supabase.from('job_listings').select('id').in('employer_id', employerIds)
+    : { data: [] as any[] }
+
+  const { data: people } = await supabase.from('profiles')
+    .select('id').like('email', `%@${DEMO_EMAIL_DOMAIN}`)
+  const userIds = (people || []).map((p: any) => p.id)
+
+  const { data: profiles } = userIds.length
+    ? await supabase.from('candidate_profiles').select('id').in('user_id', userIds)
+    : { data: [] as any[] }
+  const candidateIds = (profiles || []).map((c: any) => c.id)
+
+  const { data: applications } = candidateIds.length
+    ? await supabase.from('applications').select('id').in('candidate_id', candidateIds)
+    : { data: [] as any[] }
+
+  const counts = {
+    properties: employerIds.length,
+    roles: (jobs || []).length,
+    people: candidateIds.length,
+    signins: userIds.length,
+    applications: (applications || []).length,
+  }
+  return { ...counts, live: Object.values(counts).some(n => n > 0) }
+}
+
 /** Takes all of it out again. Run this after the demonstration. */
 export async function clearDemoData(supabase: any): Promise<ClearReport> {
   const removed: ClearReport = { applications: 0, people: 0, roles: 0, properties: 0, signins: 0 }

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { seedDemoData, clearDemoData } from '../src/lib/demo-seed'
+import { readFileSync } from 'node:fs'
+import { seedDemoData, clearDemoData, demoDataStatus } from '../src/lib/demo-seed'
 import { DEMO_CANDIDATES, DEMO_JOBS, DEMO_PROPERTIES } from '../src/lib/demo-data'
 
 // This logic had never once executed.
@@ -164,4 +165,38 @@ test('the teardown removes what the seed created', async () => {
   assert.deepEqual(supabase.tables.get('candidate_profiles'), [])
   assert.deepEqual(supabase.tables.get('applications'), [])
   assert.deepEqual(supabase.users, [], 'the sign-ins it created are still there')
+})
+
+test('the status reader reports what is in, and nothing when it is out', async () => {
+  const supabase = fakeSupabase()
+
+  const before = await demoDataStatus(supabase)
+  assert.equal(before.live, false)
+  assert.equal(before.roles, 0)
+
+  await seedDemoData(supabase)
+  const during = await demoDataStatus(supabase)
+  assert.equal(during.live, true)
+  assert.equal(during.properties, DEMO_PROPERTIES.length)
+  assert.equal(during.roles, DEMO_JOBS.length)
+  assert.equal(during.people, DEMO_CANDIDATES.length)
+  assert.ok(during.applications > 0)
+
+  await clearDemoData(supabase)
+  const after = await demoDataStatus(supabase)
+  assert.equal(after.live, false, 'the admin screen would still say demonstration data is live')
+})
+
+// The admin screen is the only way this gets used in practice, so the route
+// behind it has to be guarded on every verb and must not write on a read.
+test('the demonstration data endpoint is admin-only and does not write on a GET', () => {
+  const source = readFileSync('src/app/api/admin/demo-data/route.ts', 'utf8')
+
+  for (const verb of ['GET', 'POST', 'DELETE']) {
+    const handler = source.slice(source.indexOf(`export async function ${verb}(`))
+    assert.match(handler.slice(0, 200), /adminRequestUser/, `${verb} is not guarded`)
+  }
+
+  const get = source.slice(source.indexOf('export async function GET('), source.indexOf('export async function POST('))
+  assert.doesNotMatch(get, /seedDemoData|clearDemoData/, 'the GET handler mutates')
 })
