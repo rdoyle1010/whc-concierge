@@ -68,6 +68,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
       })),
     { url: `${BASE}/roles`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    // The page an operator is sent before a conversation, and the one that
+    // says the seven modules are one product. It shipped with a title, a
+    // description and a canonical, and with nothing pointing a crawler at it.
+    { url: `${BASE}/platform`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    // The index above the per-document pages. Every sellable document is
+    // listed individually below; the shelf they sit on was not listed at all.
+    { url: `${BASE}/standards/library`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    // "Verify a certificate" is a thing an employer types into Google while
+    // holding somebody's certificate. The page answers it and was unlisted.
+    { url: `${BASE}/verify`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     // /agency/about, not /agency. The sitemap advertised /agency, which renders
     // a signed-in search tool or a skeleton depending on who is asking, while
     // the real server-rendered marketing page - the one the navigation links to

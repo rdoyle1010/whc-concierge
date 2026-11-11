@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.release.json",
     "test": "tsx --test tests/*.test.ts",
     "readiness": "tsx scripts/readiness-check.ts",
-    "check": "npm run test && npm run readiness && npm run typecheck"
+    "check": "npm run test && npm run readiness && npm run typecheck",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:demo:clear": "tsx scripts/seed-demo.ts --clear"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

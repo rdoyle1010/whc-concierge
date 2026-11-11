@@ -83,9 +83,13 @@ test('the database keeps a star rating tied to real reviews', () => {
 test('nothing fabricated carries a real business name', () => {
   const BRANDS = /\b(Fairmont|Rosewood|Champneys|Ritz[- ]Carlton|Four Seasons|Mandarin Oriental|Soho House|Gleneagles|Chewton Glen|Lanesborough)\b/i
 
-  const seed = readFileSync('src/app/api/seed/route.ts', 'utf8')
-  assert.doesNotMatch(seed, BRANDS, 'demonstration listings must not name a real business')
-  assert.doesNotMatch(seed, /WA16|Knutsford/, 'nor sit at a real property postcode')
+  // The seeding logic moved out of src/app/api/seed/route.ts, which the proxy
+  // blocked and which therefore never ran, into a library the CLI script uses.
+  for (const file of ['src/lib/demo-seed.ts', 'src/lib/demo-data.ts']) {
+    const seed = readFileSync(file, 'utf8')
+    assert.doesNotMatch(seed, BRANDS, `${file} must not name a real business`)
+    assert.doesNotMatch(seed, /WA16|Knutsford/, `${file} must not sit at a real property postcode`)
+  }
 
   // The document library is sold to many properties. One client's name in it
   // is that client's name on somebody else's wall.
