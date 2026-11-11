@@ -1,4 +1,6 @@
 import { calculateMatchScore } from '@/lib/matching'
+import { DEFAULT_COUNTRY } from '@/lib/countries'
+import { DEFAULT_CURRENCY } from '@/lib/money'
 import {
   DEMO_CANDIDATES, DEMO_EMAIL_DOMAIN, DEMO_JOBS, DEMO_MARKER, DEMO_PROPERTIES, demoEmail,
   demoPropertyEmail,
@@ -109,6 +111,16 @@ async function ensureDemoUser(
   return userId
 }
 
+/** "x (3 times)" rather than the same sentence three times. */
+function collapse(notes: string[]): string[] {
+  const seen = new Map<string, number>()
+  for (const note of notes) {
+    const key = note.replace(/^(property|role|person|application) "[^"]*": /, '$1: ')
+    seen.set(key, (seen.get(key) || 0) + 1)
+  }
+  return [...seen].map(([note, count]) => (count > 1 ? `${note} (${count} times)` : note))
+}
+
 export async function seedDemoData(supabase: any): Promise<SeedReport> {
   const report: SeedReport = { properties: 0, roles: 0, people: 0, applications: 0, dropped: [], notes: [] }
   const dropped = new Set<string>()
@@ -206,6 +218,15 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       location_postcode: property.postcode,
       latitude: property.latitude,
       longitude: property.longitude,
+      // Set because the real create route sets them on every single listing,
+      // not because a constraint has complained yet. Two deploys were spent
+      // discovering NOT NULL columns one at a time; the rest of what that
+      // route always writes goes in now rather than next time.
+      country_code: DEFAULT_COUNTRY,
+      salary_currency: DEFAULT_CURRENCY,
+      candidate_scope: 'step_up',
+      location_city: property.location,
+      min_years_experience: 0,
       job_type: job.job_type,
       contract_type: job.contract_type,
       required_role_level: job.required_role_level,
@@ -336,7 +357,10 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
   }
 
   report.dropped = [...dropped]
-  report.notes = notes
+  // Eight roles failing on one missing column printed the same sentence eight
+  // times, which buries the one fact that matters. Identical messages collapse
+  // to a count.
+  report.notes = collapse(notes)
   return report
 }
 

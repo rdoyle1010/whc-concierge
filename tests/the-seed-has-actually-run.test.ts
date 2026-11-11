@@ -236,3 +236,24 @@ test('the demonstration data endpoint is admin-only and does not write on a GET'
   const get = source.slice(source.indexOf('export async function GET('), source.indexOf('export async function POST('))
   assert.doesNotMatch(get, /seedDemoData|clearDemoData/, 'the GET handler mutates')
 })
+
+test('eight roles failing the same way is reported once, not eight times', async () => {
+  const supabase = fakeSupabase()
+  // A database with no sectors: every role fails for the same reason, which is
+  // exactly the case that printed the identical sentence eight times.
+  supabase.tables.set('sectors', [])
+
+  const report = await seedDemoData(supabase)
+  assert.equal(report.roles, 0)
+  assert.equal(report.notes.length, 1, `expected one collapsed note, got:\n${report.notes.join('\n')}`)
+  assert.match(report.notes[0], /8 times/)
+  assert.match(report.notes[0], /sector/i)
+})
+
+test('a role carries the fields the real create route always writes', () => {
+  const source = readFileSync('src/lib/demo-seed.ts', 'utf8')
+  const row = source.slice(source.indexOf('const row = {'), source.indexOf('insertTolerant(supabase, \'job_listings\''))
+  for (const column of ['sector_id', 'country_code', 'salary_currency', 'candidate_scope', 'employer_id']) {
+    assert.match(row, new RegExp(`${column}:`), `job_listings row is missing ${column}`)
+  }
+})
