@@ -162,6 +162,21 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
   }
 
   // ── Roles ───────────────────────────────────────────────────────────────
+  //
+  // job_listings.sector_id is NOT NULL - set that way deliberately in the
+  // phase 0 sector migration - and the id is whatever this database generated
+  // for the sector, so it has to be looked up rather than written down. A
+  // skin role is filed under Beauty and everything else under Spa, which also
+  // means sector filtering has something to filter during a demonstration.
+  const sectors = new Map<string, string>()
+  const { data: sectorRows } = await supabase.from('sectors').select('id, slug')
+  for (const row of sectorRows || []) sectors.set(row.slug, row.id)
+  const sectorFor = (title: string) =>
+    (/skin|facial|aesthetic/i.test(title) ? sectors.get('beauty') : null)
+    || sectors.get('spa')
+    || (sectorRows || [])[0]?.id
+    || null
+
   const jobIds: { id: string; job: any }[] = []
   for (const job of DEMO_JOBS) {
     const employerId = propertyIds.get(job.property)
@@ -176,8 +191,15 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     }
 
     const property = DEMO_PROPERTIES.find(p => p.company_name === job.property)!
+    const sectorId = sectorFor(job.job_title)
+    if (!sectorId) {
+      notes.push(`role "${job.job_title}": no sector exists to file it under - seed the taxonomy first`)
+      continue
+    }
+
     const row = {
       employer_id: employerId,
+      sector_id: sectorId,
       job_title: job.job_title,
       job_description: job.job_description,
       location: property.location,
@@ -294,12 +316,17 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     if (already?.id) continue
 
     const now = new Date().toISOString()
+    // Shaped like the real apply route (src/app/api/applications/draft):
+    // role_id and job_id both carry the listing id, and the letter lives in
+    // cover_letter. The earlier version wrote cover_note and no job_id, which
+    // is a column that does not exist and one that is required.
     const { dropped: lost, error } = await insertTolerant(supabase, 'applications', {
       candidate_id: pair.candidateId,
       role_id: pair.jobId,
+      job_id: pair.jobId,
       status: 'pending',
       match_score: pair.score,
-      cover_note: `Applied through the demonstration data. ${DEMO_MARKER}`,
+      cover_letter: `Applied through the demonstration data. ${DEMO_MARKER}`,
       submitted_at: now,
       updated_at: now,
     })
