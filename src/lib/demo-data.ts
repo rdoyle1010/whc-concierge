@@ -296,3 +296,8 @@ export const DEMO_CANDIDATES: DemoCandidate[] = [
 
 export const demoEmail = (c: DemoCandidate) =>
   `${c.first_name}.${c.last_name}`.toLowerCase().replace(/[^a-z.]/g, '') + '@' + DEMO_EMAIL_DOMAIN
+
+/** The sign-in for a demonstration property, on the same removable domain. */
+export const demoPropertyEmail = (companyName: string) =>
+  companyName.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  + '@' + DEMO_EMAIL_DOMAIN
