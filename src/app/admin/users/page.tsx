@@ -154,8 +154,14 @@ export default function AdminUsersPage() {
     else setEmployers(employers.map(e => e.id === id ? { ...e, approval_status: 'approved' } : e))
     const profile = type === 'candidate' ? candidates.find(c => c.id === id) : employers.find(e => e.id === id)
     if (profile?.user_id) {
+      // The destination was already chosen by type; the wording was not, so an
+      // approved property was being told "Employers can find you in search
+      // results" - the one sentence that cannot be true of a hotel.
       const dashboard = type === 'candidate' ? '/talent/dashboard' : '/employer/dashboard'
-      notify(profile.user_id, 'profile_approved', 'Profile approved', 'Your profile has been approved and is now live. Employers can find you in search results.', dashboard)
+      const [title, message] = type === 'candidate'
+        ? ['Profile approved', 'Your profile has been approved and is now live. Properties can find you in search results.']
+        : ['Property approved', 'Your property has been approved. You can publish roles now, and professionals can see your property page.']
+      notify(profile.user_id, 'profile_approved', title, message, dashboard)
     }
     setSelected(null)
   }
