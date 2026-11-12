@@ -81,6 +81,10 @@ export type DemoJob = {
   required_role_level: string
   salary_min: number
   salary_max: number
+  /** Drawn from the vocabulary the demonstration candidates hold, so the
+   *  matcher has something real to agree and disagree about, and the market
+   *  page's most-demanded-skills panel has something to count. */
+  required_skills: string[]
   required_brands: string[]
   required_qualifications: string[]
   tier: string
@@ -99,6 +103,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'permanent', job_type: 'Full-time',
     required_role_level: 'Senior Therapist',
     salary_min: 29000, salary_max: 34000,
+    required_skills: ['Deep tissue massage', 'Hot stone', 'Aromatherapy'],
     required_brands: ['ESPA'],
     required_qualifications: ['NVQ Level 3 Beauty Therapy'],
     tier: 'Platinum', is_agency_role: false, insurance_required: false,
@@ -110,6 +115,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'permanent', job_type: 'Full-time',
     required_role_level: 'Spa Manager',
     salary_min: 42000, salary_max: 50000,
+    required_skills: ['Team leadership', 'Rota planning', 'Stock control'],
     required_brands: ['ESPA', 'Elemis'],
     required_qualifications: ['NVQ Level 3 Beauty Therapy'],
     tier: 'Platinum', is_agency_role: false, insurance_required: false,
@@ -121,6 +127,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'agency', job_type: 'Part-time',
     required_role_level: 'Therapist',
     salary_min: 130, salary_max: 160,
+    required_skills: ['Swedish massage', 'Aromatherapy'],
     required_brands: ['ESPA'],
     required_qualifications: ['NVQ Level 3 Beauty Therapy'],
     tier: 'Gold', is_agency_role: true, insurance_required: true,
@@ -132,6 +139,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'permanent', job_type: 'Full-time',
     required_role_level: 'Therapist',
     salary_min: 25000, salary_max: 28000,
+    required_skills: ['Swedish massage', 'Aromatherapy', 'Manicure and pedicure'],
     required_brands: ['Comfort Zone'],
     required_qualifications: ['NVQ Level 3 Beauty Therapy'],
     tier: 'Gold', is_agency_role: false, insurance_required: false,
@@ -143,6 +151,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'permanent', job_type: 'Full-time',
     required_role_level: 'Lead Therapist',
     salary_min: 32000, salary_max: 37000,
+    required_skills: ['Team leadership', 'Training delivery', 'Advanced facials'],
     required_brands: ['Comfort Zone', 'Temple Spa'],
     required_qualifications: ['NVQ Level 3 Beauty Therapy', 'CIBTAC'],
     tier: 'Gold', is_agency_role: false, insurance_required: false,
@@ -154,6 +163,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'permanent', job_type: 'Full-time',
     required_role_level: 'Junior',
     salary_min: 23000, salary_max: 25000,
+    required_skills: ['Stock control'],
     required_brands: [],
     required_qualifications: [],
     tier: 'Bronze', is_agency_role: false, insurance_required: false,
@@ -165,6 +175,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'permanent', job_type: 'Full-time',
     required_role_level: 'Senior Therapist',
     salary_min: 34000, salary_max: 40000,
+    required_skills: ['Microneedling', 'Chemical peels', 'LED therapy', 'Advanced facials'],
     required_brands: ['Natura Bissé'],
     required_qualifications: ['NVQ Level 4 Beauty Therapy', 'Level 4 Laser & IPL'],
     tier: 'Platinum', is_agency_role: false, insurance_required: false,
@@ -176,6 +187,7 @@ export const DEMO_JOBS: DemoJob[] = [
     contract_type: 'agency', job_type: 'Part-time',
     required_role_level: 'Therapist',
     salary_min: 140, salary_max: 170,
+    required_skills: ['Deep tissue massage', 'Sports massage', 'Trigger point'],
     required_brands: ['Aromatherapy Associates'],
     required_qualifications: ['NVQ Level 3 Beauty Therapy'],
     tier: 'Gold', is_agency_role: true, insurance_required: true,

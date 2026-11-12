@@ -310,3 +310,26 @@ test('the admin screen offers the rebuild, and says why', () => {
   assert.match(route, /rebuild/)
   assert.match(route, /clearDemoData\(admin\)/)
 })
+
+// The matcher reads job.required_skills (calculateMatchScore), and the market
+// page counts them. The demonstration roles carried brands and qualifications
+// and no skills, so the scores on screen were computed without the dimension
+// the whole demonstration is about, and "most-demanded skills across live
+// roles" read empty while eight roles were live.
+test('a seeded role asks for skills the seeded people actually hold', async () => {
+  const supabase = fakeSupabase()
+  await seedDemoData(supabase)
+
+  const roles = supabase.tables.get('job_listings') || []
+  assert.ok(roles.length > 0)
+  for (const role of roles) {
+    assert.ok(Array.isArray(role.required_skills) && role.required_skills.length > 0,
+      `"${role.job_title}" asks for no skills, so it is scored without them`)
+  }
+
+  // Every skill a role asks for is held by at least one person, or the
+  // demonstration shows a pipeline of people who can never match.
+  const held = new Set(DEMO_CANDIDATES.flatMap(c => c.skills))
+  const orphans = [...new Set(roles.flatMap(r => r.required_skills))].filter(s => !held.has(s))
+  assert.deepEqual(orphans, [], 'roles ask for skills nobody in the demonstration has')
+})
