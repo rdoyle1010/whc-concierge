@@ -1,0 +1,75 @@
+name: Live Site Checks
+
+# The other two workflows prove the code compiles and the unit tests pass.
+# Neither opens a browser, so neither would notice that signing in had stopped
+# working. This one drives the real site.
+#
+# It runs on a schedule rather than only on a pull request, because the way
+# this breaks is rarely a code change: an expired key, a Supabase policy
+# edited in a dashboard, a Netlify setting, a third party going down. None of
+# those arrive as a commit, and all of them take the site out.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Site to check (defaults to production)'
+        required: false
+        default: 'https://talenthousecollective.co.uk'
+  schedule:
+    # 07:12 UTC daily. Not on the hour, because everybody schedules on the
+    # hour and the runners queue.
+    - cron: '12 7 * * *'
+  pull_request:
+    paths:
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: The site works, in a real browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Check the site
+        env:
+          E2E_BASE_URL: ${{ github.event.inputs.base_url || 'https://talenthousecollective.co.uk' }}
+          # The two QA accounts. Absent, the signed-in checks skip themselves
+          # and say so, rather than failing a fork's pull request that cannot
+          # see secrets anyway.
+          E2E_TALENT_EMAIL: ${{ secrets.E2E_TALENT_EMAIL }}
+          E2E_TALENT_PASSWORD: ${{ secrets.E2E_TALENT_PASSWORD }}
+          E2E_EMPLOYER_EMAIL: ${{ secrets.E2E_EMPLOYER_EMAIL }}
+          E2E_EMPLOYER_PASSWORD: ${{ secrets.E2E_EMPLOYER_PASSWORD }}
+        run: npm run e2e
+
+      - name: Keep the evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: what-failed
+          path: e2e-results/
+          retention-days: 14

@@ -11,7 +11,9 @@
     "readiness": "tsx scripts/readiness-check.ts",
     "check": "npm run test && npm run readiness && npm run typecheck",
     "seed:demo": "tsx scripts/seed-demo.ts",
-    "seed:demo:clear": "tsx scripts/seed-demo.ts --clear"
+    "seed:demo:clear": "tsx scripts/seed-demo.ts --clear",
+    "e2e": "playwright test",
+    "e2e:phone": "playwright test --project=phone"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",
@@ -34,6 +36,7 @@
   "devDependencies": {
     "@netlify/functions": "^6.0.0",
     "@netlify/plugin-nextjs": "5.15.13",
+    "@playwright/test": "^1.56.1",
     "@types/node": "^22.7.4",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
