@@ -232,6 +232,12 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       required_role_level: job.required_role_level,
       salary_min: job.salary_min,
       salary_max: job.salary_max,
+      // The matcher reads required_skills (see calculateMatchScore), and the
+      // market page counts them. Leaving it unset meant the demonstration's
+      // scores were computed without the dimension the demonstration is
+      // mostly about, and the most-demanded-skills panel read empty while
+      // eight roles were live.
+      required_skills: job.required_skills,
       required_brands: job.required_brands,
       required_qualifications: job.required_qualifications,
       tier: job.tier,
