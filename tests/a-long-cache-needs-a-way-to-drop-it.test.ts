@@ -207,3 +207,69 @@ test('every way of taking a role down drops the cache', () => {
   assert.match(screen, /\/api\/employer\/jobs\/status/,
     'the employer jobs screen must take roles down through the route that drops the cache')
 })
+
+test('switching the demonstration data on or off changes the public site at once', () => {
+  // Found by clicking a link on the live site.
+  //
+  // Every link on /properties led to "Property not found". The rows had been
+  // removed and reloaded minutes earlier, so they had new ids - but the cached
+  // list still carried the old ones, and nothing had dropped it. A visitor
+  // browsing properties during a demonstration got three dead ends.
+  //
+  // The tests above could not catch this. 'every tag something caches under is
+  // dropped somewhere' searches the whole of src, and other routes do drop
+  // 'public-properties', so the tag looked covered while the one route that
+  // deletes every property in a single press did not drop anything at all.
+  //
+  // Both directions matter and neither is cosmetic. Seeding without dropping
+  // means showing a hotel an empty jobs board for up to an hour after loading
+  // the data to fill it. Clearing without dropping leaves links to deleted rows
+  // on a live public page.
+  const route = body('src/app/api/admin/demo-data/route.ts')
+
+  for (const tag of ['properties', 'jobs', 'proof'] as const) {
+    assert.match(route, new RegExp(`PUBLIC_CACHE_TAGS\\.${tag}`),
+      `the demonstration data writes ${tag} and must drop that cache`)
+  }
+
+  // Per handler, not per file. A single drop in POST would satisfy a
+  // whole-file check and leave removal serving dead links, which is the half
+  // that actually bit.
+  for (const handler of ['POST', 'DELETE'] as const) {
+    const start = route.indexOf(`export async function ${handler}`)
+    assert.ok(start > 0, `the demonstration data route should still export ${handler}`)
+    const after = route.slice(start)
+    const next = after.slice(1).search(/\nexport async function /)
+    const scope = next === -1 ? after : after.slice(0, next + 1)
+    assert.match(scope, /revalidatePublic\(/,
+      `${handler} changes what the public site shows and must drop the cache before it answers`)
+  }
+})
+
+test('a page for something that is gone answers gone', () => {
+  // The property page was the only detail page in the app that answered a
+  // missing row with HTTP 200 and a body reading "Property not found". Nine
+  // others call notFound() and return a real 404.
+  //
+  // That is not a tidiness point. A 200 gets indexed, so a property that
+  // closes its account leaves a live search result saying it does not exist.
+  // And nothing automated can tell a dead page from a working one - a
+  // status-code check passes on both, which is exactly why a public list full
+  // of links to deleted rows went unnoticed until somebody clicked one.
+  const DETAIL_PAGES = [
+    'src/app/properties/[id]/page.tsx',
+    'src/app/jobs/[id]/page.tsx',
+    'src/app/blog/[slug]/page.tsx',
+    'src/app/brands/[slug]/page.tsx',
+    'src/app/academy/[slug]/page.tsx',
+    'src/app/events/[slug]/page.tsx',
+  ]
+  for (const page of DETAIL_PAGES) {
+    if (!existsSync(join(process.cwd(), page))) continue
+    const source = body(page)
+    assert.match(source, /notFound\(\)/,
+      `${page} must answer a missing row with notFound(), not a 200 that says "not found"`)
+    assert.doesNotMatch(source, /if \(!data\) \{?\s*return </,
+      `${page} returns a page body for a missing row, which is an HTTP 200 for something that does not exist`)
+  }
+})

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { clearDemoData, demoDataStatus, seedDemoData } from '@/lib/demo-seed'
+import { PUBLIC_CACHE_TAGS, revalidatePublic } from '@/lib/public-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,25 @@ export const dynamic = 'force-dynamic'
 // untouched.
 //
 // GET reads. POST seeds. DELETE removes. Nothing writes on a read.
+//
+// Both writes drop the public caches, which is not an optimisation - it is the
+// difference between this feature working and this feature handing somebody a
+// 404 during a demonstration.
+//
+// The public pages cache for an hour and bust on edit, which is right. Every
+// admin route that publishes something calls revalidatePublic(); this one
+// never did, and it is the route that creates and deletes the most public rows
+// of any of them. So: load the data and the jobs board kept showing an empty
+// board for up to an hour. Worse, remove and reload, and the cached
+// /properties list kept serving links to the rows that had just been deleted -
+// a visitor clicking a property on the live site got "Property not found".
+// That is how this was found: a link read off the live list a moment earlier
+// resolved to nothing.
+//
+// Three tags, because the seed touches all three: properties, the roles they
+// advertise, and the counts the homepage prints as proof.
+
+const DEMO_TAGS = [PUBLIC_CACHE_TAGS.properties, PUBLIC_CACHE_TAGS.jobs, PUBLIC_CACHE_TAGS.proof] as const
 
 export async function GET() {
   if (!(await adminRequestUser())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -48,6 +68,7 @@ export async function POST(req: Request) {
     const admin = createAdminClient()
     const removed = rebuild ? await clearDemoData(admin) : null
     const report = await seedDemoData(admin)
+    revalidatePublic(...DEMO_TAGS)
     return NextResponse.json({ success: true, rebuilt: rebuild, removed, ...report })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Seed failed' }, { status: 500 })
@@ -57,7 +78,9 @@ export async function POST(req: Request) {
 export async function DELETE() {
   if (!(await adminRequestUser())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   try {
-    return NextResponse.json({ success: true, removed: await clearDemoData(createAdminClient()) })
+    const removed = await clearDemoData(createAdminClient())
+    revalidatePublic(...DEMO_TAGS)
+    return NextResponse.json({ success: true, removed })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Teardown failed' }, { status: 500 })
   }
