@@ -235,7 +235,18 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       required_brands: job.required_brands,
       required_qualifications: job.required_qualifications,
       tier: job.tier,
+      // A published role is not just is_live. The route that actually
+      // publishes one - mobile/employer/jobs/manage - writes is_live, status,
+      // posted_date and expires_at together, and pages filter on more than the
+      // boolean: /intelligence wants status 'active', and the talent brief
+      // wants an expires_at in the future. Seeding is_live alone produced
+      // eight roles that showed on the jobs board and were invisible to the
+      // market data page, which is the page that claims to be drawn from live
+      // platform data.
       is_live: true,
+      status: 'active',
+      posted_date: new Date().toISOString(),
+      expires_at: new Date(Date.now() + (job.tier === 'Platinum' ? 60 : 30) * 86_400_000).toISOString(),
       is_agency_role: job.is_agency_role,
       insurance_required: job.insurance_required,
     }

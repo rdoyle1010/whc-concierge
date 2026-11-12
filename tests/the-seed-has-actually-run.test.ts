@@ -257,3 +257,16 @@ test('a role carries the fields the real create route always writes', () => {
     assert.match(row, new RegExp(`${column}:`), `job_listings row is missing ${column}`)
   }
 })
+
+// A role that is is_live but not status 'active' shows on the jobs board and
+// is invisible to /intelligence, which filters on both - so the page that
+// claims to be drawn from live platform data read zero while eight roles were
+// live. The route that really publishes a role writes all four together.
+test('a seeded role is published the way a paid one is', () => {
+  const source = readFileSync('src/lib/demo-seed.ts', 'utf8')
+  const row = source.slice(source.indexOf('const row = {'), source.indexOf('insertTolerant(supabase, \'job_listings\''))
+  for (const column of ['is_live', 'status', 'posted_date', 'expires_at']) {
+    assert.match(row, new RegExp(`${column}:`), `a seeded role is missing ${column}, so some surface will not see it`)
+  }
+  assert.match(row, /status: 'active'/)
+})
