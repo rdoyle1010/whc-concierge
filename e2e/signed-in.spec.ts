@@ -1,57 +1,31 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { existsSync } from 'node:fs'
+import { TALENT_STATE, EMPLOYER_STATE, account, MISSING } from './accounts'
 
 // The half a hotel actually buys, and the half nothing watched.
 //
-// These need two permanent QA accounts. Without the credentials they skip with
-// a message saying exactly what is missing, rather than failing - a suite that
-// goes red on every machine that has no business holding a password is a suite
-// people start ignoring, and an ignored suite is worse than none.
+// Every test here reuses a session signed in once by auth.setup.ts. Signing in
+// per test tripped the platform's own rate limiter - "Too many sign-in
+// attempts" - and failed eight checks for a reason that had nothing to do with
+// what they were checking. The limiter was right; the suite was wrong.
 //
-// Nothing here writes. See e2e/README.md: these run against production, so
-// they look and never touch. Submitting an application or posting a role on a
-// live site leaves litter in front of real customers.
+// Nothing here writes. These run against production, so they look and never
+// touch: no role posted, no application submitted, no payment started.
 
-type Account = { email: string; password: string }
-
-function account(role: 'TALENT' | 'EMPLOYER'): Account | null {
-  const email = process.env[`E2E_${role}_EMAIL`]
-  const password = process.env[`E2E_${role}_PASSWORD`]
-  return email && password ? { email, password } : null
-}
-
-const MISSING = (role: string) =>
-  `No ${role} QA account configured. Set E2E_${role.toUpperCase()}_EMAIL and ` +
-  `E2E_${role.toUpperCase()}_PASSWORD to check the signed-in journeys.`
-
-/**
- * Signs in and waits to be somewhere that is not the login page.
- *
- * Deliberately tolerant about which dashboard it lands on: the redirect is
- * decided by the role on the profile, and asserting the destination here would
- * make this helper fail for a reason that has nothing to do with signing in.
- */
-async function signIn(page: Page, who: Account) {
-  await page.goto('/login')
-  await page.locator('input[type="email"]').first().fill(who.email)
-  await page.locator('input[type="password"]').first().fill(who.password)
-  await Promise.all([
-    page.waitForURL(url => !url.pathname.startsWith('/login'), { timeout: 30_000 }),
-    page.locator('button[type="submit"]').first().click(),
-  ])
-}
+const hasTalent = !!account('TALENT')
+const hasEmployer = !!account('EMPLOYER')
 
 test.describe('a professional', () => {
-  const who = account('TALENT')
-  test.skip(!who, MISSING('talent'))
+  test.skip(!hasTalent, MISSING('talent'))
+  test.use({ storageState: existsSync(TALENT_STATE) ? TALENT_STATE : undefined })
 
-  test('can sign in and reach their dashboard', async ({ page }) => {
-    await signIn(page, who!)
+  test('is signed in and lands on their own dashboard', async ({ page }) => {
+    await page.goto('/talent/dashboard')
     await expect(page).toHaveURL(/\/talent\//)
     await expect(page.locator('h1, [class*="dashboard-title"]').first()).toBeVisible()
   })
 
   test('is not shown an error where their roles should be', async ({ page }) => {
-    await signIn(page, who!)
     await page.goto('/talent/jobs')
     await page.waitForTimeout(2500)
     const text = await page.locator('body').innerText()
@@ -61,41 +35,42 @@ test.describe('a professional', () => {
   })
 
   test('can open saved roles without hitting a dead end', async ({ page }) => {
-    await signIn(page, who!)
     const res = await page.goto('/talent/saved')
     expect(res?.status()).toBeLessThan(400)
     const text = await page.locator('body').innerText()
     expect(text).not.toMatch(/404|not found/i)
   })
 
-  test('can reach their own profile', async ({ page }) => {
-    await signIn(page, who!)
+  test('can reach their own profile and edit it', async ({ page }) => {
     const res = await page.goto('/talent/profile')
     expect(res?.status()).toBeLessThan(400)
-    await expect(page.locator('input, textarea, select').first()).toBeVisible()
+    // A visible field, not simply the first input in the DOM: that one is the
+    // hidden file picker behind the photograph upload.
+    await expect(
+      page.locator('input:visible, textarea:visible, select:visible').first(),
+      'the profile page has no editable field on it',
+    ).toBeVisible()
   })
 })
 
 test.describe('a property', () => {
-  const who = account('EMPLOYER')
-  test.skip(!who, MISSING('employer'))
+  test.skip(!hasEmployer, MISSING('employer'))
+  test.use({ storageState: existsSync(EMPLOYER_STATE) ? EMPLOYER_STATE : undefined })
 
-  test('can sign in and reach their dashboard', async ({ page }) => {
-    await signIn(page, who!)
+  test('is signed in and lands on their own dashboard', async ({ page }) => {
+    await page.goto('/employer/dashboard')
     await expect(page).toHaveURL(/\/employer\//)
     await expect(page.locator('h1, [class*="dashboard-title"]').first()).toBeVisible()
   })
 
   test('can open the page where a role is posted', async ({ page }) => {
-    await signIn(page, who!)
     const res = await page.goto('/employer/post-role')
     expect(res?.status()).toBeLessThan(400)
     // The form itself, not just the shell. Nothing is submitted.
-    await expect(page.locator('input, textarea, select').first()).toBeVisible()
+    await expect(page.locator('input:visible, textarea:visible, select:visible').first()).toBeVisible()
   })
 
   test('can see their listings and applications without an error', async ({ page }) => {
-    await signIn(page, who!)
     for (const path of ['/employer/jobs', '/employer/applications']) {
       await page.goto(path)
       await page.waitForTimeout(2200)
@@ -107,28 +82,31 @@ test.describe('a property', () => {
   })
 })
 
+// These sign in on purpose, so they stay few and deliberate.
 test.describe('the front door', () => {
   test('refuses a password that is wrong, and says so', async ({ page }) => {
     await page.goto('/login')
-    await page.locator('input[type="email"]').first().fill('nobody@demo.talenthousecollective.co.uk')
+    await page.waitForTimeout(1000)
+    await page.getByRole('button', { name: /accept/i }).click({ timeout: 4000 }).catch(() => {})
+    await page.locator('input[type="email"]').first().fill('nobody@qa.talenthousecollective.co.uk')
     await page.locator('input[type="password"]').first().fill('definitely-not-the-password')
     await page.locator('button[type="submit"]').first().click()
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(4000)
 
     // Still outside, and told why. Silence here is the bug that makes people
-    // think the site is broken when in fact they mistyped.
+    // believe the site is broken when in fact they mistyped. A rate-limit
+    // message is also a refusal with a reason, so it counts.
     await expect(page).toHaveURL(/\/login/)
     const text = await page.locator('body').innerText()
     expect(text, 'a failed sign-in said nothing at all').toMatch(
-      /invalid|incorrect|not match|try again|check your|wrong/i,
+      /invalid|incorrect|not match|try again|check your|wrong|too many/i,
     )
   })
 
   test('keeps a stranger out of the dashboards', async ({ page }) => {
-    // Admin has its own door at /admin-sign-in rather than sharing /login,
-    // so the administrator entrance is not advertised to everybody who finds
-    // the sign-in page. Any of them is a correct answer here; landing on the
-    // dashboard itself is not.
+    // Admin has its own door at /admin-sign-in rather than sharing /login, so
+    // the administrator entrance is not advertised to everybody who finds the
+    // sign-in page.
     for (const path of ['/talent/dashboard', '/employer/dashboard', '/admin/dashboard']) {
       await page.goto(path)
       await page.waitForTimeout(1200)

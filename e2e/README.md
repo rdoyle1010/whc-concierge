@@ -50,3 +50,26 @@ The report names the journey in the words of the person doing it - "a
 professional can sign in and reach their dashboard" - so a failure says which
 part of the product stopped working rather than which selector moved.
 Screenshots and traces for failures land in `e2e-results/`.
+
+## The sign-in rate limit
+
+`src/app/api/auth/login` allows **20 attempts per address and 10 per account in
+any 15 minutes**, and both are deliberate: Supabase's own per-IP throttle sees
+the Netlify function's address rather than the caller's, so without these there
+is no brake anywhere in the path on guessing passwords against the whole user
+base.
+
+That shapes this suite. An earlier version signed in inside every test - seven
+sign-ins in ninety seconds plus a retry - and tripped it, failing eight checks
+for a reason unrelated to any of them. Signing in twice per run and reusing the
+session sits comfortably inside the limit.
+
+Two rules follow, both enforced in the config:
+
+- the setup project **never retries**, because retrying into a 429 extends the
+  window rather than clearing it
+- a throttled sign-in fails with a message that says so, because being
+  throttled and having the wrong password look identical from the outside and
+  guessing wrong sends somebody to reset a password that was fine
+
+If you do trip it: wait fifteen minutes. Nothing else clears it.
