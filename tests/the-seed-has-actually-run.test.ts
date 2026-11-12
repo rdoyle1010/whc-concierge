@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { seedDemoData, clearDemoData, demoDataStatus } from '../src/lib/demo-seed'
+import { seedDemoData, clearDemoData, demoDataStatus, orderForCoverage } from '../src/lib/demo-seed'
 import { DEMO_CANDIDATES, DEMO_JOBS, DEMO_PROPERTIES } from '../src/lib/demo-data'
 
 // This logic had never once executed.
@@ -369,12 +369,12 @@ test('the admin screen shows the sign-in and says it is not stored', () => {
 // them their own candidates, and signing in as a hotel and showing them an
 // empty page.
 //
-// Honest about what this test is worth: with the stub's data the old
-// globally-best ordering happens to cover all three properties anyway, so
-// reverting the fix does NOT fail this. It guards the invariant rather than
-// catching that regression, because reproducing the clustering needs scores
-// the real matcher only produced against the live rows. Treat it as a
-// statement of what must stay true, not as proof the fix works.
+// The first attempt at this reserved a property but not a person. One
+// candidate can be the strongest match at every property; picking that pair
+// once per property then lost all but one of them to the
+// one-application-per-person rule, and the properties it was meant to cover
+// stayed empty - which is what Fennwood Hall was still showing after the
+// supposed fix had shipped.
 test('every property has a pipeline to show, not just the best-scoring one', async () => {
   const supabase = fakeSupabase()
   await seedDemoData(supabase)
@@ -390,4 +390,56 @@ test('every property has a pipeline to show, not just the best-scoring one', asy
   const empty = [...allProperties].filter(e => !withApplications.has(e))
   assert.deepEqual(empty, [],
     `${empty.length} of ${allProperties.size} properties would show "No applications received yet"`)
+})
+
+// The case the whole-seed test cannot reach: the stub's scores spread across
+// properties by luck, so neither version of the bug fails it. Against the live
+// rows the real matcher clustered, and the ordering is where that is decided -
+// so the ordering is tested on its own, with the clustering constructed.
+//
+// The cap matters as much as the ordering. Applications stop at five, and it
+// is the cap running out before a property is reached that leaves it showing
+// "No applications received yet". A simulation without the cap passes either
+// way, which is how two earlier versions of this test proved nothing.
+function walk(ordered: ReturnType<typeof orderForCoverage>, cap: number) {
+  const taken: typeof ordered = []
+  const used = new Set<string>()
+  for (const pair of ordered) {
+    if (used.has(pair.candidateId)) continue
+    if (taken.length >= cap) break
+    used.add(pair.candidateId)
+    taken.push(pair)
+  }
+  return new Set(taken.map(t => t.employerId))
+}
+
+test('the cap does not run out before every property has a pipeline', () => {
+  // Alice is the strongest match at all three, and the next best matches
+  // cluster on Calder. Reserve only the property and Alice is picked three
+  // times; two are then dropped for being the same person, the cap fills with
+  // Calder's runners-up, and Fennwood opens empty.
+  const pairs = [
+    { candidateId: 'alice', jobId: 'j1', employerId: 'calder', score: 95 },
+    { candidateId: 'alice', jobId: 'j2', employerId: 'harbourstone', score: 90 },
+    { candidateId: 'alice', jobId: 'j3', employerId: 'fennwood', score: 85 },
+    { candidateId: 'bob', jobId: 'j4', employerId: 'calder', score: 80 },
+    { candidateId: 'cara', jobId: 'j2', employerId: 'harbourstone', score: 75 },
+    { candidateId: 'dave', jobId: 'j3', employerId: 'fennwood', score: 20 },
+  ]
+
+  const covered = walk(orderForCoverage(pairs), 3)
+  assert.deepEqual([...covered].sort(), ['calder', 'fennwood', 'harbourstone'],
+    'a property would open to "No applications received yet"')
+})
+
+test('coverage never loses a pair, and keeps the best one first', () => {
+  const pairs = [
+    { candidateId: 'a', jobId: 'j1', employerId: 'x', score: 90 },
+    { candidateId: 'b', jobId: 'j2', employerId: 'x', score: 80 },
+    { candidateId: 'c', jobId: 'j3', employerId: 'y', score: 70 },
+  ]
+  const ordered = orderForCoverage(pairs)
+  assert.equal(ordered.length, pairs.length, 'a pair was dropped or duplicated')
+  assert.deepEqual(new Set(ordered), new Set(pairs))
+  assert.equal(ordered[0].score, 90, 'the strongest match is no longer shown first')
 })

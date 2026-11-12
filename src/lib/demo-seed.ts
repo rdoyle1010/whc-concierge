@@ -123,6 +123,36 @@ function collapse(notes: string[]): string[] {
   return [...seen].map(([note, count]) => (count > 1 ? `${note} (${count} times)` : note))
 }
 
+export type MatchPair = { candidateId: string; jobId: string; employerId: string; score: number }
+
+/**
+ * Orders scored pairs so every property gets a pipeline before any property
+ * gets a second one.
+ *
+ * Reserves a person as well as a property. One candidate can be the strongest
+ * match at every property; reserving only the property picked that same pair
+ * once per property, and all but one were then dropped by the
+ * one-application-per-person rule downstream - leaving the properties it was
+ * meant to cover showing "No applications received yet", which is exactly
+ * what Fennwood Hall did after the first attempt at this shipped.
+ *
+ * Expects `pairs` sorted by score, highest first.
+ */
+export function orderForCoverage(pairs: MatchPair[]): MatchPair[] {
+  const first: MatchPair[] = []
+  const coveredProperties = new Set<string>()
+  const reservedCandidates = new Set<string>()
+  for (const pair of pairs) {
+    if (!pair.employerId) continue
+    if (coveredProperties.has(pair.employerId) || reservedCandidates.has(pair.candidateId)) continue
+    coveredProperties.add(pair.employerId)
+    reservedCandidates.add(pair.candidateId)
+    first.push(pair)
+  }
+  const taken = new Set(first)
+  return [...first, ...pairs.filter(p => !taken.has(p))]
+}
+
 export async function seedDemoData(supabase: any): Promise<SeedReport> {
   // One password for this run, shown once on the admin screen and never
   // stored. Without it the demonstration was only half reachable: three
@@ -332,8 +362,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
   // applications. The score stored is whatever calculateMatchScore returns, so
   // the number on the screen during a demonstration is the number the product
   // would have produced on its own.
-  type Pair = { candidateId: string; jobId: string; employerId: string; score: number }
-  const pairs: Pair[] = []
+  const pairs: MatchPair[] = []
   for (const candidate of candidates) {
     for (const job of jobIds) {
       try {
@@ -359,14 +388,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
   // between signing in as a hotel and showing them their own candidates, and
   // signing in as a hotel and showing them an empty page - and which property
   // you happen to open is not something to leave to the scoring.
-  const byProperty: Pair[] = []
-  const covered = new Set<string>()
-  for (const pair of pairs) {
-    if (!pair.employerId || covered.has(pair.employerId)) continue
-    covered.add(pair.employerId)
-    byProperty.push(pair)
-  }
-  const ordered = [...byProperty, ...pairs.filter(p => !byProperty.includes(p))]
+  const ordered = orderForCoverage(pairs)
 
   // Applications already in place count towards both the cap and the
   // one-each rule. Without this, a second run tops up whoever missed out the
