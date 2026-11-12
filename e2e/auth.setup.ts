@@ -33,10 +33,27 @@ async function signInAndSave(page: Page, who: { email: string; password: string 
 
   await page.locator('input[type="email"]').first().fill(who.email)
   await page.locator('input[type="password"]').first().fill(who.password)
-  await Promise.all([
-    page.waitForURL(url => !url.pathname.startsWith('/login'), { timeout: 30_000 }),
-    page.locator('button[type="submit"]').first().click(),
-  ])
+  await page.locator('button[type="submit"]').first().click()
+
+  await page.waitForURL(url => !url.pathname.startsWith('/login'), { timeout: 30_000 })
+    .catch(async () => {
+      // Say which of the two it is. Being throttled and having the wrong
+      // password look identical from here - both leave you on /login - and
+      // guessing wrong sends somebody to reset a password that was fine.
+      //
+      // The limits are in src/app/api/auth/login: 20 per address and 10 per
+      // account, both over 15 minutes. Retrying into a 429 only pushes the
+      // window further out, so this stops rather than tries again.
+      const text = await page.locator('body').innerText()
+      if (/too many sign-in attempts/i.test(text)) {
+        throw new Error(
+          `Rate limited signing in as ${side}. The platform allows 20 attempts per address and `
+          + '10 per account in any 15 minutes. Wait 15 minutes and run again - retrying now only '
+          + 'extends the window.',
+        )
+      }
+      throw new Error(`Could not sign in as ${side}. The page said: ${text.slice(0, 200)}`)
+    })
 
   // Fail loudly here rather than leave every dependent test to fail
   // mysteriously on a page it did not expect.

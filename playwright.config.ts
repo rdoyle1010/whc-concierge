@@ -43,7 +43,14 @@ export default defineConfig({
   projects: [
     // Signs in once per role and saves the session. Everything else reuses it,
     // which is what keeps the suite under the platform's own rate limit.
-    { name: 'setup', testMatch: /auth\.setup\.ts/, use: { ...devices['Desktop Chrome'] } },
+    // Never retried. A failed sign-in is usually the platform throttling us,
+    // and retrying into a 429 only pushes the window further out.
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      retries: 0,
+      use: { ...devices['Desktop Chrome'] },
+    },
     // The phone checks are about things that only exist at phone width - the
     // menu button is hidden above lg - so desktop must not run them, or it
     // fails for the correct behaviour.
