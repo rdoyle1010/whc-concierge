@@ -270,3 +270,43 @@ test('a seeded role is published the way a paid one is', () => {
   }
   assert.match(row, /status: 'active'/)
 })
+
+// Topping up cannot repair what is already there.
+//
+// The seed skips a role that already exists, matched on property and job
+// title. That is right for running it twice and useless after the seed itself
+// has been fixed: roles written by the older code kept their old shape, the
+// button said "Top it up", and pressing it changed nothing while looking like
+// it had worked. Exactly how eight roles stayed invisible to /intelligence
+// after the fix had shipped.
+test('demonstration data can be rebuilt, not only added to', async () => {
+  const supabase = fakeSupabase()
+  await seedDemoData(supabase)
+
+  const stale = (supabase.tables.get('job_listings') || [])[0]
+  assert.ok(stale, 'nothing was seeded to rebuild')
+  delete stale.status                      // as an older seed left it
+  const staleId = stale.id
+
+  // A rebuild is a clear followed by a seed, which is what the route does.
+  await clearDemoData(supabase)
+  await seedDemoData(supabase)
+
+  const roles = supabase.tables.get('job_listings') || []
+  assert.ok(roles.length > 0, 'the rebuild put nothing back')
+  assert.ok(!roles.some(r => r.id === staleId), 'the rebuild kept the old row')
+  for (const role of roles) {
+    assert.equal(role.status, 'active', 'a rebuilt role is still not published properly')
+  }
+})
+
+test('the admin screen offers the rebuild, and says why', () => {
+  const page = readFileSync('src/app/admin/demo-data/page.tsx', 'utf8')
+  assert.match(page, /Remove and reload/)
+  assert.match(page, /skips rows\s*\n?\s*that already exist|skips rows that already exist/)
+  assert.doesNotMatch(page, /'Top it up'/, 'the button that cannot repair anything is still offered')
+
+  const route = readFileSync('src/app/api/admin/demo-data/route.ts', 'utf8')
+  assert.match(route, /rebuild/)
+  assert.match(route, /clearDemoData\(admin\)/)
+})

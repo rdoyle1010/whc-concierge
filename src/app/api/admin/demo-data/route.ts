@@ -29,11 +29,26 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   if (!(await adminRequestUser())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Rebuild, because topping up cannot repair what is already there.
+  //
+  // The seed skips any role that already exists, matched on property and job
+  // title - which is right for running it twice, and useless after the seed
+  // itself has been fixed. Roles written by the older code kept their old
+  // shape and the button said "Top it up", so pressing it changed nothing and
+  // looked like it had worked. Removing and reloading is the thing somebody
+  // actually wants after a fix, and it should not be two steps they have to
+  // know to take in order.
+  const body = await req.json().catch(() => ({}))
+  const rebuild = body?.rebuild === true
+
   try {
-    const report = await seedDemoData(createAdminClient())
-    return NextResponse.json({ success: true, ...report })
+    const admin = createAdminClient()
+    const removed = rebuild ? await clearDemoData(admin) : null
+    const report = await seedDemoData(admin)
+    return NextResponse.json({ success: true, rebuilt: rebuild, removed, ...report })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Seed failed' }, { status: 500 })
   }

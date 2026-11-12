@@ -39,7 +39,7 @@ const EMPTY: Status = { live: false, properties: 0, roles: 0, people: 0, signins
 export default function DemoDataPage() {
   const [status, setStatus] = useState<Status>(EMPTY)
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState<'seed' | 'clear' | null>(null)
+  const [busy, setBusy] = useState<'seed' | 'clear' | 'rebuild' | null>(null)
   const [report, setReport] = useState<Report | null>(null)
   const [error, setError] = useState('')
   const [confirmClear, setConfirmClear] = useState(false)
@@ -59,15 +59,19 @@ export default function DemoDataPage() {
 
   useEffect(() => { refresh() }, [refresh])
 
-  async function run(action: 'seed' | 'clear') {
+  async function run(action: 'seed' | 'clear' | 'rebuild') {
     setBusy(action)
     setError('')
     setReport(null)
     try {
-      const res = await fetch('/api/admin/demo-data', { method: action === 'seed' ? 'POST' : 'DELETE' })
+      const res = await fetch('/api/admin/demo-data', {
+        method: action === 'clear' ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: action === 'clear' ? undefined : JSON.stringify({ rebuild: action === 'rebuild' }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'That did not work')
-      if (action === 'seed') setReport(data)
+      if (action !== 'clear') setReport(data)
       setConfirmClear(false)
       await refresh()
     } catch (e: any) {
@@ -123,15 +127,26 @@ export default function DemoDataPage() {
           <p className="mt-4 border border-[#d99089] bg-[#fbe9e7] px-4 py-3 text-[12.5px] text-[#8a1c14]">{error}</p>
         )}
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        {status.live && (
+          <p className="mt-6 text-[12.5px] leading-6 text-secondary">
+            <strong className="font-semibold text-ink">Remove and reload</strong> takes everything
+            out and puts it back. Use it after any change to the seed: adding on top skips rows
+            that already exist, so roles written by an older version keep their old shape and
+            nothing appears to happen.
+          </p>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => run('seed')}
+            onClick={() => run(status.live ? 'rebuild' : 'seed')}
             disabled={!!busy || loading}
             className="btn-primary inline-flex items-center gap-2 disabled:opacity-50"
           >
-            {busy === 'seed' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-            {busy === 'seed' ? 'Putting it in...' : status.live ? 'Top it up' : 'Load demonstration data'}
+            {busy && busy !== 'clear' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            {busy === 'rebuild' ? 'Rebuilding...'
+              : busy === 'seed' ? 'Putting it in...'
+              : status.live ? 'Remove and reload' : 'Load demonstration data'}
           </button>
 
           {status.live && (
