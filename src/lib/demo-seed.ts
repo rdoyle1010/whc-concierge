@@ -48,6 +48,8 @@ export type SeedReport = {
   applications: number
   dropped: string[]
   notes: string[]
+  /** How to sign in as the demonstration accounts, for the length of a call. */
+  signIn: { password: string; properties: string[]; people: string[] }
 }
 
 export type ClearReport = {
@@ -89,12 +91,12 @@ async function insertTolerant(
  * Used for both sides: the properties and the professionals.
  */
 async function ensureDemoUser(
-  supabase: any, email: string, fullName: string, role: 'employer' | 'candidate',
+  supabase: any, email: string, fullName: string, role: 'employer' | 'candidate', password: string,
 ): Promise<string | null> {
   let userId: string | null = null
   const { data: created, error: authError } = await supabase.auth.admin.createUser({
     email, email_confirm: true,
-    password: crypto.randomUUID() + 'Aa1!',
+    password,
     user_metadata: { full_name: fullName, demo: true },
   })
   if (created?.user?.id) userId = created.user.id
@@ -122,7 +124,18 @@ function collapse(notes: string[]): string[] {
 }
 
 export async function seedDemoData(supabase: any): Promise<SeedReport> {
-  const report: SeedReport = { properties: 0, roles: 0, people: 0, applications: 0, dropped: [], notes: [] }
+  // One password for this run, shown once on the admin screen and never
+  // stored. Without it the demonstration was only half reachable: three
+  // properties and six people existed, with scored applications between them,
+  // and nobody could open either side to show it - which is the entire point
+  // of having the data. Random rather than fixed, because the addresses are
+  // guessable and these accounts sit on the live site; gone the moment the
+  // data is removed.
+  const demoPassword = 'Demo!' + crypto.randomUUID().replace(/-/g, '').slice(0, 14)
+  const report: SeedReport = {
+    properties: 0, roles: 0, people: 0, applications: 0, dropped: [], notes: [],
+    signIn: { password: demoPassword, properties: [], people: [] },
+  }
   const dropped = new Set<string>()
   const notes: string[] = []
 
@@ -140,7 +153,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     // employer side can be shown from the inside - their roles, their
     // applications, their shortlist - rather than described.
     const propertyEmail = demoPropertyEmail(property.company_name)
-    const employerUserId = await ensureDemoUser(supabase, propertyEmail, property.company_name, 'employer')
+    const employerUserId = await ensureDemoUser(supabase, propertyEmail, property.company_name, 'employer', demoPassword)
     if (!employerUserId) {
       notes.push(`property "${property.company_name}": could not create the sign-in`)
       continue
@@ -171,6 +184,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     lost.forEach(c => dropped.add(`employer_profiles.${c}`))
     if (error) { notes.push(`property "${property.company_name}": ${error}`); continue }
     if (data?.id) { propertyIds.set(property.company_name, data.id); report.properties += 1 }
+    report.signIn.properties.push(`${property.company_name} - ${propertyEmail}`)
   }
 
   // ── Roles ───────────────────────────────────────────────────────────────
@@ -272,8 +286,9 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     const email = demoEmail(person)
     const fullName = `${person.first_name} ${person.last_name}`
 
-    const userId = await ensureDemoUser(supabase, email, fullName, 'candidate')
+    const userId = await ensureDemoUser(supabase, email, fullName, 'candidate', demoPassword)
     if (!userId) { notes.push(`person "${fullName}": could not create the sign-in`); continue }
+    report.signIn.people.push(`${fullName} - ${email}`)
 
     const { data: existingProfile } = await supabase.from('candidate_profiles')
       .select('*').eq('user_id', userId).maybeSingle()
