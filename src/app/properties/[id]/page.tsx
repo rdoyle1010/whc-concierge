@@ -193,6 +193,71 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   }
 }
 
+/**
+ * One section, laid out like an editorial page rather than a document.
+ *
+ * Every section used to be the same shape: a label, then prose across the
+ * page, ten times over. Nothing anchored the eye, the measure ran past sixty
+ * characters, and a therapist deciding where to work was being asked to read
+ * two thousand words of unbroken column.
+ *
+ * The label now sits in its own rail and stays put while the section is read,
+ * so you always know which part you are in, and the content runs at a width
+ * somebody will actually finish.
+ */
+function Section({ eyebrow, children, first = false, id }: {
+  eyebrow: string
+  children: React.ReactNode
+  first?: boolean
+  id?: string
+}) {
+  return (
+    <section id={id} className={`${first ? '' : 'border-t border-border'} py-12 md:py-20`}>
+      <div className="grid gap-x-14 gap-y-5 md:grid-cols-[170px_1fr] lg:grid-cols-[210px_1fr]">
+        <p className="public-eyebrow md:sticky md:top-28 md:self-start">{eyebrow}</p>
+        <div className="min-w-0">{children}</div>
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Prose as paragraphs, at a measure that can be finished.
+ *
+ * The copy arrives as one string with blank lines in it. Rendered with
+ * whitespace-pre-line it is technically paragraphed and visually a slab, so
+ * it is split properly and given room. Lines that begin with a dash are a
+ * list somebody typed by hand - usually career progression - and are set as
+ * one, because four routes from therapist to director is the most persuasive
+ * thing on the page and was being buried in body copy.
+ */
+function Prose({ text, className = '' }: { text?: string | null; className?: string }) {
+  const blocks = String(text || '').split(/\n\s*\n/).map(b => b.trim()).filter(Boolean)
+  if (!blocks.length) return null
+  return (
+    <div className={`space-y-5 ${className}`}>
+      {blocks.map((block, index) => {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
+        const bullets = lines.filter(l => /^[-\u2013\u2022]\s*/.test(l))
+        if (bullets.length >= 2 && bullets.length === lines.length) {
+          return (
+            <ul key={index} className="grid gap-x-10 gap-y-2.5 sm:grid-cols-2">
+              {bullets.map(line => (
+                <li key={line} className="border-t border-border pt-2.5 text-[14px] leading-6 text-body">
+                  {line.replace(/^[-\u2013\u2022]\s*/, '')}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        return (
+          <p key={index} className="max-w-[62ch] text-[15.5px] leading-[1.75] text-body">{block}</p>
+        )
+      })}
+    </div>
+  )
+}
+
 export default async function PropertyDestinationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const data = await getPropertyPageData(id)
@@ -311,8 +376,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       <main id="main-content" className="max-w-6xl mx-auto px-6">
         {/* Why work here */}
         {showWhy && (
-          <section className="py-14 md:py-20">
-            <p className="public-eyebrow">Why work here</p>
+          <Section eyebrow="Why work here" first>
             {property.tagline && <h2 className="mt-4 text-[26px] md:text-[36px] leading-[1.2] max-w-3xl">{property.tagline}</h2>}
             {highlights.length > 0 && (
               <div className="mt-10 grid md:grid-cols-2 gap-x-12 gap-y-6">
@@ -321,14 +385,13 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 ))}
               </div>
             )}
-          </section>
+          </Section>
         )}
 
         {/* The property */}
         {showProperty && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">The property</p>
-            {description && <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl whitespace-pre-line">{description}</p>}
+          <Section eyebrow="The property">
+            {description && <Prose className="mt-6" text={description} />}
             {propertyFacts.length > 0 && (
               <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 max-w-4xl">
                 {propertyFacts.map(fact => (
@@ -345,13 +408,12 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 <div className="mt-3"><QuietList items={facilities} noun="facilities" /></div>
               </div>
             )}
-          </section>
+          </Section>
         )}
 
         {/* The spa */}
         {showSpa && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">The spa</p>
+          <Section eyebrow="The spa">
             {spaFacts.length > 0 && (
               <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 max-w-4xl">
                 {spaFacts.map(fact => (
@@ -397,13 +459,12 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 <BookOpen size={15} />View the treatment menu<ExternalLink size={13} />
               </a>
             )}
-          </section>
+          </Section>
         )}
 
         {/* The team */}
         {showTeam && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">The team</p>
+          <Section eyebrow="The team">
             {property.team_size && (
               <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 max-w-4xl">
                 <div className="border-t border-border pt-3">
@@ -429,13 +490,12 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 </div>
               </div>
             )}
-          </section>
+          </Section>
         )}
 
         {/* Culture */}
         {showCulture && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">Culture</p>
+          <Section eyebrow="Culture">
             {property.culture_statement && (
               String(property.culture_statement).length <= 260 ? (
                 // A short statement earns the display treatment.
@@ -444,7 +504,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 </blockquote>
               ) : (
                 // A full paragraph at display size becomes a wall - set it as prose.
-                <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl whitespace-pre-line">{property.culture_statement}</p>
+                <Prose className="mt-6" text={property.culture_statement} />
               )
             )}
             {culturePoints.length > 0 && (
@@ -454,34 +514,31 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 ))}
               </div>
             )}
-          </section>
+          </Section>
         )}
 
         {/* Development & progression */}
         {property.progression_notes && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">Development &amp; progression</p>
-            <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl whitespace-pre-line">{property.progression_notes}</p>
-          </section>
+          <Section eyebrow="Development &amp; progression">
+            <Prose className="mt-6" text={property.progression_notes} />
+          </Section>
         )}
 
         {/* Employee benefits */}
         {benefits.length > 0 && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">Employee benefits</p>
+          <Section eyebrow="Employee benefits">
             <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 max-w-5xl">
               {benefits.map((item: string) => (
                 <p key={item} className="border-b border-border py-3.5 text-[14px] leading-6 text-body">{item}</p>
               ))}
             </div>
-          </section>
+          </Section>
         )}
 
         {/* Location guide */}
         {showLocation && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">Location guide</p>
-            {property.location_guide && <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl whitespace-pre-line">{property.location_guide}</p>}
+          <Section eyebrow="Location guide">
+            {property.location_guide && <Prose className="mt-6" text={property.location_guide} />}
             {travelRows.length > 0 && (
               <dl className="mt-9 max-w-3xl">
                 {travelRows.map(row => (
@@ -493,21 +550,19 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
               </dl>
             )}
             <p className="mt-5 text-[11px] text-muted max-w-3xl">Travel details are supplied by the property.</p>
-          </section>
+          </Section>
         )}
 
         {/* Relocation */}
         {property.relocation_support && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">Relocating for this role</p>
-            <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl whitespace-pre-line">{property.relocation_support}</p>
-          </section>
+          <Section eyebrow="Relocating for this role">
+            <Prose className="mt-6" text={property.relocation_support} />
+          </Section>
         )}
 
         {/* Reputation */}
         {showReputation && (
-          <section className="border-t border-border py-14 md:py-20">
-            <p className="public-eyebrow">Reputation</p>
+          <Section eyebrow="Reputation">
             {awards.length > 0 && (
               <div className="mt-8 max-w-3xl">
                 {awards.map((award, index) => (
@@ -532,7 +587,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 {externalUrl(property.tripadvisor_url) && <a href={externalUrl(property.tripadvisor_url)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">TripAdvisor<ExternalLink size={13} /></a>}
               </div>
             )}
-          </section>
+          </Section>
         )}
 
         {/* Verified team reviews */}
@@ -573,8 +628,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
         )}
 
         {/* Current vacancies */}
-        <section id="openings" className="border-t border-border py-14 md:py-20">
-          <p className="public-eyebrow">Current vacancies</p>
+        <Section id="openings" eyebrow="Current vacancies">
           {jobs.length > 0 ? (
             <div className="mt-8 border-b border-border">
               {jobs.map((job: any) => {
@@ -604,7 +658,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
               No open roles right now - <Link href="/jobs" className="font-semibold text-accent hover:underline">browse all live roles</Link>.
             </p>
           )}
-        </section>
+        </Section>
       </main>
 
       {/* Closing CTA */}
