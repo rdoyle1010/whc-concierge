@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { unstable_cache } from 'next/cache'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -267,9 +268,16 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   const { id } = await params
   const data = await getPropertyPageData(id)
 
-  if (!data) {
-    return <div className="min-h-screen bg-parchment"><Navbar /><section className="pt-[120px] pb-20"><div className="max-w-6xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-accent font-semibold">Back to Properties</Link></div></section><Footer /></div>
-  }
+  // notFound(), not a hand-rolled body - this page was the only detail page
+  // in the app that answered a missing row with HTTP 200 and a page that says
+  // "not found". The nine others already do this properly.
+  //
+  // A soft 404 is not a cosmetic problem. Search engines index a 200 as a real
+  // page, so a property that closes its account leaves an indexed page behind
+  // saying it does not exist. And nothing automated can tell a dead property
+  // from a live one: a status-code check passes on both, which is precisely
+  // how a cached list full of links to deleted rows went unnoticed.
+  if (!data) notFound()
 
   const { property, jobs, reviews: staffReviews, summary: reviewSummary } = data
   const name = property.property_name || property.company_name || 'Property'
