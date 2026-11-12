@@ -123,6 +123,27 @@ function collapse(notes: string[]): string[] {
   return [...seen].map(([note, count]) => (count > 1 ? `${note} (${count} times)` : note))
 }
 
+/**
+ * Update that survives a column this environment does not have, like its
+ * insert twin above.
+ */
+async function updateTolerant(
+  supabase: any, table: string, id: string, row: Record<string, any>, maxStrips = 12,
+): Promise<{ dropped: string[]; error: string | null }> {
+  const data = { ...row }
+  const dropped: string[] = []
+  for (let attempt = 0; attempt <= maxStrips; attempt++) {
+    const { error } = await supabase.from(table).update(data).eq('id', id)
+    if (!error) return { dropped, error: null }
+    const unknown = /column "?([a-z_]+)"? of relation|Could not find the '([a-z_]+)' column/i.exec(error.message)
+    const column = unknown?.[1] || unknown?.[2]
+    if (!column || !(column in data)) return { dropped, error: error.message }
+    delete data[column]
+    dropped.push(column)
+  }
+  return { dropped, error: 'too many unknown columns' }
+}
+
 export type MatchPair = { candidateId: string; jobId: string; employerId: string; score: number }
 
 /**
@@ -320,11 +341,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     if (!userId) { notes.push(`person "${fullName}": could not create the sign-in`); continue }
     report.signIn.people.push(`${fullName} - ${email}`)
 
-    const { data: existingProfile } = await supabase.from('candidate_profiles')
-      .select('*').eq('user_id', userId).maybeSingle()
-    if (existingProfile?.id) { candidates.push({ id: existingProfile.id, profile: existingProfile }); continue }
-
-    const { data, dropped: lost, error } = await insertTolerant(supabase, 'candidate_profiles', {
+    const profileRow = {
       user_id: userId,
       full_name: fullName,
       role_level: person.role_level,
@@ -346,13 +363,40 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       headline: person.headline,
       bio: `${person.headline} ${DEMO_MARKER}`,
       profile_visible: true,
-    })
-    lost.forEach(c => dropped.add(`candidate_profiles.${c}`))
-    if (error) { notes.push(`person "${fullName}": ${error}`); continue }
-    if (data?.id) {
-      report.people += 1
-      const { data: full } = await supabase.from('candidate_profiles').select('*').eq('id', data.id).maybeSingle()
-      if (full) candidates.push({ id: data.id, profile: full })
+    }
+
+    // A row existing never meant the person existed.
+    //
+    // Creating the sign-in also creates an empty candidate_profiles row, so
+    // this always found one and skipped straight past it - leaving six people
+    // with no name, no skills, no location and no experience. A property
+    // opening its applications saw "Candidate" where a name belongs, and the
+    // matcher, given nothing to match on, scored them in the forties. The
+    // profiles had been empty from the first seed; nothing said so because an
+    // empty row and a full one are both a row.
+    const { data: existingProfile } = await supabase.from('candidate_profiles')
+      .select('id, full_name').eq('user_id', userId).maybeSingle()
+
+    let profileId: string | null = null
+    if (existingProfile?.id) {
+      const { dropped: lost, error } = await updateTolerant(
+        supabase, 'candidate_profiles', existingProfile.id, profileRow,
+      )
+      lost.forEach(c => dropped.add(`candidate_profiles.${c}`))
+      if (error) { notes.push(`person "${fullName}": ${error}`); continue }
+      profileId = existingProfile.id
+      // Counted as a person seeded, because before this it was not one.
+      if (!existingProfile.full_name) report.people += 1
+    } else {
+      const { data, dropped: lost, error } = await insertTolerant(supabase, 'candidate_profiles', profileRow)
+      lost.forEach(c => dropped.add(`candidate_profiles.${c}`))
+      if (error) { notes.push(`person "${fullName}": ${error}`); continue }
+      if (data?.id) { profileId = data.id; report.people += 1 }
+    }
+
+    if (profileId) {
+      const { data: full } = await supabase.from('candidate_profiles').select('*').eq('id', profileId).maybeSingle()
+      if (full) candidates.push({ id: profileId, profile: full })
     }
   }
 
