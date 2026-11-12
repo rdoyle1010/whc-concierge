@@ -36,7 +36,11 @@ concurrency:
 jobs:
   check:
     name: The site works, in a real browser
-    runs-on: ubuntu-latest
+    # Pinned, not latest. ubuntu-latest moved to 26.04 and Playwright 1.56
+    # cannot install browser dependencies there: "Playwright does not support
+    # chromium on ubuntu26.04-x64". A browser suite that follows the runner
+    # wherever it wanders breaks on somebody else's schedule.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -45,7 +49,9 @@ jobs:
       - name: Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22, like the other two workflows. Supabase's packages require it
+          # and 20 is deprecated on the runners.
+          node-version: 22
           cache: npm
 
       - name: Install
