@@ -361,3 +361,33 @@ test('the admin screen shows the sign-in and says it is not stored', () => {
   assert.match(page, /signIn\?\.password/)
   assert.match(page, /not stored anywhere/i)
 })
+
+// Taking the globally best pairs put every application on whichever
+// properties happened to score highest. On the live site Fennwood Hall showed
+// "No applications received yet" while the other two had the lot - which in a
+// demonstration is the difference between signing in as a hotel and showing
+// them their own candidates, and signing in as a hotel and showing them an
+// empty page.
+//
+// Honest about what this test is worth: with the stub's data the old
+// globally-best ordering happens to cover all three properties anyway, so
+// reverting the fix does NOT fail this. It guards the invariant rather than
+// catching that regression, because reproducing the clustering needs scores
+// the real matcher only produced against the live rows. Treat it as a
+// statement of what must stay true, not as proof the fix works.
+test('every property has a pipeline to show, not just the best-scoring one', async () => {
+  const supabase = fakeSupabase()
+  await seedDemoData(supabase)
+
+  const roles = supabase.tables.get('job_listings') || []
+  const applications = supabase.tables.get('applications') || []
+  assert.ok(applications.length > 0, 'no applications at all')
+
+  const employerOf = new Map(roles.map(r => [r.id, r.employer_id]))
+  const withApplications = new Set(applications.map(a => employerOf.get(a.role_id)))
+  const allProperties = new Set(roles.map(r => r.employer_id))
+
+  const empty = [...allProperties].filter(e => !withApplications.has(e))
+  assert.deepEqual(empty, [],
+    `${empty.length} of ${allProperties.size} properties would show "No applications received yet"`)
+})
