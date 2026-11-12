@@ -50,6 +50,17 @@ function weeksLive(postedDate: unknown, now: number): number {
   return Math.max(1, (now - posted) / (7 * DAY_MS))
 }
 
+/**
+ * Whether a listing advertises a day rate rather than an annual salary.
+ *
+ * Agency cover is quoted per day. Nothing else on the platform is, and the two
+ * must never share a median: £145 a day against £31,500 a year reads as 100%
+ * below the market, and a pool holding both is wrong for everybody in it.
+ */
+function paidByDay(job: { is_agency_role?: boolean | null; contract_type?: string | null }): boolean {
+  return job.is_agency_role === true || String(job.contract_type || '').toLowerCase() === 'agency'
+}
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
@@ -70,10 +81,10 @@ export async function GET(req: NextRequest) {
 
     const [myJobsRes, platformJobsRes, salaryRes] = await Promise.all([
       admin.from('job_listings')
-        .select('id, job_title, is_live, status, required_role_level, salary_min, salary_max, posted_date')
+        .select('id, job_title, is_live, status, required_role_level, salary_min, salary_max, posted_date, is_agency_role, contract_type')
         .eq('employer_id', employer.id),
       admin.from('job_listings')
-        .select('id, employer_id, required_role_level, salary_min, salary_max, posted_date')
+        .select('id, employer_id, required_role_level, salary_min, salary_max, posted_date, is_agency_role, contract_type')
         .eq('is_live', true),
       // Advertised annual salary records over 12 months - the house
       // credibility basis shared with the talent-side salary signal.
@@ -160,12 +171,28 @@ export async function GET(req: NextRequest) {
       // Salary competitiveness: this role's midpoint against the median
       // midpoint of comparable live roles plus advertised salary records at
       // the same (loosely matched) level over the last 12 months.
+      // A day rate is not a salary, and comparing them is how a property
+      // advertising £130-160 a day was told it was paying "100% below the
+      // market median" of £31,500 - true only in the sense that a day and a
+      // year are different lengths. It cut both ways: agency rates sitting in
+      // the pool also dragged the median down for every permanent role
+      // measured against it.
+      //
+      // Like is compared with like, and where there is not enough of the same
+      // kind to be truthful nothing is published, which is the rule this panel
+      // already states at the top of itself.
       const myMid = salaryMidpoint(job.salary_min, job.salary_max)
       const marketMidpoints = [
-        ...comparables.map(other => salaryMidpoint(other.salary_min, other.salary_max)),
-        ...salaryRows
-          .filter(row => looselyComparable(levelKey(row.role_level), myLevel))
-          .map(row => salaryMidpoint(row.amount_min, row.amount_max)),
+        ...comparables
+          .filter(other => paidByDay(other) === paidByDay(job))
+          .map(other => salaryMidpoint(other.salary_min, other.salary_max)),
+        // Advertised salary records are annual, so they belong only to an
+        // annual comparison.
+        ...(paidByDay(job)
+          ? []
+          : salaryRows
+            .filter(row => looselyComparable(levelKey(row.role_level), myLevel))
+            .map(row => salaryMidpoint(row.amount_min, row.amount_max))),
       ].filter((value): value is number => Boolean(value))
       let salary: { pctDiff: number; marketMedian: number; midpoint: number; sample: number } | null = null
       if (myMid && marketMidpoints.length >= MIN_COMPARABLE_ROLES) {
