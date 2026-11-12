@@ -30,8 +30,22 @@ const MISSING = (role: string) =>
  * decided by the role on the profile, and asserting the destination here would
  * make this helper fail for a reason that has nothing to do with signing in.
  */
-async function signIn(page: Page, who: Account) {
+async function signIn(page: Page, who: Account, side: 'talent' | 'employer' = 'talent') {
   await page.goto('/login')
+  await page.waitForTimeout(1200)
+
+  // The cookie banner sits over the foot of the page and eats clicks.
+  await page.getByRole('button', { name: /accept/i }).click({ timeout: 4000 }).catch(() => {})
+
+  // The page has a Talent | Hotel toggle and the two are not interchangeable:
+  // an employer submitting the talent side is correctly refused with "This is
+  // a Hotel / Employer account". Talent is the default, so only the employer
+  // needs the switch.
+  if (side === 'employer') {
+    await page.getByRole('button', { name: /hotel|employer|property/i }).first().click({ timeout: 5000 })
+    await page.waitForTimeout(600)
+  }
+
   await page.locator('input[type="email"]').first().fill(who.email)
   await page.locator('input[type="password"]').first().fill(who.password)
   await Promise.all([
@@ -72,7 +86,13 @@ test.describe('a professional', () => {
     await signIn(page, who!)
     const res = await page.goto('/talent/profile')
     expect(res?.status()).toBeLessThan(400)
-    await expect(page.locator('input, textarea, select').first()).toBeVisible()
+    // A visible field, not simply the first input in the DOM: that one is the
+    // hidden file picker behind the photograph upload, and it is correctly
+    // invisible.
+    await expect(
+      page.locator('input:visible, textarea:visible, select:visible').first(),
+      'the profile page has no editable field on it',
+    ).toBeVisible()
   })
 })
 
@@ -81,21 +101,21 @@ test.describe('a property', () => {
   test.skip(!who, MISSING('employer'))
 
   test('can sign in and reach their dashboard', async ({ page }) => {
-    await signIn(page, who!)
+    await signIn(page, who!, 'employer')
     await expect(page).toHaveURL(/\/employer\//)
     await expect(page.locator('h1, [class*="dashboard-title"]').first()).toBeVisible()
   })
 
   test('can open the page where a role is posted', async ({ page }) => {
-    await signIn(page, who!)
+    await signIn(page, who!, 'employer')
     const res = await page.goto('/employer/post-role')
     expect(res?.status()).toBeLessThan(400)
     // The form itself, not just the shell. Nothing is submitted.
-    await expect(page.locator('input, textarea, select').first()).toBeVisible()
+    await expect(page.locator('input:visible, textarea:visible, select:visible').first()).toBeVisible()
   })
 
   test('can see their listings and applications without an error', async ({ page }) => {
-    await signIn(page, who!)
+    await signIn(page, who!, 'employer')
     for (const path of ['/employer/jobs', '/employer/applications']) {
       await page.goto(path)
       await page.waitForTimeout(2200)
@@ -137,4 +157,25 @@ test.describe('the front door', () => {
       expect(page.url(), `${path} rendered for a signed-out visitor`).not.toContain(path)
     }
   })
+})
+
+test('the login page refuses the wrong side of its own toggle, and says which', async ({ page }) => {
+  const who = account('EMPLOYER')
+  test.skip(!who, MISSING('employer'))
+
+  // An employer submitting the Talent side is refused. That is correct, and
+  // the message matters more than the refusal: a bounce back to /login with
+  // no explanation is the single most common way somebody decides a site is
+  // broken when in fact they picked the wrong tab.
+  await page.goto('/login')
+  await page.waitForTimeout(1200)
+  await page.getByRole('button', { name: /accept/i }).click({ timeout: 4000 }).catch(() => {})
+  await page.locator('input[type="email"]').first().fill(who!.email)
+  await page.locator('input[type="password"]').first().fill(who!.password)
+  await page.locator('button[type="submit"]').first().click()
+  await page.waitForTimeout(6000)
+
+  await expect(page).toHaveURL(/\/login/)
+  const text = await page.locator('body').innerText()
+  expect(text, 'refused without saying why').toMatch(/hotel\s*\/?\s*employer account|use the hotel/i)
 })
