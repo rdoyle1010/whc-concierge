@@ -332,16 +332,41 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
   // applications. The score stored is whatever calculateMatchScore returns, so
   // the number on the screen during a demonstration is the number the product
   // would have produced on its own.
-  const pairs: { candidateId: string; jobId: string; score: number }[] = []
+  type Pair = { candidateId: string; jobId: string; employerId: string; score: number }
+  const pairs: Pair[] = []
   for (const candidate of candidates) {
     for (const job of jobIds) {
       try {
         const match = calculateMatchScore(candidate.profile, job.job)
-        if (!match?.hardStop) pairs.push({ candidateId: candidate.id, jobId: job.id, score: Number(match?.score || 0) })
+        if (!match?.hardStop) {
+          pairs.push({
+            candidateId: candidate.id,
+            jobId: job.id,
+            employerId: String(job.job?.employer_id || ''),
+            score: Number(match?.score || 0),
+          })
+        }
       } catch { /* a scoring failure is not a reason to abandon the seed */ }
     }
   }
   pairs.sort((a, b) => b.score - a.score)
+
+  // Every property gets a pipeline before any property gets a second one.
+  //
+  // Taking the globally best pairs put all five applications on whichever
+  // properties happened to score highest, and left the others with "No
+  // applications received yet". During a demonstration that is the difference
+  // between signing in as a hotel and showing them their own candidates, and
+  // signing in as a hotel and showing them an empty page - and which property
+  // you happen to open is not something to leave to the scoring.
+  const byProperty: Pair[] = []
+  const covered = new Set<string>()
+  for (const pair of pairs) {
+    if (!pair.employerId || covered.has(pair.employerId)) continue
+    covered.add(pair.employerId)
+    byProperty.push(pair)
+  }
+  const ordered = [...byProperty, ...pairs.filter(p => !byProperty.includes(p))]
 
   // Applications already in place count towards both the cap and the
   // one-each rule. Without this, a second run tops up whoever missed out the
@@ -359,7 +384,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
     }
   }
 
-  for (const pair of pairs) {
+  for (const pair of ordered) {
     if (seen.has(pair.candidateId)) continue
     if (existingApplications + report.applications >= 5) break
     seen.add(pair.candidateId)
