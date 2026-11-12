@@ -4,6 +4,8 @@ import { unstable_cache } from 'next/cache'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getPublicPagesContent } from '@/lib/public-page-content-server'
+import { filledEditorialBand } from '@/lib/public-page-content-values'
 import { Star, ArrowLeft, ExternalLink, BadgeCheck, BookOpen } from 'lucide-react'
 import { externalUrl } from '@/lib/external-url'
 import { OG_DEFAULTS } from '@/lib/og-defaults'
@@ -212,11 +214,14 @@ function Section({ eyebrow, children, first = false, id }: {
   id?: string
 }) {
   return (
-    <section id={id} className={`${first ? '' : 'border-t border-border'} py-12 md:py-20`}>
-      <div className="grid gap-x-14 gap-y-5 md:grid-cols-[170px_1fr] lg:grid-cols-[210px_1fr]">
-        <p className="public-eyebrow md:sticky md:top-28 md:self-start">{eyebrow}</p>
-        <div className="min-w-0">{children}</div>
-      </div>
+    <section id={id} className={`${first ? '' : 'border-t border-border'} py-10 md:py-14`}>
+      {/* The label sits above its content, not in a rail beside it.
+          A fixed left column looks considered next to six paragraphs and
+          absurd next to two lines - and most of these sections are two lines.
+          It was leaving a third of the page empty and making a short page
+          feel like a long one. */}
+      <p className="public-eyebrow">{eyebrow}</p>
+      <div className="mt-5 min-w-0">{children}</div>
     </section>
   )
 }
@@ -268,6 +273,11 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
 
   const { property, jobs, reviews: staffReviews, summary: reviewSummary } = data
   const name = property.property_name || property.company_name || 'Property'
+  // The platform's own spa photography - the four pictures already sitting in
+  // the footer of this very page. A property that has not uploaded its own
+  // was being given a flat charcoal slab the height of the screen while four
+  // good photographs waited two scrolls below it.
+  const bandImages = filledEditorialBand((await getPublicPagesContent()).editorialBand)
   const photos = asList(property.property_photos)
   const heroPhoto = photos[0] || null
 
@@ -356,8 +366,25 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
           </div>
         </header>
       ) : (
-        <header className="bg-charcoal">
-          <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
+        <header className="relative bg-charcoal">
+          {/* Atmosphere, not a claim. Deliberately dark and uncaptioned, so it
+              reads as the platform's own texture rather than as a photograph
+              of this property - which it is not. A property that uploads its
+              own six pictures gets the real hero above instead. */}
+          {bandImages[0] && (
+            <>
+              <img
+                decoding="async"
+                src={bandImages[0].url}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover opacity-45"
+                style={{ objectPosition: `${bandImages[0].focalX}% ${bandImages[0].focalY}%` }}
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,28,28,.94) 0%, rgba(28,28,28,.72) 55%, rgba(28,28,28,.55) 100%)' }} />
+            </>
+          )}
+          <div className="relative max-w-6xl mx-auto px-6 py-14 md:py-20">
             <h1 className="text-white text-[40px] md:text-[62px] leading-[1.03] tracking-[-.04em] max-w-4xl">{name}</h1>
             {heroMeta.length > 0 && (
               <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-white/85">
@@ -368,6 +395,19 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                   </span>
                 ))}
               </p>
+            )}
+            {/* The facts, on the first screen. They were six hundred pixels
+                down the page in a row of their own while the top of the page
+                said nothing but the name. */}
+            {propertyFacts.length > 0 && (
+              <dl className="mt-10 grid max-w-3xl grid-cols-2 gap-x-10 gap-y-5 border-t border-white/15 pt-7 md:grid-cols-4">
+                {propertyFacts.map(fact => (
+                  <div key={fact.label}>
+                    <dt className="text-[10px] uppercase tracking-[.14em] text-white/55">{fact.label}</dt>
+                    <dd className="mt-1 text-[19px] font-serif text-white">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
             )}
           </div>
         </header>
