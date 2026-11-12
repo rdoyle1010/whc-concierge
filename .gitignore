@@ -14,3 +14,6 @@ next-env.d.ts
 /e2e-results/
 /playwright-report/
 /test-results/
+
+# Signed-in sessions saved by the e2e setup
+/e2e/.auth/

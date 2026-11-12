@@ -41,10 +41,18 @@ export default defineConfig({
     },
   },
   projects: [
+    // Signs in once per role and saves the session. Everything else reuses it,
+    // which is what keeps the suite under the platform's own rate limit.
+    { name: 'setup', testMatch: /auth\.setup\.ts/, use: { ...devices['Desktop Chrome'] } },
     // The phone checks are about things that only exist at phone width - the
     // menu button is hidden above lg - so desktop must not run them, or it
     // fails for the correct behaviour.
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: /phone\.spec\.ts/ },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /phone\.spec\.ts|auth\.setup\.ts/,
+      dependencies: ['setup'],
+    },
     { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /phone\.spec\.ts/ },
   ],
 })
