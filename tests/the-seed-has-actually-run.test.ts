@@ -333,3 +333,31 @@ test('a seeded role asks for skills the seeded people actually hold', async () =
   const orphans = [...new Set(roles.flatMap(r => r.required_skills))].filter(s => !held.has(s))
   assert.deepEqual(orphans, [], 'roles ask for skills nobody in the demonstration has')
 })
+
+// Three properties and six people existed, with scored applications between
+// them, and the password for every one of them was generated and thrown away.
+// So the public half of the demonstration worked and the half that sells it -
+// opening a property's own workspace in front of a hotel - could not be shown
+// at all.
+test('the demonstration can be signed into, not just looked at', async () => {
+  const supabase = fakeSupabase()
+  const report = await seedDemoData(supabase)
+
+  assert.ok(report.signIn?.password, 'no password is returned, so nobody can open either side')
+  assert.ok(report.signIn.password.length >= 12, 'the demonstration password is too short to sit on a live site')
+  assert.ok(report.signIn.properties.length > 0, 'no property sign-in was recorded')
+  assert.ok(report.signIn.people.length > 0, 'no professional sign-in was recorded')
+
+  // Every account really does carry it, not just the first.
+  assert.ok(supabase.users.length >= report.signIn.properties.length)
+
+  // Not fixed: the addresses are guessable and these sit on the live site.
+  const second = await seedDemoData(fakeSupabase())
+  assert.notEqual(second.signIn.password, report.signIn.password, 'the password is the same every run')
+})
+
+test('the admin screen shows the sign-in and says it is not stored', () => {
+  const page = readFileSync('src/app/admin/demo-data/page.tsx', 'utf8')
+  assert.match(page, /signIn\?\.password/)
+  assert.match(page, /not stored anywhere/i)
+})

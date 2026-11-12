@@ -32,6 +32,7 @@ type Report = {
   applications: number
   dropped: string[]
   notes: string[]
+  signIn?: { password: string; properties: string[]; people: string[] }
 }
 
 const EMPTY: Status = { live: false, properties: 0, roles: 0, people: 0, signins: 0, applications: 0 }
@@ -192,6 +193,52 @@ export default function DemoDataPage() {
                 Nothing new went in, which means it was already there.
               </p>
             )}
+            {/* The half of the demonstration that was unreachable.
+                Properties and people existed with scored applications between
+                them, and no password existed to open either side with. Shown
+                once, here, because it is not stored anywhere - rebuild to get
+                a fresh one. */}
+            {report.signIn?.password && (
+              <div className="mt-5 border-t border-border pt-5">
+                <p className="text-[13px] font-semibold text-ink">Signing in as them</p>
+                <p className="mt-1.5 text-[12.5px] leading-6 text-secondary">
+                  Showing a hotel both sides is the demonstration. Use these to open a property&apos;s
+                  own workspace, or a professional&apos;s. The password is not stored anywhere and is
+                  not shown again - copy it now, or press Remove and reload for a fresh one.
+                </p>
+                <p className="mt-3 text-[12.5px] text-secondary">
+                  Password for all of them:{' '}
+                  <code className="select-all bg-surface px-2 py-1 font-mono text-[12.5px] text-ink">
+                    {report.signIn.password}
+                  </code>
+                </p>
+                {report.signIn.properties.length > 0 && (
+                  <>
+                    <p className="mt-4 text-[11px] uppercase tracking-[0.12em] text-muted">Properties</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {report.signIn.properties.map(line => (
+                        <li key={line} className="select-all text-[12px] leading-5 text-secondary">{line}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {report.signIn.people.length > 0 && (
+                  <>
+                    <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-muted">Professionals</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {report.signIn.people.map(line => (
+                        <li key={line} className="select-all text-[12px] leading-5 text-secondary">{line}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <p className="mt-3 text-[11.5px] leading-5 text-muted">
+                  Sign in on the Hotel side of the login page for a property, and the Talent side
+                  for a professional. The two are not interchangeable.
+                </p>
+              </div>
+            )}
+
             {report.notes?.length > 0 && (
               <div className="mt-3">
                 <p className="text-[12px] font-semibold text-[#7a4a00]">Some rows did not go in:</p>
