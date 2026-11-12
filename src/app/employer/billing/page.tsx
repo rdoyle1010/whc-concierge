@@ -7,6 +7,24 @@ import { JOB_TIERS } from '@/lib/constants'
 import { CreditCard, ExternalLink, Briefcase, Star, FileText, Save } from 'lucide-react'
 import Link from 'next/link'
 
+// Keyed by the value src/proxy.ts puts in ?locked=. Keep these in step with
+// EMPLOYER_PREMIUM_ROUTES: a key with no entry here falls back to a general
+// line rather than showing nothing, but a property deserves to be told
+// precisely what it reached for.
+const LOCKED_COPY: Record<string, { title: string; body: string }> = {
+  'talent-search': {
+    title: 'Talent search is part of Employer Pro.',
+    body: 'Searching the register by skill, qualification, product house and travel distance - and '
+      + 'approaching people directly - comes with Employer Pro. Posting roles and receiving '
+      + 'applications stays free.',
+  },
+  analytics: {
+    title: 'Analytics is part of Employer Pro.',
+    body: 'Views, applications and shortlist performance for each of your roles, plus candidate '
+      + 'notes, come with Employer Pro.',
+  },
+}
+
 // Shows the tier's current list price for every listing, whatever its status.
 // Member discounts are applied at checkout, not here.
 function jobAmount(job: any): string {
@@ -27,7 +45,20 @@ export default function EmployerBillingPage() {
   // property, not asked for again at every checkout.
   const [billing, setBilling] = useState({ purchase_order_ref: '', billing_email: '', billing_address: '' })
   const [savingBilling, setSavingBilling] = useState(false)
+  // Why they are on this page at all.
+  //
+  // src/proxy.ts bounces a property off a premium route and appends
+  // ?locked=<feature>. Nothing here read it, so somebody who pressed "Discover
+  // Talent" landed on a page headed Billing & Payment with no mention of
+  // talent search anywhere, and the only upsell in sight was Featured Hotel at
+  // £49/month - a different product entirely. That is the highest-intent
+  // moment a property has, spent selling them the wrong thing.
+  const [lockedFeature, setLockedFeature] = useState('')
   const [billingNotice, setBillingNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
+
+  useEffect(() => {
+    setLockedFeature(new URLSearchParams(window.location.search).get('locked') || '')
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -119,6 +150,19 @@ export default function EmployerBillingPage() {
         <h1 className="dashboard-title">Billing & Payment</h1>
         <p className="dashboard-intro">Manage subscriptions, payment methods and job-post history.</p>
       </div>
+
+      {lockedFeature && (
+        <div className="mb-6 border border-[#d9ab63] bg-[#fdf1df] px-5 py-4">
+          <p className="text-[13px] font-semibold text-[#7a4a00]">
+            {LOCKED_COPY[lockedFeature]?.title || 'That part of the platform is on a paid plan.'}
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-6 text-[#7a4a00]">
+            {LOCKED_COPY[lockedFeature]?.body
+              || 'Employer Pro includes it, along with the rest of the recruitment tools.'}
+          </p>
+          <Link href="/pricing" className="btn-primary mt-4 inline-flex text-[12.5px]">See what Pro includes</Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="dashboard-card"><div className="text-muted mb-2"><Briefcase size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.length}</p><p className="text-[11px] text-muted">Total job posts</p></div>
