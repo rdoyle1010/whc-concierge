@@ -237,6 +237,39 @@ function Section({ eyebrow, children, first = false, id }: {
  * one, because four routes from therapist to director is the most persuasive
  * thing on the page and was being buried in body copy.
  */
+// The five photographs nobody could see.
+//
+// A property can upload six pictures from its own profile screen - there is a
+// gallery uploader, a storage bucket and a column for them. The public page
+// read the array, took photos[0] for the hero and never rendered the rest. So
+// a property did the work, paid for the storage, and five of its six
+// photographs existed only in the database.
+//
+// It is also what the page needed structurally. Thirteen sections of the same
+// treatment stacked on top of each other is three and a half thousand pixels
+// of unbroken text, and the writing in it is good enough that losing readers
+// to the layout is the expensive kind of mistake.
+function PhotoBand({ images, name }: { images: string[]; name: string }) {
+  if (!images.length) return null
+  const columns = images.length === 1 ? 'grid-cols-1' : images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'
+  return (
+    <section className="border-t border-border py-10 md:py-14">
+      <div className={`grid gap-3 ${columns}`}>
+        {images.map((src, index) => (
+          <img
+            key={src}
+            src={src}
+            alt={`${name} - photograph ${index + 1}`}
+            loading="lazy"
+            decoding="async"
+            className="aspect-[4/3] h-full w-full object-cover"
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function Prose({ text, className = '' }: { text?: string | null; className?: string }) {
   const blocks = String(text || '').split(/\n\s*\n/).map(b => b.trim()).filter(Boolean)
   if (!blocks.length) return null
@@ -386,6 +419,20 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 ))}
               </p>
             )}
+            {/* The same facts the fallback hero carries. They were written into
+                one branch of this and not the other, so uploading photographs
+                silently cost a property its rooms, opening year and type from
+                the top of its own page. */}
+            {propertyFacts.length > 0 && (
+              <dl className="mt-10 grid max-w-3xl grid-cols-2 gap-x-10 gap-y-5 border-t border-white/15 pt-7 md:grid-cols-4">
+                {propertyFacts.map(fact => (
+                  <div key={fact.label}>
+                    <dt className="text-[10px] uppercase tracking-[.14em] text-white/55">{fact.label}</dt>
+                    <dd className="mt-1 text-[19px] font-serif text-white">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
         </header>
       ) : (
@@ -450,6 +497,9 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
             )}
           </Section>
         )}
+
+        {/* The photographs, high on the page where somebody is still reading. */}
+        <PhotoBand images={photos.slice(1, 4)} name={name} />
 
         {/* The property */}
         {showProperty && (
@@ -689,6 +739,9 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
             </div>
           </section>
         )}
+
+        {/* The rest of them, just before the roles - the point of the page. */}
+        <PhotoBand images={photos.slice(4)} name={name} />
 
         {/* Current vacancies */}
         <Section id="openings" eyebrow="Current vacancies">

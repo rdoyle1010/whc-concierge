@@ -5,6 +5,38 @@ import {
   DEMO_CANDIDATES, DEMO_EMAIL_DOMAIN, DEMO_JOBS, DEMO_MARKER, DEMO_PROPERTIES, demoEmail,
   demoPropertyEmail,
 } from '@/lib/demo-data'
+import { parsePublicPagesContent, PUBLIC_PAGES_PUBLISHED_KEY } from '@/lib/public-page-content'
+import { filledEditorialBand } from '@/lib/public-page-content-values'
+
+// Photographs for the invented properties.
+//
+// A property page without pictures is three and a half thousand pixels of
+// text, and the demonstration properties had none - so the one page a hotel is
+// most likely to judge the product by was its worst page. The public property
+// page reads property_photos; the seed simply never wrote any.
+//
+// These come out of the site's own editorial band rather than from anywhere
+// new: four spa photographs already in her storage bucket, already on the
+// footer of the page in question. No new assets, nothing fetched from outside,
+// nothing to license, and nothing that outlives the demonstration - the
+// teardown removes the rows and the pictures stay where they were.
+//
+// Rotated by position so the three properties do not open on the same picture,
+// which would say "stock" louder than having none at all.
+async function demoPhotographs(supabase: any): Promise<string[][]> {
+  try {
+    const { data } = await supabase.from('platform_config')
+      .select('value').eq('key', PUBLIC_PAGES_PUBLISHED_KEY).limit(1)
+    const band = filledEditorialBand(parsePublicPagesContent(data?.[0]?.value).editorialBand)
+    const urls = band.map(image => image.url)
+    if (urls.length < 2) return []
+    return DEMO_PROPERTIES.map((_, index) =>
+      urls.map((_url, offset) => urls[(index + offset) % urls.length]))
+  } catch {
+    // A property with no photographs still renders. A seed that throws does not.
+    return []
+  }
+}
 
 // Demonstration data, and why it is a script rather than an endpoint.
 //
@@ -192,7 +224,8 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
 
   // ── Properties ──────────────────────────────────────────────────────────
   const propertyIds = new Map<string, string>()
-  for (const property of DEMO_PROPERTIES) {
+  const photoSets = await demoPhotographs(supabase)
+  for (const [propertyIndex, property] of DEMO_PROPERTIES.entries()) {
     const { data: existing } = await supabase.from('employer_profiles')
       .select('id').eq('company_name', property.company_name).maybeSingle()
     if (existing?.id) { propertyIds.set(property.company_name, existing.id); continue }
@@ -247,6 +280,7 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       property_type: property.property_type,
       num_treatment_rooms: property.num_treatment_rooms,
       team_size: property.team_size,
+      property_photos: photoSets[propertyIndex] || [],
     })
     lost.forEach(c => dropped.add(`employer_profiles.${c}`))
     if (error) { notes.push(`property "${property.company_name}": ${error}`); continue }

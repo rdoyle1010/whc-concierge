@@ -126,3 +126,67 @@ test('a picture is matched by its path and by its name', () => {
   // the reference never matches and the file looks unused.
   assert.match(route, /split\('\?'\)\[0\]/)
 })
+
+// The other half of the same sentence.
+//
+// Everything above is about pictures still being paid for after nothing refers
+// to them. These two are about pictures being paid for while something does.
+
+test('every photograph a property uploads is shown, not just the first', () => {
+  // A property can upload six. The gallery uploader on the employer profile
+  // screen enforces that limit, writes to the property-photos bucket and
+  // stores the array in property_photos.
+  //
+  // The public property page read the array, took photos[0] for the hero, and
+  // never rendered the other five. A property did the work, filled the
+  // bucket, and five of its six photographs existed only in the database -
+  // paid for every month, visible to nobody.
+  const uploader = readFileSync('src/app/employer/profile/page.tsx', 'utf8')
+  assert.match(uploader, /current\.length >= 6/, 'the gallery should still allow six photographs')
+
+  const page = readFileSync('src/app/properties/[id]/page.tsx', 'utf8')
+  const uses = [...page.matchAll(/photos\.slice\((\d+)(?:,\s*(\d+))?\)/g)]
+  assert.ok(uses.length >= 1, 'the property page must render the photographs beyond the hero')
+
+  // Reaching past the fourth, or six uploads become three shown and the same
+  // bug comes back one image further along.
+  const highest = Math.max(...uses.map(m => (m[2] ? Number(m[2]) : Infinity)))
+  assert.equal(highest, Infinity,
+    'one band must run to the end of the array, or photographs past it are still invisible')
+
+  // And a property with none must not render an empty grid where the pictures
+  // would be.
+  assert.match(page, /function PhotoBand[\s\S]{0,400}?if \(!images\.length\) return null/,
+    'a property with no photographs must render no band at all')
+})
+
+test('the demonstration properties have photographs', () => {
+  // The page a hotel is most likely to judge the product by was its worst
+  // page: thirteen sections of the same treatment and not one picture between
+  // the header and the footer, because the seed never wrote property_photos.
+  //
+  // They come from the site's own editorial band - photographs already in her
+  // storage bucket and already on the footer of the page in question. Nothing
+  // new is uploaded, so the teardown has nothing extra to clean up.
+  const seed = readFileSync('src/lib/demo-seed.ts', 'utf8')
+  assert.match(seed, /property_photos:/, 'the seeded properties must carry photographs')
+  assert.match(seed, /PUBLIC_PAGES_PUBLISHED_KEY/,
+    'the pictures should come from the site content she already owns, not from new assets')
+
+  // Different pictures per property. Three invented hotels opening on one
+  // identical photograph says "stock" louder than having none.
+  assert.match(seed, /\(index \+ offset\) % urls\.length/,
+    'each property should start from a different photograph')
+
+  // And it must never be able to take the seed down. A property with no
+  // pictures still renders; a seed that throws loses the whole demonstration.
+  //
+  // Checked on the catch BODY, not on the word "catch". The first version of
+  // this matched /\} catch \{/ and passed happily against a catch block that
+  // rethrew - a test that confirms the shape of a safety net without checking
+  // it is attached to anything.
+  const fn = seed.slice(seed.indexOf('async function demoPhotographs'))
+  const guard = fn.slice(fn.indexOf('} catch {'), fn.indexOf('} catch {') + 300)
+  assert.match(guard, /\} catch \{[^{}]*return \[\]/,
+    'the catch must return no photographs, not rethrow: a seed that throws loses the whole demonstration')
+})
