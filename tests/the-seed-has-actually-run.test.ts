@@ -63,7 +63,7 @@ function fakeSupabase() {
     let filters: [string, any][] = []
     let likes: [string, string][] = []
     let ins: [string, any[]][] = []
-    let pending: 'select' | 'insert' | 'delete' | 'upsert' = 'select'
+    let pending: 'select' | 'insert' | 'delete' | 'upsert' | 'update' = 'select'
     let payload: Row | null = null
     let counting = false
 
@@ -82,6 +82,7 @@ function fakeSupabase() {
       in(column: string, values: any[]) { ins.push([column, values]); return api },
       like(column: string, pattern: string) { likes.push([column, pattern]); return api },
       insert(row: Row) { pending = 'insert'; payload = row; return api },
+      update(row: Row) { pending = 'update'; payload = row; return api },
       upsert(row: Row) { pending = 'upsert'; payload = row; return api },
       delete(options?: { count?: string }) { pending = 'delete'; counting = !!options?.count; return api },
       async maybeSingle() {
@@ -100,6 +101,16 @@ function fakeSupabase() {
         return { data: rows(table).find(matches) || null, error: null }
       },
       then(resolve: (value: any) => void) {
+        if (pending === 'update') {
+          // Only the rows the filters select, like the real thing.
+          let touched = 0
+          for (const row of rows(table)) {
+            if (!matches(row)) continue
+            Object.assign(row, payload)
+            touched += 1
+          }
+          return Promise.resolve({ data: null, error: null, count: touched }).then(resolve)
+        }
         if (pending === 'delete') {
           const keep = rows(table).filter(row => !matches(row))
           const removed = rows(table).length - keep.length
@@ -442,4 +453,35 @@ test('coverage never loses a pair, and keeps the best one first', () => {
   assert.equal(ordered.length, pairs.length, 'a pair was dropped or duplicated')
   assert.deepEqual(new Set(ordered), new Set(pairs))
   assert.equal(ordered[0].score, 90, 'the strongest match is no longer shown first')
+})
+
+// Creating the sign-in also creates an empty candidate_profiles row, so the
+// seed always found one and skipped straight past it. Six people existed with
+// no name, no skills and no location; a property opening its applications saw
+// "Candidate" where a name belongs, and the matcher - given nothing to match
+// on - scored them in the forties. An empty row and a full one are both a row,
+// which is why nothing noticed for a whole day.
+test('a person whose row already exists is filled in, not skipped', async () => {
+  const supabase = fakeSupabase()
+
+  // Exactly what the live database does: a bare row keyed to the sign-in.
+  await seedDemoData(supabase)
+  const profiles = supabase.tables.get('candidate_profiles') || []
+  assert.ok(profiles.length > 0)
+  for (const p of profiles) {
+    p.full_name = null
+    p.skills = null
+    p.location = null
+  }
+
+  await seedDemoData(supabase)
+
+  const after = supabase.tables.get('candidate_profiles') || []
+  const hollow = after.filter(p => !p.full_name)
+  assert.deepEqual(hollow, [],
+    `${hollow.length} people would show as "Candidate" with nothing for the matcher to read`)
+  for (const p of after) {
+    assert.ok(Array.isArray(p.skills) && p.skills.length > 0, `${p.full_name} has no skills`)
+    assert.ok(p.location, `${p.full_name} has no location`)
+  }
 })
