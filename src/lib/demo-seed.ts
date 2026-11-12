@@ -231,6 +231,22 @@ export async function seedDemoData(supabase: any): Promise<SeedReport> {
       systems_used: property.systems_used,
       approval_status: 'approved',
       property_description: property.property_description,
+      // Everything the property page is actually built to show. Without these
+      // it rendered a name, two lines and a column of rule lines - the
+      // text-only fallback of a design meant for a filled-in property.
+      tagline: property.tagline,
+      highlights: property.highlights,
+      culture_statement: property.culture_statement,
+      culture_points: property.culture_points,
+      progression_notes: property.progression_notes,
+      staff_benefits: property.staff_benefits,
+      facilities: property.facilities,
+      location_guide: property.location_guide,
+      room_count: property.room_count || null,
+      opening_year: property.opening_year,
+      property_type: property.property_type,
+      num_treatment_rooms: property.num_treatment_rooms,
+      team_size: property.team_size,
     })
     lost.forEach(c => dropped.add(`employer_profiles.${c}`))
     if (error) { notes.push(`property "${property.company_name}": ${error}`); continue }

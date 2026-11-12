@@ -29,6 +29,22 @@ export const DEMO_MARKER = '[demonstration data]'
 
 export type DemoProperty = {
   company_name: string
+  /** The fields the property page is built around. Without them it renders a
+   *  name, two lines and a lot of rule lines - which is what a demonstration
+   *  property looked like until somebody read one. */
+  tagline: string
+  highlights: string[]
+  culture_statement: string
+  culture_points: string[]
+  progression_notes: string
+  staff_benefits: string[]
+  facilities: string[]
+  location_guide: string
+  room_count: number
+  opening_year: number
+  property_type: string
+  num_treatment_rooms: number
+  team_size: number
   location: string
   postcode: string
   latitude: number
@@ -48,6 +64,29 @@ export const DEMO_PROPERTIES: DemoProperty[] = [
     company_type: 'Country house hotel',
     product_houses_used: ['ESPA', 'Elemis'],
     systems_used: ['Spa Booker'],
+        tagline: `A seventeen-room country house where the spa is the reason people come, not an amenity they find.`,
+    highlights: [`Six treatment rooms for seventeen bedrooms - the highest ratio of any property on the platform.`, `ESPA throughout, with the full body and face menu rather than a cut-down hotel version.`, `Two senior therapists on every shift, so complex bookings are never handed to a junior.`, `Thirty minutes from Cirencester, with staff parking and no London commute.`],
+    culture_statement: `A small house where the spa team is named on the website and the kitchen knows their coffee order.`,
+    culture_points: [`Treatment times are ninety minutes where the treatment needs ninety minutes.`, `Rota published a fortnight ahead, and it does not change without asking you.`, `Retail targets are a team figure, not an individual one.`, `Every therapist does one ESPA training day a quarter, paid.`],
+    progression_notes: `Most of our seniors arrived as therapists.
+
+- Therapist to Senior Therapist, typically eighteen months
+- Senior Therapist to Head Therapist, when the role exists and you want it
+- Head Therapist to Spa Manager, with the commercial side taught rather than assumed
+
+We would rather promote somebody who knows the house than recruit a manager who has to learn it.`,
+    staff_benefits: [`Live-in accommodation available`, `Meals on duty`, `ESPA product allowance`, `Treatments at cost`, `Paid training days`, `Staff parking`, `Birthday off`, `Tronc share`],
+    facilities: [`Six treatment rooms`, `Indoor pool`, `Sauna`, `Steam room`, `Relaxation lounge`, `Outdoor hot tub`, `Nail studio`, `Staff room with showers`],
+    location_guide: `Deep Cotswolds, eight miles from Cirencester.
+
+Kemble station is twenty minutes by car and reaches Paddington in about ninety. Most of the team live in Cirencester or Tetbury; a few live in.
+
+It is genuinely rural. That suits people who want the countryside and does not suit people who want a city on a night off.`,
+    room_count: 17,
+    opening_year: 2019,
+    property_type: `country_house`,
+    num_treatment_rooms: 6,
+    team_size: 14,
     property_description: `A seventeen-room country house with a six-room spa, an indoor pool and a treatment menu built around ESPA. ${DEMO_MARKER}`,
   },
   {
@@ -58,6 +97,29 @@ export const DEMO_PROPERTIES: DemoProperty[] = [
     company_type: 'Coastal resort',
     product_houses_used: ['Comfort Zone', 'Temple Spa'],
     systems_used: ['Premier Software'],
+        tagline: `A coastal spa with a real season - busy from April, quiet in January, and honest about both.`,
+    highlights: [`Eight treatment rooms and a thermal suite, five minutes from the harbour.`, `Comfort Zone and Temple Spa, with brand training from both.`, `Summer is relentless and winter is not - we staff for that rather than pretending.`, `Sea swimming before shift is a normal thing here.`],
+    culture_statement: `Seasonal does not mean disposable. The same team comes back each spring because we are straight with them about the winter.`,
+    culture_points: [`Guaranteed hours through the quiet months for anybody on a permanent contract.`, `Summer overtime is paid, not absorbed.`, `Two days off together, not split.`, `The December rota is agreed in October.`],
+    progression_notes: `A coastal resort gives you volume, which is the fastest way to get good.
+
+- Therapist to Senior Therapist, often inside a year on this volume
+- Senior Therapist to Treatment Lead across the thermal suite
+- Treatment Lead to Spa Manager
+
+Several of the team came for one season and stayed.`,
+    staff_benefits: [`Seasonal accommodation`, `Guaranteed winter hours`, `Paid summer overtime`, `Comfort Zone and Temple Spa training`, `Meals on duty`, `Treatments at cost`, `Wetsuit storage and showers`],
+    facilities: [`Eight treatment rooms`, `Thermal suite`, `Hydrotherapy pool`, `Salt room`, `Experience showers`, `Relaxation terrace`, `Sea view treatment room`, `Staff changing`],
+    location_guide: `Falmouth, five minutes from the harbour.
+
+Truro is twenty-five minutes and has the mainline station. Summer parking is tight in town, so staff parking is on site and kept for staff.
+
+Renting here is easier out of season than in it, which is worth knowing before you move.`,
+    room_count: 42,
+    opening_year: 2017,
+    property_type: `resort`,
+    num_treatment_rooms: 8,
+    team_size: 19,
     property_description: `A coastal resort spa with eight treatment rooms, a thermal suite and a seasonal peak from April to October. ${DEMO_MARKER}`,
   },
   {
@@ -68,6 +130,29 @@ export const DEMO_PROPERTIES: DemoProperty[] = [
     company_type: 'Members club',
     product_houses_used: ['Aromatherapy Associates', 'Natura Bissé'],
     systems_used: ['Mindbody'],
+        tagline: `A members club in Marylebone where the same forty faces come back every week and know yours.`,
+    highlights: [`Members rather than guests - you build a client list instead of starting again each day.`, `Advanced skin is the centre of what we do: microneedling, peels, LED.`, `Five treatment rooms, no hotel, no banqueting, no rooms division.`, `Four minutes from Baker Street.`],
+    culture_statement: `Clinical standards with the manners of a members club. Quiet, precise, and not remotely corporate.`,
+    culture_points: [`Clients rebook with you by name, and that is the point.`, `Column time protected for advanced treatments - no doubling up.`, `Commission on treatment, not only on retail.`, `Closed Sundays.`],
+    progression_notes: `This is where therapists come to specialise rather than to manage.
+
+- Therapist to Advanced Skin Therapist, with the qualifications funded
+- Advanced Skin Therapist to Lead Aesthetician
+- Lead Aesthetician to Clinical Lead, setting the protocols
+
+There is a management route as well, but most people here want the skill.`,
+    staff_benefits: [`Funded advanced qualifications`, `Treatment commission`, `Closed Sundays`, `Travel contribution`, `Club membership`, `Uniform and laundry`, `Private healthcare after two years`],
+    facilities: [`Five treatment rooms`, `Advanced skin suite`, `LED room`, `Infrared sauna`, `Members lounge`, `Changing suites`, `Fitness studio`],
+    location_guide: `Marylebone, four minutes from Baker Street.
+
+Everything in central London is reachable. Most of the team travel in from zones two and three and we contribute to travel.
+
+It is a members club, so the rhythm is weekday-heavy and the evenings are busier than the mornings.`,
+    room_count: 0,
+    opening_year: 2021,
+    property_type: `day_spa`,
+    num_treatment_rooms: 5,
+    team_size: 11,
     property_description: `A members' wellness club over three floors, with a strong facial and advanced-skin business. ${DEMO_MARKER}`,
   },
 ]

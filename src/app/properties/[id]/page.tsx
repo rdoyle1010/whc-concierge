@@ -278,6 +278,21 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   // was being given a flat charcoal slab the height of the screen while four
   // good photographs waited two scrolls below it.
   const bandImages = filledEditorialBand((await getPublicPagesContent()).editorialBand)
+
+  // Which picture, and how quietly.
+  //
+  // The first attempt took the first image in the band and that one is a
+  // photograph of Wellness House Collective's own signage - so a hotel's page
+  // opened on somebody else's logo wall, legible through the scrim. Anything
+  // whose label reads like branding is skipped, the rest are rotated by the
+  // property's own id so three properties do not share one backdrop, and it
+  // sits at under a third opacity behind a heavy gradient: texture behind a
+  // name, not a photograph anybody could mistake for the place itself.
+  const usableBackdrops = bandImages.filter(image =>
+    !/logo|brand|collective|wellness house/i.test(`${image.label || ''} ${image.alt || ''}`))
+  const backdropPool = usableBackdrops.length ? usableBackdrops : bandImages
+  const idSum = String(property.id || '').split('').reduce((total, ch) => total + ch.charCodeAt(0), 0)
+  const heroBackdrop = backdropPool.length ? backdropPool[idSum % backdropPool.length] : null
   const photos = asList(property.property_photos)
   const heroPhoto = photos[0] || null
 
@@ -371,17 +386,17 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
               reads as the platform's own texture rather than as a photograph
               of this property - which it is not. A property that uploads its
               own six pictures gets the real hero above instead. */}
-          {bandImages[0] && (
+          {heroBackdrop && (
             <>
               <img
                 decoding="async"
-                src={bandImages[0].url}
+                src={heroBackdrop.url}
                 alt=""
                 aria-hidden
-                className="absolute inset-0 h-full w-full object-cover opacity-45"
-                style={{ objectPosition: `${bandImages[0].focalX}% ${bandImages[0].focalY}%` }}
+                className="absolute inset-0 h-full w-full object-cover opacity-[0.28]"
+                style={{ objectPosition: `${heroBackdrop.focalX}% ${heroBackdrop.focalY}%` }}
               />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,28,28,.94) 0%, rgba(28,28,28,.72) 55%, rgba(28,28,28,.55) 100%)' }} />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,28,28,.96) 0%, rgba(28,28,28,.86) 55%, rgba(28,28,28,.74) 100%)' }} />
             </>
           )}
           <div className="relative max-w-6xl mx-auto px-6 py-14 md:py-20">

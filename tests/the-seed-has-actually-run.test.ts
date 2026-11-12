@@ -485,3 +485,23 @@ test('a person whose row already exists is filled in, not skipped', async () => 
     assert.ok(p.location, `${p.full_name} has no location`)
   }
 })
+
+// A demonstration property rendered a name, two lines and a column of rule
+// lines: the text-only fallback of a page designed around a filled-in
+// property. The seed was writing five fields of the twenty the page can show.
+test('a seeded property has enough on it to be worth reading', async () => {
+  const supabase = fakeSupabase()
+  await seedDemoData(supabase)
+
+  const properties = supabase.tables.get('employer_profiles') || []
+  assert.ok(properties.length > 0)
+  for (const p of properties) {
+    for (const field of ['tagline', 'culture_statement', 'progression_notes', 'location_guide']) {
+      assert.ok(String(p[field] || '').length > 40, `${p.company_name} has no ${field}`)
+    }
+    for (const field of ['highlights', 'culture_points', 'staff_benefits', 'facilities']) {
+      assert.ok(Array.isArray(p[field]) && p[field].length >= 4, `${p.company_name} has too few ${field}`)
+    }
+    assert.ok(p.num_treatment_rooms > 0, `${p.company_name} has no treatment rooms`)
+  }
+})
