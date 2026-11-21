@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import Stripe from 'stripe'
 import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
 import { publishPaidJobPosting } from '@/lib/job-posting-fulfilment'
@@ -27,6 +28,20 @@ import { sendStandardsReceiptEmail } from '@/lib/documents/receipt-email'
 // confirm route the browser hits on its way back from Stripe - run exactly
 // the same code. Whichever arrives first wins; the second is a no-op, because
 // every branch below is idempotent on its own record.
+
+// Work that the buyer does not wait on (emails to other people, alerts) runs
+// after the response has gone. Stripe gives a webhook about 20 seconds, and an
+// announcement mailed to every approved professional used to spend that
+// inside the payment's own answer. after() also keeps fire-and-forget work
+// alive on Netlify, where it could otherwise be cut off when the response ends.
+// Outside a request (a script, a test) it simply runs now.
+function later(work: () => Promise<unknown> | unknown) {
+  try {
+    after(async () => { try { await work() } catch (e: any) { console.error('[After payment] follow-up failed (non-fatal):', e?.message) } })
+  } catch {
+    void Promise.resolve().then(work).catch((e: any) => console.error('[After payment] follow-up failed (non-fatal):', e?.message))
+  }
+}
 
 export type FulfilmentOutcome =
   | { ok: true; note?: string }
@@ -350,7 +365,7 @@ export async function fulfilCheckoutSession(
       console.error('[Featured employer] fulfilment failed:', error.message)
       return { ok: false, retry: true, message: 'featured_employer fulfilment failed' }
     }
-    await announceFeaturedEmployer(supabase, meta.employer_id)
+    later(() => announceFeaturedEmployer(supabase, meta.employer_id))
   }
 
   // Extra money agreed in a shift resolution. This branch did not exist:
@@ -671,7 +686,7 @@ export async function fulfilCheckoutSession(
       console.error('[Agency listing] fulfilment failed:', error.message)
       return { ok: false, retry: true, message: 'agency_listing fulfilment failed' }
     }
-    await convertReferral(supabase, meta.candidate_id)
+    later(() => convertReferral(supabase, meta.candidate_id))
   }
 
   if (meta?.type === 'employer_registration' && meta?.employer_id) {
@@ -708,7 +723,7 @@ export async function fulfilCheckoutSession(
     // The result was discarded here, so a failed publish reached Stripe as a
     // success whatever the function returned.
     const published = await publishPaidJobPosting(supabase, session, {
-      onPublished: jobId => triggerJobAlerts(jobId, ctx?.requestUrl || 'https://talenthousecollective.co.uk'),
+      onPublished: jobId => later(() => triggerJobAlerts(jobId, ctx?.requestUrl || 'https://talenthousecollective.co.uk')),
     })
     if (!published.ok) {
       console.error('[Paid job posting] fulfilment failed:', published.reason)

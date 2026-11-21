@@ -89,6 +89,16 @@ async function announceFeaturedEmployer(supabase: any, employerId: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now()
+  const res = await handleWebhook(req)
+  // One line per delivery, so the Netlify logs say which events are slow and
+  // whether it is the work or the cold start (the request's own duration
+  // minus this figure).
+  console.log(`[Stripe webhook] answered ${res.status} in ${Date.now() - startedAt}ms`)
+  return res
+}
+
+async function handleWebhook(req: NextRequest): Promise<NextResponse> {
   const stripe = getStripe()
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
@@ -135,6 +145,7 @@ export async function POST(req: NextRequest) {
   // Past this point the event is verified. Naming it separately keeps the rest
   // of the handler working on a non-null value without a cast at every use.
   const verified: Stripe.Event = event
+  console.log(`[Stripe webhook] ${verified.type} ${verified.id}`)
 
   const supabase = createAdminClient()
 
