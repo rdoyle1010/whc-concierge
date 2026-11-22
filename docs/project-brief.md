@@ -391,11 +391,12 @@ registration ZC235847 (expires 31 August 2027). Trade marks: WELLASSURE filed
 TALENT HOUSE COLLECTIVE not yet filed (planned: classes 35, 41, 42).
 
 Sales brochure for properties: `docs/Talent-House-Collective-brochure.pdf`
-(nine A4 pages, November 2026): why properties use it, every department
-front and back of house in pictures, recruitment and
-residencies, agency cover, Academy for Teams, the standards library, pricing
-as published, and the closing page pairing it with WellAssure. It quotes no
-usage figures on purpose: the marketplace is still filling. Every form a visitor can submit
+(nine A4 pages, November 2026). Led by recruitment: matched on talent, and
+introduced only when both sides say yes (the mutual match). Then what the
+matching weighs, every department front and back of house, agency cover,
+residencies and pricing; the Academy and the standards library are one page
+of extras. It quotes no usage figures on purpose: the marketplace is still
+filling. The match card in it is an illustration with sample details. Every form a visitor can submit
 without an account (contact, Academy for Teams, sign-up, newsletter, brand
 enquiries, profile build, guest course checkout) sits behind the shared
 database rate limit and a hidden honeypot field; the four AI writing tools are
