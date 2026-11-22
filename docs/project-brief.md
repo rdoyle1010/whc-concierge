@@ -388,7 +388,13 @@ somebody could apply for at a company that never advertised it.
 Legal entity: Wellness House Collective Limited, company 16720845, ICO
 registration ZC235847 (expires 31 August 2027). Trade marks: WELLASSURE filed
 22 November 2026 (UK00004478763, classes 9, 41, 42, owned by the company);
-TALENT HOUSE COLLECTIVE not yet filed (planned: classes 35, 41, 42). Every form a visitor can submit
+TALENT HOUSE COLLECTIVE not yet filed (planned: classes 35, 41, 42).
+
+Sales brochure for properties: `docs/Talent-House-Collective-brochure.pdf`
+(eight A4 pages, November 2026): why properties use it, recruitment and
+residencies, agency cover, Academy for Teams, the standards library, pricing
+as published, and the closing page pairing it with WellAssure. It quotes no
+usage figures on purpose: the marketplace is still filling. Every form a visitor can submit
 without an account (contact, Academy for Teams, sign-up, newsletter, brand
 enquiries, profile build, guest course checkout) sits behind the shared
 database rate limit and a hidden honeypot field; the four AI writing tools are
