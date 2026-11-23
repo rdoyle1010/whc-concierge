@@ -8,8 +8,8 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
 
   const ctaText = isTalent ? 'Complete Your Profile' : 'Post Your First Role'
   const mainMessage = isTalent
-    ? 'You\'ve joined the UK\'s premier platform for luxury spa and wellness professionals. Complete your profile to get matched with premium roles at five-star properties.'
-    : 'You\'ve joined the UK\'s premier platform for luxury spa and wellness recruitment. Post your first role and discover vetted wellness professionals ready to join your team.'
+    ? 'You\'ve joined Talent House Collective, the platform built for luxury spa and wellness professionals. Complete your profile to get matched with premium roles at five-star properties.'
+    : 'You\'ve joined Talent House Collective, recruitment built for luxury spas and wellness. Post your first role and discover vetted wellness professionals ready to join your team.'
 
   const nextSteps = isTalent
     ? [
